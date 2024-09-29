@@ -14,8 +14,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -148,7 +146,7 @@ fun RegisterContent() {
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {},
                     btnString = GET_STARTED.uppercase(),
-                    textStyle = AppTheme.typography.buttonText
+                    textStyle = typography.buttonText
                 )
             }
         }
@@ -161,6 +159,6 @@ fun RegisterContent() {
 @Composable
 fun RegisterScreenPreview() {
     AppTheme {
-        RegisterScreen()
+        RegisterContent()
     }
 }

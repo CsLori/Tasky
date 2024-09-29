@@ -15,8 +15,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,7 +38,6 @@ import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 import com.example.tasky.Constants.EMAIL_ADDRESS
-import com.example.tasky.Constants.GET_STARTED
 import com.example.tasky.Constants.LOG_IN
 import com.example.tasky.Constants.PASSWORD
 import com.example.tasky.Constants.WELCOME_BACK
@@ -123,7 +120,7 @@ fun LoginContent() {
                         Icon(
                             imageVector = Icons.Filled.VisibilityOff,
                             contentDescription = "",
-                            tint = AppTheme.colors.gray
+                            tint = colors.gray
                         )
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -139,7 +136,7 @@ fun LoginContent() {
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {},
                         btnString = LOG_IN.uppercase(),
-                        textStyle = AppTheme.typography.buttonText
+                        textStyle = typography.buttonText
                     )
 
                     Text(
@@ -163,6 +160,6 @@ fun LoginContent() {
 @Composable
 fun LoginScreenPreview() {
     AppTheme {
-        LoginScreen()
+        LoginContent()
     }
 }
