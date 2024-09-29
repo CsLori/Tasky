@@ -18,6 +18,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "API_KEY",
+            "\"${project.findProperty("TEST_API_KEY")}\""
+        )
     }
 
     buildTypes {
@@ -38,8 +44,8 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
-
 }
 
 
@@ -73,13 +79,15 @@ dependencies {
     implementation (libs.retrofit)
     implementation (libs.okhttp)
     implementation (libs.logging.interceptor)
+    implementation (libs.converter.gson)
+
 
     // Dagger Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
 
     // If using Hilt with ViewModel
-    implementation(libs.androidx.hilt.lifecycle.viewmodel)
+//    implementation(libs.androidx.hilt.lifecycle.viewmodel)
     ksp(libs.androidx.hilt.compiler)
 
     // Room dependencies
