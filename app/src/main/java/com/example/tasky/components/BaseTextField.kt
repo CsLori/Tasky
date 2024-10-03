@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.util.ErrorStatus
 import com.example.tasky.util.FieldInput
-import com.example.tasky.util.IconResource
 
 @Composable
 fun BaseTextField(
@@ -82,7 +81,7 @@ fun BaseTextField(
                         text = it.asString(),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = AppTheme.dimensions.small8dp),
+                            .padding(bottom = AppTheme.dimensions.small8dp),
                         style = AppTheme.typography.labelSmall,
                     )
                 }

@@ -15,7 +15,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -53,6 +52,7 @@ import com.example.tasky.ui.theme.AppTheme.typography
 import com.example.tasky.util.ErrorStatus
 import com.example.tasky.util.FieldInput
 import com.example.tasky.util.UiText
+import dagger.hilt.android.AndroidEntryPoint
 
 @Composable
 internal fun RegisterScreen(registerViewModel: RegisterViewModel, navController: NavController) {
@@ -85,7 +85,7 @@ internal fun RegisterScreen(registerViewModel: RegisterViewModel, navController:
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun RegisterContent(
     state: RegisterViewModel.RegisterState,
@@ -274,7 +274,7 @@ fun RegisterScreenPreview() {
         RegisterContent(
             state = RegisterViewModel.RegisterState.None,
             dialogState = RegisterViewModel.DialogState.Hide,
-            onRegisterClick = { _, email, password -> {} },
+            onRegisterClick = { _, _, _ -> {} },
             onNavigateToLogin = {},
             onDismiss = {},
             nameField = FieldInput("L"),

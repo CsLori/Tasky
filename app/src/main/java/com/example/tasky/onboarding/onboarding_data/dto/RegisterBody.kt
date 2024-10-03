@@ -2,7 +2,6 @@ package com.example.tasky.onboarding.onboarding_data.dto
 
 import com.google.gson.annotations.SerializedName
 import java.io.Serializable
-import javax.inject.Inject
 
 data class RegisterBody(
     @SerializedName("full_name")

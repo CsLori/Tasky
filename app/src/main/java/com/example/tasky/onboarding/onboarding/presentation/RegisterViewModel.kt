@@ -45,6 +45,10 @@ class RegisterViewModel @Inject constructor(
     }
 
     fun register(name: String, email: String, password: String) {
+        nameField = nameField.copy(hasInteracted = true)
+        emailField = emailField.copy(hasInteracted = true)
+        passwordField = passwordField.copy(hasInteracted = true)
+
         if (!isFormValid()) {
             return
         }
@@ -92,7 +96,7 @@ class RegisterViewModel @Inject constructor(
                 !passwordErrorStatus.isError
     }
 
-    sealed class DialogState() {
+    sealed class DialogState {
         data object Hide : DialogState()
         data class Show(val errorMessage: String?) : DialogState()
     }

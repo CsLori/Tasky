@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    id("com.google.dagger.hilt.android")
+    id("com.google.dagger.hilt.android") version "2.52" apply true
     id("com.google.devtools.ksp")
 }
 
@@ -47,6 +47,9 @@ android {
         compose = true
         buildConfig = true
     }
+    hilt {
+        enableAggregatingTask = true
+    }
 }
 
 
@@ -85,14 +88,13 @@ dependencies {
     implementation (libs.logging.interceptor)
     implementation (libs.converter.gson)
 
-
     // Dagger Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
 
-    // If using Hilt with ViewModel
-//    implementation(libs.androidx.hilt.lifecycle.viewmodel)
-    ksp(libs.androidx.hilt.compiler)
+    //Hilt navigation
+    implementation(libs.androidx.hilt.navigation)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     // Room dependencies
     implementation(libs.androidx.room.runtime)

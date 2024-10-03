@@ -3,6 +3,7 @@ package com.example.tasky.util
 import android.content.Context
 import android.util.Patterns
 import android.widget.Toast
+import com.example.tasky.Constants
 import com.example.tasky.R
 
 class CredentialsValidator {
@@ -11,14 +12,13 @@ class CredentialsValidator {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
-
     fun validateName(name: String): ErrorStatus {
         return when {
             name.trim().isEmpty() -> {
                 ErrorStatus(true, UiText.StringResource(R.string.This_field_is_required))
             }
 
-            name.length in 4..50 -> {
+            name.length in Constants.MIN_NAME_LENGTH..Constants.MAX_NAME_LENGTH -> {
                 ErrorStatus(false)
             }
 
