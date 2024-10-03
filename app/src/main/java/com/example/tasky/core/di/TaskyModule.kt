@@ -2,10 +2,8 @@ package com.example.tasky.core.di
 
 import com.example.tasky.BuildConfig.API_KEY
 import com.example.tasky.core.remote.TaskyApi
-import com.example.tasky.onboarding.onboarding_data.dto.RegisterBody
 import com.example.tasky.onboarding.onboarding_data.repository.UserRepositoryImpl
-import com.example.tasky.onboarding.onboarding_domain.UserRepository
-import com.google.gson.Gson
+import com.example.tasky.util.CredentialsValidator
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,7 +14,6 @@ import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Module
@@ -57,5 +54,11 @@ object TaskyModule {
     @Singleton
     fun provideUserRepo(api: TaskyApi): UserRepositoryImpl {
         return UserRepositoryImpl(api)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCredentialValidator(): CredentialsValidator {
+        return CredentialsValidator()
     }
 }

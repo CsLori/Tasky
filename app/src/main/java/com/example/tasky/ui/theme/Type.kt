@@ -69,7 +69,7 @@ data class AppTypography(
         fontFamily = Inter,
         fontSize = 16.sp,
         fontWeight = FontWeight.Normal,
-        lineHeight = 30.sp
+        lineHeight = 30.sp,
     ),
 
     val buttonText: TextStyle = TextStyle(

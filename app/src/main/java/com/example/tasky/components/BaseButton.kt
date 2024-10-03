@@ -9,14 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.tasky.Constants.GET_STARTED
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 
 @Composable
 fun BaseButton(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
     btnString: String,
     textStyle: TextStyle
@@ -31,7 +30,7 @@ fun BaseButton(
     ) {
         Text(
             btnString,
-            modifier = Modifier.padding(dimensions.small8dp),
+            modifier = Modifier.padding(dimensions.default16dp),
             style = textStyle
         )
     }

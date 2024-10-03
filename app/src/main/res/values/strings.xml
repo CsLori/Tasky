@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">Tasky</string>
+    <string name="Password">Password</string>
+    <string name="Name">Name</string>
+    <string name="Email_address">Email address</string>
+    <string name="Welcome_Back">Welcome Back!</string>
+    <string name="Get_Started">Get Started</string>
+    <string name="Log_in">Log in</string>
+    <string name="This_field_is_required">This field is required</string>
+    <string name="Please_enter_a_valid_email_address_error">Please enter a valid email address</string>
+    <string name="Password_already_in_use_error">Please choose another password</string>
+    <string name="Name_length_error">"Name should be 4 to 50 characters long"</string>
+    <string name="Enter_at_least_x_characters_long">At least %1$s characters long</string>
+    <string name="Password_error">Requires a number, capital and a lowercase letter</string>
+    <string name="Error">Error</string>
 </resources>

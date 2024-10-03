@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.tasky.onboarding.onboarding.presentation.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.RegisterViewModel
 import com.example.tasky.ui.theme.AppTheme
@@ -25,9 +29,20 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AppTheme {
+                val navController = rememberNavController()
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        RegisterScreen(registerViewModel)
+                        NavHost(
+                            navController = navController,
+                            startDestination = Screen.Register,
+                        ) {
+                            composable<Screen.Register> {
+                                RegisterScreen(registerViewModel, navController)
+                            }
+                            composable<Screen.Login> {
+                                LoginScreen(navController)
+                            }
+                        }
                     }
                 }
             }
