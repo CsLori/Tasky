@@ -1,6 +1,8 @@
 package com.example.tasky.onboarding.onboarding_data.repository
 
 import com.example.tasky.core.remote.TaskyApi
+import com.example.tasky.onboarding.onboarding_data.dto.LoginBody
+import com.example.tasky.onboarding.onboarding_data.dto.LoginResponse
 import com.example.tasky.onboarding.onboarding_data.dto.RegisterBody
 import com.example.tasky.onboarding.onboarding_domain.UserRepository
 import java.util.concurrent.CancellationException
@@ -10,20 +12,32 @@ class UserRepositoryImpl(
 ) : UserRepository {
     override suspend fun register(name: String, email: String, password: String) {
         try {
-            val result = api.register(
+            api.register(
                 RegisterBody(
                     fullName = name,
                     email = email,
                     password = password,
                 )
             )
-            Result.success(result)
-
         } catch (e: Exception) {
             if (e is CancellationException) {
-                e.printStackTrace()
                 throw e
             }
+            e.printStackTrace()
+        }
+    }
+
+    override suspend fun login(email: String, password: String): Result<LoginResponse> {
+        return try {
+            val result = api.login(LoginBody(email, password))
+//            result.refreshToken
+            Result.success(result)
+            TODO()
+        } catch (e: Exception) {
+            if (e is CancellationException) {
+                throw e
+            }
+            e.printStackTrace()
             Result.failure(e)
         }
     }

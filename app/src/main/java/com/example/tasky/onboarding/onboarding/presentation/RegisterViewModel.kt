@@ -49,19 +49,26 @@ class RegisterViewModel @Inject constructor(
         emailField = emailField.copy(hasInteracted = true)
         passwordField = passwordField.copy(hasInteracted = true)
 
-        if (!isFormValid()) {
-            return
-        }
+        if (!isFormValid()) return
+
         _state.update { RegisterState.Loading }
 
-        try {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            try {
                 userRepositoryImpl.register(name, email, password)
-                _state.update { RegisterState.Success }
+                login(email, password) // Handle login after successful registration
+            } catch (e: Exception) {
+                _dialogState.update { DialogState.Show("Registration failed!") }
             }
+        }
+    }
 
+    private suspend fun login(email: String, password: String) {
+        try {
+            userRepositoryImpl.login(email, password)
+            _state.update { RegisterState.Success }
         } catch (e: Exception) {
-            _dialogState.update { DialogState.Show("Something went wrong!") }
+            _dialogState.update { DialogState.Show("Login failed!") }
         }
     }
 
@@ -106,5 +113,4 @@ class RegisterViewModel @Inject constructor(
         data object Loading : RegisterState()
         data object Success : RegisterState()
     }
-
 }

@@ -74,6 +74,16 @@ class CredentialsValidator {
                 ErrorStatus(true, UiText.StringResource(R.string.This_field_is_required))
             }
 
+            password.trim().length < Constants.MIN_PASSWORD_LENGTH -> {
+                ErrorStatus(
+                    true,
+                    UiText.StringResource(
+                        R.string.Enter_at_least_x_characters_long,
+                        Constants.MIN_PASSWORD_LENGTH
+                    )
+                )
+            }
+
             containsLettersDigitsLowerCaseAndUpperCase -> {
                 ErrorStatus(false)
             }

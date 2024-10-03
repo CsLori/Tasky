@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -32,14 +33,10 @@ import java.util.Locale
 fun BaseDialog(
     title: String? = null,
     label: String,
-    clickableLabel: AnnotatedString = AnnotatedString(""),
     displayCloseIcon: Boolean = false,
     positiveButtonText: String,
     positiveOnClick: () -> Unit,
     onCancelClicked: (() -> Unit)? = null,
-    negativeButtonText: String? = null,
-    negativeOnClick: (() -> Unit)? = null,
-    clickableLabelOnClick: ((String) -> Unit)? = null,
 ) {
     AppTheme {
         Dialog(
@@ -47,9 +44,7 @@ fun BaseDialog(
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                modifier = Modifier.fillMaxWidth(),
                 color = AppTheme.colors.white
             )
             {
@@ -85,52 +80,21 @@ fun BaseDialog(
                             }
                         }
                     }
-                    if (clickableLabel.isNotEmpty()) {
-                        ClickableText(
-                            text = clickableLabel,
-                            onClick = { offset ->
-                                clickableLabel.getStringAnnotations(
-                                    tag = "URL",
-                                    start = offset,
-                                    end = offset
-                                )
-                                    .firstOrNull()?.let { annotation ->
-                                        if (clickableLabelOnClick != null) {
-                                            clickableLabelOnClick(annotation.item)
-                                        }
-                                    }
-                            },
-                            style = AppTheme.typography.bodyMedium,
-                        )
-                    } else {
-                        Text(
-                            text = label,
-                            style = AppTheme.typography.bodyMedium,
-                            lineHeight = 20.sp
-                        )
-                    }
+                    Text(
+                        text = label,
+                        style = AppTheme.typography.bodyMedium,
+                        lineHeight = 20.sp
+                    )
 
                     Spacer(modifier = Modifier.height(AppTheme.dimensions.default16dp))
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                        negativeButtonText?.let {
-                            BaseButton(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.5f),
-                                btnString = negativeButtonText,
-                                onClick = {
-                                    if (negativeOnClick != null) {
-                                        negativeOnClick()
-                                    }
-                                },
-                                textStyle = AppTheme.typography.buttonText
-                            )
-
-                        }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
                         BaseButton(
-                            modifier = Modifier
-                                .fillMaxWidth(0.3f),
-                            btnString = positiveButtonText,
+                            modifier = Modifier.fillMaxWidth(0.5f),
+                            btnString = positiveButtonText.uppercase(),
                             onClick = { positiveOnClick() },
                             textStyle = AppTheme.typography.buttonText
                         )
@@ -138,5 +102,20 @@ fun BaseDialog(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Preview
+@Composable
+fun DialogPreview() {
+    AppTheme {
+        BaseDialog(
+            title = "Title", label = "Label",
+            displayCloseIcon = false,
+            positiveButtonText = "Ok",
+            positiveOnClick = {},
+            onCancelClicked = {},
+        )
     }
 }

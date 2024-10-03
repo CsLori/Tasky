@@ -129,14 +129,10 @@ fun RegisterContent(
                 BaseDialog(
                     title = "Something went wrong!",
                     label = "Something",
-                    clickableLabel = AnnotatedString("Check your credentials!"),
                     displayCloseIcon = true,
                     positiveButtonText = "Ok",
                     positiveOnClick = onDismiss,
                     onCancelClicked = onDismiss,
-                    negativeButtonText = null,
-                    negativeOnClick = onDismiss,
-                    clickableLabelOnClick = { },
                 )
             }
             Scaffold(floatingActionButton = {
@@ -165,7 +161,7 @@ fun RegisterContent(
                     )
                     {
                         Text(
-                            text = stringResource(R.string.Welcome_Back),
+                            text = stringResource(R.string.Create_your_account),
                             style = typography.title,
                             textAlign = TextAlign.Center,
                             color = colors.white,

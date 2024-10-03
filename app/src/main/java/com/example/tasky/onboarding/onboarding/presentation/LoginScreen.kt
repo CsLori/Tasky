@@ -13,26 +13,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +38,8 @@ import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
+import com.example.tasky.util.ErrorStatus
+import com.example.tasky.util.FieldInput
 
 @Composable
 internal fun LoginScreen(navController: NavController) {
@@ -58,89 +51,100 @@ fun LoginContent(
     onSignUpClick: () -> Unit
 ) {
 
-//    Box(
-//        modifier = Modifier
-//            .fillMaxSize(),
-//    ) {
-//        Box(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(200.dp)
-//                .background(colors.black),
-//            contentAlignment = Alignment.Center
-//        )
-//        {
-//            Text(
-//                text = stringResource(R.string.Welcome_Back),
-//                style = typography.title,
-//                textAlign = TextAlign.Center,
-//                color = colors.white,
-//                modifier = Modifier.padding(bottom = dimensions.large32dp)
-//            )
-//        }
-//
-//        Surface(
-//            shape = RoundedCornerShape(
-//                topStart = dimensions.large24dp,
-//                topEnd = dimensions.large24dp
-//            ),
-//            color = colors.white,
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .fillMaxHeight()
-//                .padding(top = 150.dp)
-//        ) {
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .fillMaxHeight()
-//                    .padding(top = dimensions.large32dp)
-//                    .padding(horizontal = dimensions.default16dp)
-//            ) {
-//                BaseTextField(
-//                    modifier = Modifier.padding(dimensions.small8dp),
-//                    fieldInput = email,
-//                    placeholder = { Text(stringResource(R.string.Email_address)) },
-//
-//                )
-//
-//                Spacer(modifier = Modifier.height(dimensions.default16dp))
-//
-//                BaseTextField(
-//                    modifier = Modifier.padding(dimensions.small8dp),
-//                    fieldInput = password,
-//                    onValueChange = { password = it },
-//                    placeholder = { Text(stringResource(R.string.Password)) },
-//                )
-//
-//                Spacer(modifier = Modifier.height(dimensions.large32dp))
-//
-//                Column(
-//                    modifier = Modifier.fillMaxSize(),
-//                    verticalArrangement = Arrangement.SpaceBetween
-//                ) {
-//                    BaseButton(
-//                        modifier = Modifier.fillMaxWidth(),
-//                        onClick = {},
-//                        btnString = stringResource(R.string.Log_in).uppercase(),
-//                        textStyle = typography.buttonText
-//                    )
-//
-//                    Text(
-//                        text = "Don't have an account? Sign up".uppercase(),
-//                        modifier = Modifier
-//                            .align(Alignment.CenterHorizontally)
-//                            .clickable { onSignUpClick() },
-//                        style = TextStyle(
-//                            fontSize = 14.sp,
-//                            fontWeight = FontWeight.W500,
-//                            lineHeight = 30.sp
-//                        )
-//                    )
-//                }
-//            }
-//        }
-//    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .background(colors.black),
+            contentAlignment = Alignment.Center
+        )
+        {
+            Text(
+                text = stringResource(R.string.Welcome_Back),
+                style = typography.title,
+                textAlign = TextAlign.Center,
+                color = colors.white,
+                modifier = Modifier.padding(bottom = dimensions.large32dp)
+            )
+        }
+
+        Surface(
+            shape = RoundedCornerShape(
+                topStart = 30.dp,
+                topEnd = 30.dp
+            ),
+            color = colors.white,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .padding(top = 150.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(top = 40.dp)
+                    .padding(horizontal = dimensions.default16dp)
+            ) {
+                BaseTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    fieldInput = FieldInput("Lori"),
+                    errorStatus = ErrorStatus(false),
+                    placeholderValue = stringResource(R.string.Email_address),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
+                    onValueChange = {}
+                )
+
+                Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
+
+                BaseTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    fieldInput = FieldInput("lori@boohoo.com"),
+                    errorStatus = ErrorStatus(false),
+                    placeholderValue = stringResource(R.string.Password),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        capitalization = KeyboardCapitalization.Words,
+                        imeAction = ImeAction.Next
+                    ),
+                    onValueChange = {}
+                )
+
+                Spacer(modifier = Modifier.height(dimensions.large32dp))
+
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    BaseButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {},
+                        btnString = stringResource(R.string.Log_in).uppercase(),
+                        textStyle = typography.buttonText
+                    )
+
+                    Text(
+                        text = "Don't have an account? Sign up".uppercase(),
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .clickable { onSignUpClick() },
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.W500,
+                            lineHeight = 30.sp
+                        )
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Preview(name = "Pixel 3", device = Devices.PIXEL_3)
