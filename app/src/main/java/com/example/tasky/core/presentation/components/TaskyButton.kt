@@ -1,4 +1,4 @@
-package com.example.tasky.components
+package com.example.tasky.core.presentation.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,7 +14,7 @@ import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 
 @Composable
-fun BaseButton(
+fun MainButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     btnString: String,
@@ -36,11 +36,34 @@ fun BaseButton(
     }
 }
 
+@Composable
+fun DialogSuccessButton(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    btnString: String,
+    textStyle: TextStyle
+) {
+    Button(
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = colors.black,
+            contentColor = colors.white
+        ),
+        onClick = onClick
+    ) {
+        Text(
+            btnString,
+            modifier = Modifier.padding(dimensions.small8dp),
+            style = textStyle
+        )
+    }
+}
+
 @Preview
 @Composable
 fun BaseButtonPreview() {
     AppTheme {
-        BaseButton(
+        MainButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = {},
             btnString = "Log in",

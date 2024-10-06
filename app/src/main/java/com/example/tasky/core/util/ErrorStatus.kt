@@ -1,4 +1,4 @@
-package com.example.tasky.util
+package com.example.tasky.core.util
 
 data class ErrorStatus(
     val isError: Boolean,

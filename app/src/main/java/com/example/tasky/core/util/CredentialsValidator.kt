@@ -1,16 +1,13 @@
-package com.example.tasky.util
+package com.example.tasky.core.util
 
-import android.content.Context
 import android.util.Patterns
-import android.widget.Toast
-import com.example.tasky.Constants
 import com.example.tasky.R
 
-class CredentialsValidator {
+const val MIN_NAME_LENGTH = 4
+const val MAX_NAME_LENGTH = 50
+const val MIN_PASSWORD_LENGTH = 9
 
-    fun Context.showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-    }
+object CredentialsValidator {
 
     fun validateName(name: String): ErrorStatus {
         return when {
@@ -18,7 +15,7 @@ class CredentialsValidator {
                 ErrorStatus(true, UiText.StringResource(R.string.This_field_is_required))
             }
 
-            name.length in Constants.MIN_NAME_LENGTH..Constants.MAX_NAME_LENGTH -> {
+            name.length in MIN_NAME_LENGTH..MAX_NAME_LENGTH -> {
                 ErrorStatus(false)
             }
 
@@ -49,37 +46,45 @@ class CredentialsValidator {
 
     fun validatePassword(password: String): ErrorStatus {
         val containsLettersDigitsLowerCaseAndUpperCase = run {
-            var hasDigit = false
-            var hasLetter = false
-            var hasLower = false
-            var hasUpper = false
+            val hasLower = password.any { it.isLowerCase() }
+            val hasUpper = password.any { it.isUpperCase() }
+            val hasNumber = password.any { it.isDigit() }
 
-            for (char in password) {
-                when {
-                    char.isDigit() -> hasDigit = true
-                    char.isLowerCase() -> hasLower = true
-                    char.isUpperCase() -> hasUpper = true
-                    char.isLetter() -> hasLetter = true
-                }
-                if (hasDigit && hasLetter && hasLower && hasUpper) {
-                    break
-                }
-            }
-
-            hasDigit && hasLower && hasUpper
+            hasLower && hasUpper && hasNumber
         }
+
+//        val containsLettersDigitsLowerCaseAndUpperCase = run {
+//            var hasDigit = false
+//            var hasLetter = false
+//            var hasLower = false
+//            var hasUpper = false
+//
+//            for (char in password) {
+//                when {
+//                    char.isDigit() -> hasDigit = true
+//                    char.isLowerCase() -> hasLower = true
+//                    char.isUpperCase() -> hasUpper = true
+//                    char.isLetter() -> hasLetter = true
+//                }
+//                if (hasDigit && hasLetter && hasLower && hasUpper) {
+//                    break
+//                }
+//            }
+//
+//            hasDigit && hasLower && hasUpper
+//        }
 
         return when {
             password.trim().isEmpty() -> {
                 ErrorStatus(true, UiText.StringResource(R.string.This_field_is_required))
             }
 
-            password.trim().length < Constants.MIN_PASSWORD_LENGTH -> {
+            password.trim().length < MIN_PASSWORD_LENGTH -> {
                 ErrorStatus(
                     true,
                     UiText.StringResource(
                         R.string.Enter_at_least_x_characters_long,
-                        Constants.MIN_PASSWORD_LENGTH
+                        MIN_PASSWORD_LENGTH
                     )
                 )
             }

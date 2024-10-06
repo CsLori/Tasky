@@ -1,4 +1,4 @@
-package com.example.tasky.components
+package com.example.tasky.core.presentation.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,12 +26,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.tasky.core.util.ErrorStatus
+import com.example.tasky.core.util.FieldInput
 import com.example.tasky.ui.theme.AppTheme
-import com.example.tasky.util.ErrorStatus
-import com.example.tasky.util.FieldInput
 
 @Composable
-fun BaseTextField(
+fun CredentialsTextField(
     modifier: Modifier,
     fieldInput: FieldInput,
     errorStatus: ErrorStatus,

@@ -23,14 +23,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,77 +35,73 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
 import com.example.tasky.R
-import com.example.tasky.Screen
-import com.example.tasky.components.BaseButton
-import com.example.tasky.components.BaseDialog
-import com.example.tasky.components.BaseTextField
+import com.example.tasky.core.presentation.components.MainButton
+import com.example.tasky.core.presentation.components.CredentialsTextField
+import com.example.tasky.core.presentation.components.SuccessDialog
+import com.example.tasky.core.util.ErrorStatus
+import com.example.tasky.core.util.FieldInput
+import com.example.tasky.core.util.UiText
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import com.example.tasky.util.ErrorStatus
-import com.example.tasky.util.FieldInput
-import com.example.tasky.util.UiText
-import dagger.hilt.android.AndroidEntryPoint
 
 @Composable
-internal fun RegisterScreen(registerViewModel: RegisterViewModel, navController: NavController) {
+internal fun RegisterScreen(
+    registerViewModel: RegisterViewModel,
+    onNavigateToLogin: () -> Unit
+) {
     val state by registerViewModel.state.collectAsStateWithLifecycle()
+    val uiState by registerViewModel.uiState.collectAsStateWithLifecycle()
     val dialogState by registerViewModel.dialogState.collectAsStateWithLifecycle()
-    val nameField = registerViewModel.nameField
-    val emailField = registerViewModel.emailField
-    val passwordField = registerViewModel.passwordField
-    val nameErrorStatus = registerViewModel.nameErrorStatus
-    val emailErrorStatus = registerViewModel.emailErrorStatus
-    val passwordErrorStatus = registerViewModel.passwordErrorStatus
 
     RegisterContent(
         state = state,
+        uiState = uiState,
         dialogState = dialogState,
-        nameField = nameField,
-        emailField = emailField,
-        passwordField = passwordField,
-        nameErrorStatus = nameErrorStatus,
-        emailErrorStatus = emailErrorStatus,
-        passwordErrorStatus = passwordErrorStatus,
-        onRegisterClick = { name, email, password ->
-            registerViewModel.register(name, email, password)
-        },
-        onNavigateToLogin = { navController.navigate(Screen.Login) },
-        onDismiss = registerViewModel::closeDialog,
-        onNameChange = { registerViewModel.onNameChange(it) },
-        onEmailChange = { registerViewModel.onEmailChange(it) },
-        onPasswordChange = { registerViewModel.onPasswordChange(it) },
+        onAction = { action ->
+            when (action) {
+                RegisterViewModel.RegisterAction.OnRegistrationClick -> {
+                    registerViewModel.register(state.fullName, state.email, state.password)
+                }
+
+                is RegisterViewModel.RegisterAction.OnEmailChange -> registerViewModel.onEmailChange(
+                    action.email
+                )
+
+                is RegisterViewModel.RegisterAction.OnNameChange -> registerViewModel.onNameChange(
+                    action.name
+                )
+
+                is RegisterViewModel.RegisterAction.OnPasswordChange -> registerViewModel.onPasswordChange(
+                    action.password
+                )
+
+                RegisterViewModel.RegisterAction.OnNavigateToLogin -> {
+                    onNavigateToLogin()
+                }
+
+                RegisterViewModel.RegisterAction.OnDismissDialog -> {
+                    registerViewModel.closeDialog()
+                }
+
+            }
+        }
     )
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun RegisterContent(
+private fun RegisterContent(
     state: RegisterViewModel.RegisterState,
+    uiState: RegisterViewModel.RegisterUiState,
     dialogState: RegisterViewModel.DialogState,
-    nameField: FieldInput,
-    emailField: FieldInput,
-    passwordField: FieldInput,
-    nameErrorStatus: ErrorStatus,
-    emailErrorStatus: ErrorStatus,
-    passwordErrorStatus: ErrorStatus,
-    onRegisterClick: (String, String, String) -> Unit,
-    onNavigateToLogin: () -> Unit,
-    onDismiss: () -> Unit,
-    onNameChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit,
+    onAction: (RegisterViewModel.RegisterAction) -> Unit
 ) {
-    var email by remember { mutableStateOf(("")) }
-    var password by remember { mutableStateOf("") }
-    var name by remember { mutableStateOf("") }
 
-
-    when (state) {
-        RegisterViewModel.RegisterState.Loading -> {
+    when (uiState) {
+        RegisterViewModel.RegisterUiState.Loading -> {
             Box(
                 modifier = Modifier
                     .fillMaxSize(),
@@ -119,26 +111,26 @@ fun RegisterContent(
             }
         }
 
-        RegisterViewModel.RegisterState.Success -> {
+        RegisterViewModel.RegisterUiState.Success -> {
             Log.d("DDD", "Success!")
             TODO()
         }
 
-        RegisterViewModel.RegisterState.None -> {
+        RegisterViewModel.RegisterUiState.None -> {
             if (dialogState is RegisterViewModel.DialogState.Show) {
-                BaseDialog(
+                SuccessDialog(
                     title = "Something went wrong!",
                     label = "Something",
                     displayCloseIcon = true,
                     positiveButtonText = "Ok",
-                    positiveOnClick = onDismiss,
-                    onCancelClicked = onDismiss,
+                    positiveOnClick = { onAction(RegisterViewModel.RegisterAction.OnDismissDialog) },
+                    onCancelClicked = { onAction(RegisterViewModel.RegisterAction.OnDismissDialog) },
                 )
             }
             Scaffold(floatingActionButton = {
                 FloatingActionButton(
                     containerColor = colors.black,
-                    onClick = { onNavigateToLogin() },
+                    onClick = { onAction(RegisterViewModel.RegisterAction.OnNavigateToLogin) },
                     shape = RoundedCornerShape(16.dp),
                 ) {
                     Icon(
@@ -187,45 +179,47 @@ fun RegisterContent(
                                 .padding(top = 40.dp)
                                 .padding(horizontal = dimensions.default16dp)
                         ) {
-                            BaseTextField(
+                            CredentialsTextField(
                                 modifier = Modifier.fillMaxWidth(),
-                                fieldInput = nameField,
+                                fieldInput = state.fullName,
                                 placeholderValue = stringResource(R.string.Name),
-                                errorStatus = nameErrorStatus,
+                                errorStatus = state.fullNameErrorStatus,
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Text,
                                     capitalization = KeyboardCapitalization.Words,
                                     imeAction = ImeAction.Next
                                 ),
                                 onValueChange = {
-                                    name = it
-                                    onNameChange(name)
+                                    onAction(
+                                        RegisterViewModel.RegisterAction.OnNameChange(it)
+                                    )
                                 }
                             )
 
                             Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
 
-                            BaseTextField(
+                            CredentialsTextField(
                                 modifier = Modifier.fillMaxWidth(),
-                                fieldInput = emailField,
+                                fieldInput = state.email,
                                 placeholderValue = stringResource(R.string.Email_address),
-                                errorStatus = emailErrorStatus,
+                                errorStatus = state.emailErrorStatus,
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Email,
                                     imeAction = ImeAction.Next
                                 ),
                                 onValueChange = {
-                                    email = it
-                                    onEmailChange(email)
+                                    onAction(
+                                        RegisterViewModel.RegisterAction.OnEmailChange(it)
+                                    )
                                 }
                             )
 
                             Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
 
-                            BaseTextField(
+                            CredentialsTextField(
                                 modifier = Modifier.fillMaxWidth(),
-                                fieldInput = passwordField,
-                                errorStatus = passwordErrorStatus,
+                                fieldInput = state.password,
+                                errorStatus = state.passwordErrorStatus,
                                 placeholderValue = stringResource(R.string.Password),
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Password,
@@ -233,21 +227,20 @@ fun RegisterContent(
                                 ),
                                 isPasswordField = true,
                                 onValueChange = {
-                                    password = it
-                                    onPasswordChange(password)
+                                    onAction(
+                                        RegisterViewModel.RegisterAction.OnPasswordChange(
+                                            it
+                                        )
+                                    )
                                 }
                             )
 
                             Spacer(modifier = Modifier.height(dimensions.extraLarge64dp))
 
-                            BaseButton(
+                            MainButton(
                                 modifier = Modifier.fillMaxWidth(),
                                 onClick = {
-                                    onRegisterClick(
-                                        nameField.value,
-                                        emailField.value,
-                                        passwordField.value
-                                    )
+                                    onAction(RegisterViewModel.RegisterAction.OnRegistrationClick)
                                 },
                                 btnString = stringResource(R.string.Get_Started).uppercase(),
                                 textStyle = typography.buttonText
@@ -268,26 +261,41 @@ fun RegisterContent(
 fun RegisterScreenPreview() {
     AppTheme {
         RegisterContent(
-            state = RegisterViewModel.RegisterState.None,
+            state = RegisterViewModel.RegisterState(
+                fullName = FieldInput("Lorant Csuhai"),
+                email = FieldInput("lori123@boohoo.com"),
+                password = FieldInput("boohoo123"),
+                fullNameErrorStatus = ErrorStatus(
+                    true,
+                    UiText.StringResource(R.string.Name_length_error)
+                )
+            ),
+            uiState = RegisterViewModel.RegisterUiState.None,
             dialogState = RegisterViewModel.DialogState.Hide,
-            onRegisterClick = { _, _, _ -> {} },
-            onNavigateToLogin = {},
-            onDismiss = {},
-            nameField = FieldInput("L"),
-            emailField = FieldInput("csakjhajfhas"),
-            passwordField = FieldInput("jhjk"),
-            nameErrorStatus = ErrorStatus(true, UiText.StringResource(R.string.Name_length_error)),
-            emailErrorStatus = ErrorStatus(
-                true,
-                UiText.StringResource(R.string.Please_enter_a_valid_email_address_error)
+            onAction = {}
+        )
+    }
+}
+
+@Preview(name = "Pixel 3", device = Devices.PIXEL_3)
+@Preview(name = "Pixel 6", device = Devices.PIXEL_6)
+@Preview(name = "Pixel 7 PRO", device = Devices.PIXEL_7_PRO)
+@Composable
+fun RegisterScreenWithErrorDialogPreview() {
+    AppTheme {
+        RegisterContent(
+            state = RegisterViewModel.RegisterState(
+                fullName = FieldInput("Lorant Csuhai"),
+                email = FieldInput("lori123@boohoo.com"),
+                password = FieldInput("boohoo123"),
+                fullNameErrorStatus = ErrorStatus(
+                    true,
+                    UiText.StringResource(R.string.Name_length_error)
+                )
             ),
-            passwordErrorStatus = ErrorStatus(
-                true,
-                UiText.StringResource(R.string.Please_enter_a_valid_email_address_error)
-            ),
-            onNameChange = {},
-            onEmailChange = {},
-            onPasswordChange = {}
+            uiState = RegisterViewModel.RegisterUiState.None,
+            dialogState = RegisterViewModel.DialogState.Show("Some Error!"),
+            onAction = {}
         )
     }
 }

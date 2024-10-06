@@ -1,14 +1,13 @@
 package com.example.tasky.onboarding.onboarding.presentation
 
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tasky.onboarding.onboarding_data.repository.UserRepositoryImpl
-import com.example.tasky.util.CredentialsValidator
-import com.example.tasky.util.FieldInput
+import com.example.tasky.core.util.AuthError
+import com.example.tasky.core.util.CredentialsValidator
+import com.example.tasky.core.util.ErrorStatus
+import com.example.tasky.core.util.FieldInput
+import com.example.tasky.core.util.Result
+import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,86 +18,120 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val userRepositoryImpl: UserRepositoryImpl,
-    private val credentialsValidator: CredentialsValidator
+    private val defaultUserRepository: DefaultUserRepository,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<RegisterState>(RegisterState.None)
-    val state: StateFlow<RegisterState> = _state.asStateFlow()
+    private var _uiState = MutableStateFlow<RegisterUiState>(RegisterUiState.None)
+    val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
-    private val _dialogState = MutableStateFlow<DialogState>(DialogState.Hide)
+    private var _dialogState = MutableStateFlow<DialogState>(DialogState.Hide)
     val dialogState: StateFlow<DialogState> = _dialogState.asStateFlow()
 
-    var nameField by mutableStateOf(FieldInput())
-    val nameErrorStatus by derivedStateOf {
-        credentialsValidator.validateName(nameField.value)
-    }
+    private var _state = MutableStateFlow(RegisterState())
+    val state: StateFlow<RegisterState> = _state.asStateFlow()
 
-    var emailField by mutableStateOf(FieldInput())
-    val emailErrorStatus by derivedStateOf {
-        credentialsValidator.validateEmail(emailField.value)
-    }
+    fun register(name: FieldInput, email: FieldInput, password: FieldInput) {
+        val fullNameErrorStatus = CredentialsValidator.validateName(name.value)
+        val emailErrorStatus = CredentialsValidator.validateEmail(email.value)
+        val passwordErrorStatus = CredentialsValidator.validatePassword(password.value)
 
-    var passwordField by mutableStateOf(FieldInput())
-    val passwordErrorStatus by derivedStateOf {
-        credentialsValidator.validatePassword(passwordField.value)
-    }
+        _state.update {
+            it.copy(
+                fullName = name.copy(hasInteracted = true),
+                fullNameErrorStatus = fullNameErrorStatus,
+                email = email.copy(hasInteracted = true),
+                emailErrorStatus = emailErrorStatus,
+                password = password.copy(hasInteracted = true),
+                passwordErrorStatus = passwordErrorStatus
+            )
+        }
 
-    fun register(name: String, email: String, password: String) {
-        nameField = nameField.copy(hasInteracted = true)
-        emailField = emailField.copy(hasInteracted = true)
-        passwordField = passwordField.copy(hasInteracted = true)
 
-        if (!isFormValid()) return
+        if (isFormValid(fullNameErrorStatus, emailErrorStatus, passwordErrorStatus)) {
+            _uiState.update { RegisterUiState.Loading }
 
-        _state.update { RegisterState.Loading }
+            viewModelScope.launch {
+                val result = defaultUserRepository.register(name.value, email.value, password.value)
+                when (result) {
+                    is Result.Success -> {
+                        login(email.value, password.value)
+                        _uiState.update { RegisterUiState.Success }
+                    }
 
-        viewModelScope.launch {
-            try {
-                userRepositoryImpl.register(name, email, password)
-                login(email, password) // Handle login after successful registration
-            } catch (e: Exception) {
-                _dialogState.update { DialogState.Show("Registration failed!") }
+                    is Result.Error -> {
+                        val errorMessage = when (result.error) {
+                            AuthError.Register.EMAIL_ALREADY_EXISTS -> "Email is already in use!"
+                            AuthError.General.NO_INTERNET -> "No internet connection!"
+                            else -> "Registration failed!"
+                        }
+                        _dialogState.update { DialogState.Show(errorMessage) }
+                    }
+                }
             }
         }
     }
 
     private suspend fun login(email: String, password: String) {
         try {
-            userRepositoryImpl.login(email, password)
-            _state.update { RegisterState.Success }
+            defaultUserRepository.login(email, password)
+            _uiState.update { RegisterUiState.Success }
         } catch (e: Exception) {
             _dialogState.update { DialogState.Show("Login failed!") }
         }
     }
 
-    fun onNameChange(newName: String) {
-        nameField = nameField.copy(
-            value = newName,
-            hasInteracted = true
-        )
+    fun onNameChange(fullNameInput: String) {
+        val fullNameErrorStatus = CredentialsValidator.validateName(fullNameInput)
+
+        _state.update {
+            it.copy(
+                fullName = it.fullName.copy(
+                    value = fullNameInput,
+                    hasInteracted = true
+                ),
+                fullNameErrorStatus = fullNameErrorStatus
+            )
+        }
     }
 
-    fun onEmailChange(newEmail: String) {
-        emailField = emailField.copy(
-            value = newEmail,
-            hasInteracted = true
-        )
+    fun onEmailChange(emailInput: String) {
+        val emailErrorStatus = CredentialsValidator.validateEmail(emailInput)
+
+        _state.update {
+            it.copy(
+                email = it.email.copy(
+                    value = emailInput,
+                    hasInteracted = true
+                ),
+                emailErrorStatus = emailErrorStatus
+            )
+        }
     }
 
-    fun onPasswordChange(newPassword: String) {
-        passwordField = passwordField.copy(
-            value = newPassword,
-            hasInteracted = true
-        )
+    fun onPasswordChange(passwordInput: String) {
+        val passwordErrorStatus = CredentialsValidator.validatePassword(passwordInput)
+
+        _state.update {
+            it.copy(
+                password = it.password.copy(
+                    value = passwordInput,
+                    hasInteracted = true
+                ),
+                passwordErrorStatus = passwordErrorStatus
+            )
+        }
     }
 
     fun closeDialog() {
         _dialogState.value = DialogState.Hide
     }
 
-    private fun isFormValid(): Boolean {
-        return !nameErrorStatus.isError &&
+    private fun isFormValid(
+        fullNameErrorStatus: ErrorStatus,
+        emailErrorStatus: ErrorStatus,
+        passwordErrorStatus: ErrorStatus
+    ): Boolean {
+        return !fullNameErrorStatus.isError &&
                 !emailErrorStatus.isError &&
                 !passwordErrorStatus.isError
     }
@@ -108,9 +141,27 @@ class RegisterViewModel @Inject constructor(
         data class Show(val errorMessage: String?) : DialogState()
     }
 
-    sealed class RegisterState {
-        data object None : RegisterState()
-        data object Loading : RegisterState()
-        data object Success : RegisterState()
+    data class RegisterState(
+        val fullName: FieldInput = FieldInput(),
+        val fullNameErrorStatus: ErrorStatus = ErrorStatus(false),
+        val email: FieldInput = FieldInput(),
+        val emailErrorStatus: ErrorStatus = ErrorStatus(false),
+        val password: FieldInput = FieldInput(),
+        val passwordErrorStatus: ErrorStatus = ErrorStatus(false)
+    )
+
+    sealed interface RegisterAction {
+        data class OnNameChange(val name: String) : RegisterAction
+        data class OnEmailChange(val email: String) : RegisterAction
+        data class OnPasswordChange(val password: String) : RegisterAction
+        data object OnRegistrationClick : RegisterAction
+        data object OnNavigateToLogin : RegisterAction
+        data object OnDismissDialog : RegisterAction
+    }
+
+    sealed class RegisterUiState {
+        data object None : RegisterUiState()
+        data object Loading : RegisterUiState()
+        data object Success : RegisterUiState()
     }
 }

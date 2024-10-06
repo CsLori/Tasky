@@ -2,8 +2,7 @@ package com.example.tasky.core.di
 
 import com.example.tasky.BuildConfig.API_KEY
 import com.example.tasky.core.remote.TaskyApi
-import com.example.tasky.onboarding.onboarding_data.repository.UserRepositoryImpl
-import com.example.tasky.util.CredentialsValidator
+import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -52,13 +51,7 @@ object TaskyModule {
 
     @Provides
     @Singleton
-    fun provideUserRepo(api: TaskyApi): UserRepositoryImpl {
-        return UserRepositoryImpl(api)
-    }
-
-    @Provides
-    @Singleton
-    fun provideCredentialValidator(): CredentialsValidator {
-        return CredentialsValidator()
+    fun provideUserRepo(api: TaskyApi): DefaultUserRepository {
+        return DefaultUserRepository(api)
     }
 }

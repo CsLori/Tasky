@@ -29,28 +29,25 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.tasky.R
-import com.example.tasky.Screen
-import com.example.tasky.components.BaseButton
-import com.example.tasky.components.BaseTextField
+import com.example.tasky.core.presentation.components.CredentialsTextField
+import com.example.tasky.core.presentation.components.MainButton
+import com.example.tasky.core.util.ErrorStatus
+import com.example.tasky.core.util.FieldInput
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import com.example.tasky.util.ErrorStatus
-import com.example.tasky.util.FieldInput
 
 @Composable
-internal fun LoginScreen(navController: NavController) {
-    LoginContent(onSignUpClick = { navController.navigate(Screen.Register) })
+internal fun LoginScreen(onNavigateLoRegister: () -> Unit) {
+    LoginContent(onSignUpClick = { onNavigateLoRegister() })
 }
 
 @Composable
 fun LoginContent(
     onSignUpClick: () -> Unit
 ) {
-
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -90,7 +87,7 @@ fun LoginContent(
                     .padding(top = 40.dp)
                     .padding(horizontal = dimensions.default16dp)
             ) {
-                BaseTextField(
+                CredentialsTextField(
                     modifier = Modifier.fillMaxWidth(),
                     fieldInput = FieldInput("Lori"),
                     errorStatus = ErrorStatus(false),
@@ -104,7 +101,7 @@ fun LoginContent(
 
                 Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
 
-                BaseTextField(
+                CredentialsTextField(
                     modifier = Modifier.fillMaxWidth(),
                     fieldInput = FieldInput("lori@boohoo.com"),
                     errorStatus = ErrorStatus(false),
@@ -123,7 +120,7 @@ fun LoginContent(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    BaseButton(
+                    MainButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {},
                         btnString = stringResource(R.string.Log_in).uppercase(),
