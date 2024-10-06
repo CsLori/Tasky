@@ -1,4 +1,4 @@
-package com.example.tasky.onboarding.onboarding_data.dto
+package com.example.tasky.onboarding.onboarding_data.remote
 
 import java.io.Serializable
 

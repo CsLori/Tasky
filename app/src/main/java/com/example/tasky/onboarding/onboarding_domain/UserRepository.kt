@@ -1,8 +1,8 @@
 package com.example.tasky.onboarding.onboarding_domain
 
-import com.example.tasky.core.util.AuthError
+import com.example.tasky.onboarding.onboarding_domain.util.AuthError
 import com.example.tasky.core.util.Result
-import com.example.tasky.onboarding.onboarding_data.dto.LoginResponse
+import com.example.tasky.onboarding.onboarding_data.remote.LoginResponse
 
 interface UserRepository {
 

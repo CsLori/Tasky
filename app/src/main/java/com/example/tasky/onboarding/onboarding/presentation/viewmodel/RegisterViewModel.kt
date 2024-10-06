@@ -1,8 +1,8 @@
-package com.example.tasky.onboarding.onboarding.presentation
+package com.example.tasky.onboarding.onboarding.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tasky.core.util.AuthError
+import com.example.tasky.onboarding.onboarding_domain.util.AuthError
 import com.example.tasky.core.util.CredentialsValidator
 import com.example.tasky.core.util.ErrorStatus
 import com.example.tasky.core.util.FieldInput

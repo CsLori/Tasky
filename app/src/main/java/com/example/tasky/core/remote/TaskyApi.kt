@@ -1,10 +1,10 @@
 package com.example.tasky.core.remote
 
-import com.example.tasky.onboarding.onboarding_data.dto.LoginBody
-import com.example.tasky.onboarding.onboarding_data.dto.LoginResponse
-import com.example.tasky.onboarding.onboarding_data.dto.RefreshTokenBody
-import com.example.tasky.onboarding.onboarding_data.dto.RegisterBody
-import com.example.tasky.onboarding.onboarding_data.dto.TokenResponse
+import com.example.tasky.onboarding.onboarding_data.remote.LoginBody
+import com.example.tasky.onboarding.onboarding_data.remote.LoginResponse
+import com.example.tasky.onboarding.onboarding_data.remote.RefreshTokenBody
+import com.example.tasky.onboarding.onboarding_data.remote.RegisterBody
+import com.example.tasky.onboarding.onboarding_data.remote.TokenResponse
 import retrofit2.http.Body
 import retrofit2.http.POST
 

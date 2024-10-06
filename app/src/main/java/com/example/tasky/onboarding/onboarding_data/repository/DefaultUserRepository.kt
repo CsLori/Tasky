@@ -1,11 +1,11 @@
 package com.example.tasky.onboarding.onboarding_data.repository
 
 import com.example.tasky.core.remote.TaskyApi
-import com.example.tasky.core.util.AuthError
+import com.example.tasky.onboarding.onboarding_domain.util.AuthError
 import com.example.tasky.core.util.Result
-import com.example.tasky.onboarding.onboarding_data.dto.LoginBody
-import com.example.tasky.onboarding.onboarding_data.dto.LoginResponse
-import com.example.tasky.onboarding.onboarding_data.dto.RegisterBody
+import com.example.tasky.onboarding.onboarding_data.remote.LoginBody
+import com.example.tasky.onboarding.onboarding_data.remote.LoginResponse
+import com.example.tasky.onboarding.onboarding_data.remote.RegisterBody
 import com.example.tasky.onboarding.onboarding_domain.UserRepository
 import retrofit2.HttpException
 import java.io.IOException

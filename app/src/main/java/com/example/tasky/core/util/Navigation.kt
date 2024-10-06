@@ -11,9 +11,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.tasky.Screen
-import com.example.tasky.onboarding.onboarding.presentation.LoginScreen
-import com.example.tasky.onboarding.onboarding.presentation.RegisterScreen
-import com.example.tasky.onboarding.onboarding.presentation.RegisterViewModel
+import com.example.tasky.onboarding.onboarding.presentation.ui.LoginScreen
+import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
+import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 
 @Composable
 fun Navigation() {

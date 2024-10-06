@@ -1,4 +1,4 @@
-package com.example.tasky.onboarding.onboarding.presentation
+package com.example.tasky.onboarding.onboarding.presentation.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
