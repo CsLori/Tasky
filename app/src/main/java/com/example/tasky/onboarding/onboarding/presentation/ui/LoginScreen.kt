@@ -13,133 +13,202 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.core.presentation.components.CredentialsTextField
+import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.presentation.components.MainButton
 import com.example.tasky.core.util.ErrorStatus
 import com.example.tasky.core.util.FieldInput
+import com.example.tasky.core.util.UiText
+import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 
 @Composable
-internal fun LoginScreen(onNavigateLoRegister: () -> Unit) {
-    LoginContent(onSignUpClick = { onNavigateLoRegister() })
+internal fun LoginScreen(
+    loginViewModel: LoginViewModel,
+    onNavigateToRegister: () -> Unit,
+    onNavigateToAgenda: () -> Unit
+) {
+    val state by loginViewModel.state.collectAsStateWithLifecycle()
+    val uiState by loginViewModel.uiState.collectAsStateWithLifecycle()
+    val dialogState by loginViewModel.dialogState.collectAsStateWithLifecycle()
+
+    LoginContent(state = state, uiState = uiState, onAction = { action ->
+        when (action) {
+            LoginViewModel.LoginAction.OnNavigateToRegister -> {
+                onNavigateToRegister()
+            }
+
+            LoginViewModel.LoginAction.OnDismissDialog -> DialogState.Hide
+            is LoginViewModel.LoginAction.OnEmailChange -> {
+                loginViewModel.onEmailChange(action.email)
+            }
+
+            is LoginViewModel.LoginAction.OnPasswordChange -> {
+                loginViewModel.onPasswordChange(action.password)
+            }
+
+            is LoginViewModel.LoginAction.OnLoginClick -> {
+                loginViewModel.login(state.email, state.password)
+            }
+
+            is LoginViewModel.LoginAction.OnNavigateToAgenda -> {
+                onNavigateToAgenda()
+            }
+        }
+    }
+    )
 }
 
 @Composable
-fun LoginContent(
-    onSignUpClick: () -> Unit
+private fun LoginContent(
+    state: LoginViewModel.LoginState,
+    uiState: LoginViewModel.LoginUiState,
+    onAction: (LoginViewModel.LoginAction) -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .background(colors.black),
-            contentAlignment = Alignment.Center
-        )
-        {
-            Text(
-                text = stringResource(R.string.Welcome_Back),
-                style = typography.title,
-                textAlign = TextAlign.Center,
-                color = colors.white,
-                modifier = Modifier.padding(bottom = dimensions.large32dp)
-            )
+    when (uiState) {
+        LoginViewModel.LoginUiState.Loading -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
         }
 
-        Surface(
-            shape = RoundedCornerShape(
-                topStart = 30.dp,
-                topEnd = 30.dp
-            ),
-            color = colors.white,
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .padding(top = 150.dp)
-        ) {
-            Column(
+        LoginViewModel.LoginUiState.Success -> {
+            onAction(LoginViewModel.LoginAction.OnNavigateToAgenda)
+        }
+
+        LoginViewModel.LoginUiState.None -> {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-                    .padding(top = 40.dp)
-                    .padding(horizontal = dimensions.default16dp)
+                    .fillMaxSize(),
             ) {
-                CredentialsTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    fieldInput = FieldInput("Lori"),
-                    errorStatus = ErrorStatus(false),
-                    placeholderValue = stringResource(R.string.Email_address),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Next
-                    ),
-                    onValueChange = {}
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .background(colors.black),
+                    contentAlignment = Alignment.Center
                 )
-
-                Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
-
-                CredentialsTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    fieldInput = FieldInput("lori@boohoo.com"),
-                    errorStatus = ErrorStatus(false),
-                    placeholderValue = stringResource(R.string.Password),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        capitalization = KeyboardCapitalization.Words,
-                        imeAction = ImeAction.Next
-                    ),
-                    onValueChange = {}
-                )
-
-                Spacer(modifier = Modifier.height(dimensions.large32dp))
-
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    MainButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {},
-                        btnString = stringResource(R.string.Log_in).uppercase(),
-                        textStyle = typography.buttonText
-                    )
-
+                {
                     Text(
-                        text = "Don't have an account? Sign up".uppercase(),
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .clickable { onSignUpClick() },
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.W500,
-                            lineHeight = 30.sp
-                        )
+                        text = stringResource(R.string.Welcome_Back),
+                        style = typography.title,
+                        textAlign = TextAlign.Center,
+                        color = colors.white,
+                        modifier = Modifier.padding(bottom = dimensions.large32dp)
                     )
                 }
+
+                Surface(
+                    shape = RoundedCornerShape(
+                        topStart = 30.dp,
+                        topEnd = 30.dp
+                    ),
+                    color = colors.white,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+                        .padding(top = 150.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight()
+                            .padding(top = 40.dp)
+                            .padding(horizontal = dimensions.default16dp)
+                    ) {
+                        CredentialsTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            fieldInput = state.email,
+                            errorStatus = state.emailErrorStatus,
+                            placeholderValue = stringResource(R.string.Email_address),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Email,
+                                imeAction = ImeAction.Next
+                            ),
+                            onValueChange = { onAction(LoginViewModel.LoginAction.OnEmailChange(it)) }
+                        )
+
+                        Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
+
+                        CredentialsTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            fieldInput = state.password,
+                            errorStatus = state.passwordErrorStatus,
+                            placeholderValue = stringResource(R.string.Password),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Next
+                            ),
+                            onValueChange = {
+                                onAction(
+                                    LoginViewModel.LoginAction.OnPasswordChange(
+                                        it
+                                    )
+                                )
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(dimensions.large32dp))
+
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            MainButton(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = {
+                                    onAction(
+                                        LoginViewModel.LoginAction.OnLoginClick
+                                    )
+                                },
+                                btnString = stringResource(R.string.Log_in).uppercase(),
+                                textStyle = typography.buttonText
+                            )
+
+                            Text(
+                                text = "Don't have an account? Sign up".uppercase(),
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .clickable {
+                                        onAction(LoginViewModel.LoginAction.OnNavigateToRegister)
+                                    },
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.W500,
+                                    lineHeight = 30.sp
+                                )
+                            )
+                        }
+                    }
+                }
             }
+
         }
     }
 }
@@ -150,6 +219,21 @@ fun LoginContent(
 @Composable
 fun LoginScreenPreview() {
     AppTheme {
-        LoginContent(onSignUpClick = {})
+        LoginContent(
+            state = LoginViewModel.LoginState(
+                email = FieldInput("lori123@boohoo.com"),
+                emailErrorStatus = ErrorStatus(
+                    true,
+                    UiText.StringResource(R.string.Please_enter_a_valid_email_address_error)
+                ),
+                password = FieldInput("boohoo123"),
+                passwordErrorStatus = ErrorStatus(
+                    true,
+                    UiText.StringResource(R.string.Password_error)
+                )
+            ),
+            uiState = LoginViewModel.LoginUiState.None,
+            onAction = {}
+        )
     }
 }

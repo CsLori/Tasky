@@ -36,8 +36,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
-import com.example.tasky.core.presentation.components.MainButton
 import com.example.tasky.core.presentation.components.CredentialsTextField
+import com.example.tasky.core.presentation.components.DialogState
+import com.example.tasky.core.presentation.components.MainButton
 import com.example.tasky.core.presentation.components.SuccessDialog
 import com.example.tasky.core.util.ErrorStatus
 import com.example.tasky.core.util.FieldInput
@@ -97,7 +98,7 @@ internal fun RegisterScreen(
 private fun RegisterContent(
     state: RegisterViewModel.RegisterState,
     uiState: RegisterViewModel.RegisterUiState,
-    dialogState: RegisterViewModel.DialogState,
+    dialogState: DialogState,
     onAction: (RegisterViewModel.RegisterAction) -> Unit
 ) {
 
@@ -114,11 +115,11 @@ private fun RegisterContent(
 
         RegisterViewModel.RegisterUiState.Success -> {
             Log.d("DDD", "Success!")
-            TODO()
+            RegisterViewModel.RegisterAction.OnNavigateToLogin
         }
 
         RegisterViewModel.RegisterUiState.None -> {
-            if (dialogState is RegisterViewModel.DialogState.Show) {
+            if (dialogState is DialogState.Show) {
                 SuccessDialog(
                     title = "Something went wrong!",
                     label = "Something",
@@ -272,7 +273,7 @@ fun RegisterScreenPreview() {
                 )
             ),
             uiState = RegisterViewModel.RegisterUiState.None,
-            dialogState = RegisterViewModel.DialogState.Hide,
+            dialogState = DialogState.Hide,
             onAction = {}
         )
     }
@@ -295,7 +296,7 @@ fun RegisterScreenWithErrorDialogPreview() {
                 )
             ),
             uiState = RegisterViewModel.RegisterUiState.None,
-            dialogState = RegisterViewModel.DialogState.Show("Some Error!"),
+            dialogState = DialogState.Show("Some Error!"),
             onAction = {}
         )
     }

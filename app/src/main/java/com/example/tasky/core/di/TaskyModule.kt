@@ -1,5 +1,6 @@
 package com.example.tasky.core.di
 
+import android.util.Log
 import com.example.tasky.BuildConfig.API_KEY
 import com.example.tasky.core.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
@@ -32,9 +33,13 @@ object TaskyModule {
                 val original: Request = chain.request()
                 val request = original.newBuilder()
                     .header("x-api-key", API_KEY)
+                    .header("Content-Type", "application/json")
                     .method(original.method, original.body)
                     .build()
-                chain.proceed(request)
+                chain.proceed(request).also {
+                    Log.d("API Request", request.toString())
+                }
+
             }.build()
     }
 

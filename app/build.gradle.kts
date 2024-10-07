@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -20,11 +22,13 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField(
-            "String",
-            "API_KEY",
-            "\"${project.findProperty("TEST_API_KEY")}\""
-        )
+        val keystoreFile = project.rootProject.file("local.properties")
+        val properties = Properties()
+        properties.load(keystoreFile.inputStream())
+
+        val apiKey = properties["API_KEY"] ?: ""
+        buildConfigField(type = "String", name = "API_KEY", value = apiKey.toString())
+
     }
 
     buildTypes {
@@ -75,18 +79,18 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     // Compose dependencies
-    implementation (libs.androidx.lifecycle.viewmodel.compose)
-    implementation (libs.androidx.material.icons.extended)
-    implementation (libs.androidx.activity.compose.v160alpha03)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.activity.compose.v160alpha03)
 
     // Coroutine
     implementation(libs.kotlinx.coroutines.android)
 
     // Retrofit
-    implementation (libs.retrofit)
-    implementation (libs.okhttp)
-    implementation (libs.logging.interceptor)
-    implementation (libs.converter.gson)
+    implementation(libs.retrofit)
+    implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
+    implementation(libs.converter.gson)
 
     // Dagger Hilt
     implementation(libs.hilt.android)

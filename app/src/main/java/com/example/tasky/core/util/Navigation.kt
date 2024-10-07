@@ -11,13 +11,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.tasky.Screen
+import com.example.tasky.onboarding.onboarding.presentation.ui.AgendaScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
+import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 
 @Composable
 fun Navigation() {
-    val registerViewModel = hiltViewModel<RegisterViewModel>()
     val navController = rememberNavController()
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
@@ -26,6 +27,7 @@ fun Navigation() {
                 startDestination = Screen.Register,
             ) {
                 composable<Screen.Register> {
+                    val registerViewModel = hiltViewModel<RegisterViewModel>()
                     RegisterScreen(registerViewModel = registerViewModel,
                         onNavigateToLogin = {
                             navController.navigate(Screen.Login) {
@@ -36,13 +38,17 @@ fun Navigation() {
                         })
                 }
                 composable<Screen.Login> {
-                    LoginScreen(onNavigateLoRegister = {
+                    val loginViewModel = hiltViewModel<LoginViewModel>()
+                    LoginScreen(loginViewModel = loginViewModel, onNavigateToRegister = {
                         navController.navigate(Screen.Register) {
                             popUpTo(
                                 0
                             )
                         }
-                    })
+                    }, onNavigateToAgenda = { navController.navigate(Screen.Agenda) })
+                }
+                composable<Screen.Agenda> {
+                    AgendaScreen()
                 }
             }
         }

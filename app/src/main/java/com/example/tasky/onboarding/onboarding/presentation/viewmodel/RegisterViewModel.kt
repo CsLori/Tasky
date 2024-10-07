@@ -2,12 +2,13 @@ package com.example.tasky.onboarding.onboarding.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tasky.onboarding.onboarding_domain.util.AuthError
+import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.util.CredentialsValidator
 import com.example.tasky.core.util.ErrorStatus
 import com.example.tasky.core.util.FieldInput
 import com.example.tasky.core.util.Result
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
+import com.example.tasky.onboarding.onboarding_domain.util.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,8 +55,8 @@ class RegisterViewModel @Inject constructor(
                 val result = defaultUserRepository.register(name.value, email.value, password.value)
                 when (result) {
                     is Result.Success -> {
-                        login(email.value, password.value)
-                        _uiState.update { RegisterUiState.Success }
+//                        login(email.value, password.value)
+//                        _uiState.update { RegisterUiState.Success }
                     }
 
                     is Result.Error -> {
@@ -64,6 +65,7 @@ class RegisterViewModel @Inject constructor(
                             AuthError.General.NO_INTERNET -> "No internet connection!"
                             else -> "Registration failed!"
                         }
+                        _uiState.update { RegisterUiState.None }
                         _dialogState.update { DialogState.Show(errorMessage) }
                     }
                 }
@@ -134,11 +136,6 @@ class RegisterViewModel @Inject constructor(
         return !fullNameErrorStatus.isError &&
                 !emailErrorStatus.isError &&
                 !passwordErrorStatus.isError
-    }
-
-    sealed class DialogState {
-        data object Hide : DialogState()
-        data class Show(val errorMessage: String?) : DialogState()
     }
 
     data class RegisterState(

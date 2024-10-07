@@ -103,6 +103,11 @@ fun SuccessDialog(
     }
 }
 
+sealed class DialogState {
+    data object Hide : DialogState()
+    data class Show(val errorMessage: String?) : DialogState()
+}
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Preview
 @Composable
