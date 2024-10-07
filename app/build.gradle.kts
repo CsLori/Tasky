@@ -1,3 +1,4 @@
+import com.google.protobuf.gradle.GenerateProtoTask
 import java.util.Properties
 
 plugins {
@@ -5,7 +6,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    id("com.google.dagger.hilt.android") version "2.52" apply true
+    alias(libs.plugins.dagger.hilt)
+    alias(libs.plugins.protobuf)
     id("com.google.devtools.ksp")
 }
 
@@ -61,6 +63,8 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.extensions)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -96,7 +100,7 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
 
-    //Hilt navigation
+    // Hilt navigation
     implementation(libs.androidx.hilt.navigation)
     implementation(libs.androidx.hilt.navigation.compose)
 
@@ -104,4 +108,28 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.hilt.compiler)
+
+    // Datastore
+    implementation(libs.datastore)
+    implementation(libs.protobuf.javalite)
+    implementation(libs.datastore.core)
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.21.2"
+    }
+
+    // Generates the java Protobuf-lite code for the Protobufs in this project. See
+    // https://github.com/google/protobuf-gradle-plugin#customizing-protobuf-compilation
+    // for more information.
+    generateProtoTasks {
+        all().forEach { task: GenerateProtoTask ->
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+            }
+        }
+    }
 }

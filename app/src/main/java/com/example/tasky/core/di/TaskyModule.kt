@@ -1,12 +1,15 @@
 package com.example.tasky.core.di
 
+import android.content.Context
 import android.util.Log
 import com.example.tasky.BuildConfig.API_KEY
+import com.example.tasky.core.local.UserPrefsRepository
 import com.example.tasky.core.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -58,5 +61,11 @@ object TaskyModule {
     @Singleton
     fun provideUserRepo(api: TaskyApi): DefaultUserRepository {
         return DefaultUserRepository(api)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserPrefs(@ApplicationContext context: Context): UserPrefsRepository {
+        return UserPrefsRepository(context)
     }
 }

@@ -3,12 +3,12 @@ package com.example.tasky.onboarding.onboarding.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tasky.core.local.UserPrefsRepository
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.util.CredentialsValidator
 import com.example.tasky.core.util.ErrorStatus
 import com.example.tasky.core.util.FieldInput
 import com.example.tasky.core.util.Result
-import com.example.tasky.core.util.onSuccess
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import com.example.tasky.onboarding.onboarding_domain.util.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +21,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val defaultUserRepository: DefaultUserRepository
+    private val defaultUserRepository: DefaultUserRepository,
+    private val userPrefsRepository: UserPrefsRepository
 ) : ViewModel() {
 
     private var _uiState = MutableStateFlow<LoginUiState>(LoginUiState.None)
@@ -56,10 +57,11 @@ class LoginViewModel @Inject constructor(
         _uiState.update { LoginUiState.Loading }
         viewModelScope.launch {
             val result = defaultUserRepository.login(email.value, password.value)
-            Log.d("DDD", result.onSuccess { it.userId }.toString())
             when (result) {
                 is Result.Success -> {
+                    Log.d("DDD", result.data.accessToken ?: "")
                     _uiState.update { LoginUiState.Success }
+                    result.data.accessToken?.let { userPrefsRepository.updateAccessToken(it) }
                 }
 
                 is Result.Error -> {
