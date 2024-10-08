@@ -19,13 +19,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -34,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.core.presentation.components.CredentialsTextField
 import com.example.tasky.core.presentation.components.DialogState
+import com.example.tasky.core.presentation.components.ErrorDialog
 import com.example.tasky.core.presentation.components.MainButton
 import com.example.tasky.core.util.ErrorStatus
 import com.example.tasky.core.util.FieldInput
@@ -54,7 +58,7 @@ internal fun LoginScreen(
     val uiState by loginViewModel.uiState.collectAsStateWithLifecycle()
     val dialogState by loginViewModel.dialogState.collectAsStateWithLifecycle()
 
-    LoginContent(state = state, uiState = uiState, onAction = { action ->
+    LoginContent(state = state, uiState = uiState, dialogState = dialogState, onAction = { action ->
         when (action) {
             LoginViewModel.LoginAction.OnNavigateToRegister -> {
                 onNavigateToRegister()
@@ -81,11 +85,13 @@ internal fun LoginScreen(
     )
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun LoginContent(
     state: LoginViewModel.LoginState,
     uiState: LoginViewModel.LoginUiState,
-    onAction: (LoginViewModel.LoginAction) -> Unit
+    onAction: (LoginViewModel.LoginAction) -> Unit,
+    dialogState: DialogState
 ) {
     if (state.isLoading) {
         Box(
@@ -103,6 +109,16 @@ private fun LoginContent(
             }
 
             LoginViewModel.LoginUiState.None -> {
+                if (dialogState is DialogState.Show) {
+                    ErrorDialog(
+                        title = stringResource(R.string.Something_went_wrong),
+                        label = dialogState.errorMessage.toString(),
+                        displayCloseIcon = false,
+                        positiveButtonText = stringResource(R.string.OK),
+                        positiveOnClick = { DialogState.Hide },
+                        onCancelClicked = { DialogState.Hide }
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxSize(),
@@ -139,7 +155,7 @@ private fun LoginContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .fillMaxHeight()
-                                .padding(top = 40.dp)
+                                .padding(top = 50.dp)
                                 .padding(horizontal = dimensions.default16dp)
                         ) {
                             CredentialsTextField(
@@ -181,7 +197,7 @@ private fun LoginContent(
                                 }
                             )
 
-                            Spacer(modifier = Modifier.height(dimensions.large32dp))
+                            Spacer(modifier = Modifier.height(dimensions.default16dp))
 
                             Column(
                                 modifier = Modifier.fillMaxSize(),
@@ -198,15 +214,27 @@ private fun LoginContent(
                                     textStyle = typography.buttonText
                                 )
 
+                                val styledText = buildAnnotatedString {
+                                    withStyle(style = SpanStyle(color = colors.gray)) {
+                                        append(
+                                            "DON'T HAVE AN ACCOUNT? "
+                                        )
+                                    }
+                                    withStyle(
+                                        style = SpanStyle(color = colors.lightBlue)
+                                    ) {
+                                        append("SIGN UP")
+                                    }
+                                }
                                 Text(
-                                    text = "Don't have an account? Sign up".uppercase(),
+                                    text = styledText,
                                     modifier = Modifier
                                         .align(Alignment.CenterHorizontally)
+                                        .padding(bottom = 70.dp)
                                         .clickable {
                                             onAction(LoginViewModel.LoginAction.OnNavigateToRegister)
                                         },
-                                    style = TextStyle(
-                                        fontSize = 14.sp,
+                                    style = typography.bodyMedium.copy(
                                         fontWeight = FontWeight.W500,
                                         lineHeight = 30.sp
                                     )
@@ -241,7 +269,8 @@ fun LoginScreenPreview() {
                 )
             ),
             uiState = LoginViewModel.LoginUiState.None,
-            onAction = {}
+            onAction = {},
+            dialogState = DialogState.Hide
         )
     }
 }

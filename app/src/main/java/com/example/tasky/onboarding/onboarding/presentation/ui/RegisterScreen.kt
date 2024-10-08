@@ -38,8 +38,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.core.presentation.components.CredentialsTextField
 import com.example.tasky.core.presentation.components.DialogState
+import com.example.tasky.core.presentation.components.ErrorDialog
 import com.example.tasky.core.presentation.components.MainButton
-import com.example.tasky.core.presentation.components.SuccessDialog
 import com.example.tasky.core.util.ErrorStatus
 import com.example.tasky.core.util.FieldInput
 import com.example.tasky.core.util.UiText
@@ -121,7 +121,7 @@ private fun RegisterContent(
 
             RegisterViewModel.RegisterUiState.None -> {
                 if (dialogState is DialogState.Show) {
-                    SuccessDialog(
+                    ErrorDialog(
                         title = "Something went wrong!",
                         label = "Something",
                         displayCloseIcon = true,

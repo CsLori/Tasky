@@ -19,4 +19,6 @@
     <string name="Login_failed">Login failed!</string>
     <string name="Email_already_in_use">Email is already in use!</string>
     <string name="Registration_failed">Registration failed!</string>
+    <string name="OK">OK</string>
+    <string name="Something_went_wrong">Something went wrong</string>
 </resources>

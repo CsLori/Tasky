@@ -27,7 +27,7 @@ import com.example.tasky.ui.theme.AppTheme
 
 @ExperimentalComposeUiApi
 @Composable
-fun SuccessDialog(
+fun ErrorDialog(
     title: String? = null,
     label: String,
     displayCloseIcon: Boolean = false,
@@ -112,7 +112,7 @@ sealed class DialogState {
 @Composable
 fun DialogPreview() {
     AppTheme {
-        SuccessDialog(
+        ErrorDialog(
             title = "Title", label = "Label",
             displayCloseIcon = false,
             positiveButtonText = "Ok",
