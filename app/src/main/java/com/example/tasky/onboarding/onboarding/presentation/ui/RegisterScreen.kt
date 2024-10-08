@@ -102,151 +102,153 @@ private fun RegisterContent(
     onAction: (RegisterViewModel.RegisterAction) -> Unit
 ) {
 
-    when (uiState) {
-        RegisterViewModel.RegisterUiState.Loading -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
         }
+    } else {
 
-        RegisterViewModel.RegisterUiState.Success -> {
-            Log.d("DDD", "Success!")
-            RegisterViewModel.RegisterAction.OnNavigateToLogin
-        }
+        when (uiState) {
 
-        RegisterViewModel.RegisterUiState.None -> {
-            if (dialogState is DialogState.Show) {
-                SuccessDialog(
-                    title = "Something went wrong!",
-                    label = "Something",
-                    displayCloseIcon = true,
-                    positiveButtonText = "Ok",
-                    positiveOnClick = { onAction(RegisterViewModel.RegisterAction.OnDismissDialog) },
-                    onCancelClicked = { onAction(RegisterViewModel.RegisterAction.OnDismissDialog) },
-                )
+            RegisterViewModel.RegisterUiState.Success -> {
+                Log.d("DDD", "Success!")
+                RegisterViewModel.RegisterAction.OnNavigateToLogin
             }
-            Scaffold(floatingActionButton = {
-                FloatingActionButton(
-                    containerColor = colors.black,
-                    onClick = { onAction(RegisterViewModel.RegisterAction.OnNavigateToLogin) },
-                    shape = RoundedCornerShape(16.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBackIosNew,
-                        contentDescription = "Back Arrow",
-                        tint = colors.white,
+
+            RegisterViewModel.RegisterUiState.None -> {
+                if (dialogState is DialogState.Show) {
+                    SuccessDialog(
+                        title = "Something went wrong!",
+                        label = "Something",
+                        displayCloseIcon = true,
+                        positiveButtonText = "Ok",
+                        positiveOnClick = { onAction(RegisterViewModel.RegisterAction.OnDismissDialog) },
+                        onCancelClicked = { onAction(RegisterViewModel.RegisterAction.OnDismissDialog) },
                     )
                 }
-            }, floatingActionButtonPosition = FabPosition.Start) { innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .background(colors.black),
-                        contentAlignment = Alignment.Center
-                    )
-                    {
-                        Text(
-                            text = stringResource(R.string.Create_your_account),
-                            style = typography.title,
-                            textAlign = TextAlign.Center,
-                            color = colors.white,
-                            modifier = Modifier.padding(bottom = dimensions.large32dp)
+                Scaffold(floatingActionButton = {
+                    FloatingActionButton(
+                        containerColor = colors.black,
+                        onClick = { onAction(RegisterViewModel.RegisterAction.OnNavigateToLogin) },
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBackIosNew,
+                            contentDescription = "Back Arrow",
+                            tint = colors.white,
                         )
                     }
-
-                    Surface(
-                        shape = RoundedCornerShape(
-                            topStart = 30.dp,
-                            topEnd = 30.dp
-                        ),
-                        color = colors.white,
+                }, floatingActionButtonPosition = FabPosition.Start) { innerPadding ->
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
-                            .padding(top = 150.dp)
+                            .fillMaxSize(),
                     ) {
-                        Column(
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .background(colors.black),
+                            contentAlignment = Alignment.Center
+                        )
+                        {
+                            Text(
+                                text = stringResource(R.string.Create_your_account),
+                                style = typography.title,
+                                textAlign = TextAlign.Center,
+                                color = colors.white,
+                                modifier = Modifier.padding(bottom = dimensions.large32dp)
+                            )
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(
+                                topStart = 30.dp,
+                                topEnd = 30.dp
+                            ),
+                            color = colors.white,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .fillMaxHeight()
-                                .padding(top = 40.dp)
-                                .padding(horizontal = dimensions.default16dp)
+                                .padding(top = 150.dp)
                         ) {
-                            CredentialsTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                fieldInput = state.fullName,
-                                placeholderValue = stringResource(R.string.Name),
-                                errorStatus = state.fullNameErrorStatus,
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Text,
-                                    capitalization = KeyboardCapitalization.Words,
-                                    imeAction = ImeAction.Next
-                                ),
-                                onValueChange = {
-                                    onAction(
-                                        RegisterViewModel.RegisterAction.OnNameChange(it)
-                                    )
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
-
-                            CredentialsTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                fieldInput = state.email,
-                                placeholderValue = stringResource(R.string.Email_address),
-                                errorStatus = state.emailErrorStatus,
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Email,
-                                    imeAction = ImeAction.Next
-                                ),
-                                onValueChange = {
-                                    onAction(
-                                        RegisterViewModel.RegisterAction.OnEmailChange(it)
-                                    )
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
-
-                            CredentialsTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                fieldInput = state.password,
-                                errorStatus = state.passwordErrorStatus,
-                                placeholderValue = stringResource(R.string.Password),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Password,
-                                    imeAction = ImeAction.Next
-                                ),
-                                isPasswordField = true,
-                                onValueChange = {
-                                    onAction(
-                                        RegisterViewModel.RegisterAction.OnPasswordChange(
-                                            it
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight()
+                                    .padding(top = 40.dp)
+                                    .padding(horizontal = dimensions.default16dp)
+                            ) {
+                                CredentialsTextField(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fieldInput = state.fullName,
+                                    placeholderValue = stringResource(R.string.Name),
+                                    errorStatus = state.fullNameErrorStatus,
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Text,
+                                        capitalization = KeyboardCapitalization.Words,
+                                        imeAction = ImeAction.Next
+                                    ),
+                                    onValueChange = {
+                                        onAction(
+                                            RegisterViewModel.RegisterAction.OnNameChange(it)
                                         )
-                                    )
-                                }
-                            )
+                                    }
+                                )
 
-                            Spacer(modifier = Modifier.height(dimensions.extraLarge64dp))
+                                Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
 
-                            MainButton(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = {
-                                    onAction(RegisterViewModel.RegisterAction.OnRegistrationClick)
-                                },
-                                btnString = stringResource(R.string.Get_Started).uppercase(),
-                                textStyle = typography.buttonText
-                            )
+                                CredentialsTextField(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fieldInput = state.email,
+                                    placeholderValue = stringResource(R.string.Email_address),
+                                    errorStatus = state.emailErrorStatus,
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Email,
+                                        imeAction = ImeAction.Next
+                                    ),
+                                    onValueChange = {
+                                        onAction(
+                                            RegisterViewModel.RegisterAction.OnEmailChange(it)
+                                        )
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
+
+                                CredentialsTextField(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fieldInput = state.password,
+                                    errorStatus = state.passwordErrorStatus,
+                                    placeholderValue = stringResource(R.string.Password),
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Password,
+                                        imeAction = ImeAction.Next
+                                    ),
+                                    isPasswordField = true,
+                                    onValueChange = {
+                                        onAction(
+                                            RegisterViewModel.RegisterAction.OnPasswordChange(
+                                                it
+                                            )
+                                        )
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(dimensions.extraLarge64dp))
+
+                                MainButton(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = {
+                                        onAction(RegisterViewModel.RegisterAction.OnRegistrationClick)
+                                    },
+                                    btnString = stringResource(R.string.Get_Started).uppercase(),
+                                    textStyle = typography.buttonText
+                                )
+                            }
                         }
                     }
                 }

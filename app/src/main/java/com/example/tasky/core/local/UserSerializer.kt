@@ -1,7 +1,8 @@
-package com.example.tasky
+package com.example.tasky.core.local
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
+import com.example.tasky.UserPreferences
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream

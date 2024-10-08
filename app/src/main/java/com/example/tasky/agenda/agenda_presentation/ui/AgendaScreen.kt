@@ -1,4 +1,4 @@
-package com.example.tasky.onboarding.onboarding.presentation.ui
+package com.example.tasky.agenda.agenda_presentation.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

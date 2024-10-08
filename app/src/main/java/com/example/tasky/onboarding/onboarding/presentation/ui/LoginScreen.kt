@@ -87,128 +87,136 @@ private fun LoginContent(
     uiState: LoginViewModel.LoginUiState,
     onAction: (LoginViewModel.LoginAction) -> Unit
 ) {
-    when (uiState) {
-        LoginViewModel.LoginUiState.Loading -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else {
+        when (uiState) {
+
+            LoginViewModel.LoginUiState.Success -> {
+                onAction(LoginViewModel.LoginAction.OnNavigateToAgenda)
             }
-        }
 
-        LoginViewModel.LoginUiState.Success -> {
-            onAction(LoginViewModel.LoginAction.OnNavigateToAgenda)
-        }
-
-        LoginViewModel.LoginUiState.None -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-            ) {
+            LoginViewModel.LoginUiState.None -> {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .background(colors.black),
-                    contentAlignment = Alignment.Center
-                )
-                {
-                    Text(
-                        text = stringResource(R.string.Welcome_Back),
-                        style = typography.title,
-                        textAlign = TextAlign.Center,
-                        color = colors.white,
-                        modifier = Modifier.padding(bottom = dimensions.large32dp)
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(
-                        topStart = 30.dp,
-                        topEnd = 30.dp
-                    ),
-                    color = colors.white,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight()
-                        .padding(top = 150.dp)
+                        .fillMaxSize(),
                 ) {
-                    Column(
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .background(colors.black),
+                        contentAlignment = Alignment.Center
+                    )
+                    {
+                        Text(
+                            text = stringResource(R.string.Welcome_Back),
+                            style = typography.title,
+                            textAlign = TextAlign.Center,
+                            color = colors.white,
+                            modifier = Modifier.padding(bottom = dimensions.large32dp)
+                        )
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(
+                            topStart = 30.dp,
+                            topEnd = 30.dp
+                        ),
+                        color = colors.white,
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight()
-                            .padding(top = 40.dp)
-                            .padding(horizontal = dimensions.default16dp)
+                            .padding(top = 150.dp)
                     ) {
-                        CredentialsTextField(
-                            modifier = Modifier.fillMaxWidth(),
-                            fieldInput = state.email,
-                            errorStatus = state.emailErrorStatus,
-                            placeholderValue = stringResource(R.string.Email_address),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Email,
-                                imeAction = ImeAction.Next
-                            ),
-                            onValueChange = { onAction(LoginViewModel.LoginAction.OnEmailChange(it)) }
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight()
+                                .padding(top = 40.dp)
+                                .padding(horizontal = dimensions.default16dp)
+                        ) {
+                            CredentialsTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                fieldInput = state.email,
+                                errorStatus = state.emailErrorStatus,
+                                placeholderValue = stringResource(R.string.Email_address),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Email,
+                                    imeAction = ImeAction.Next
+                                ),
+                                onValueChange = {
+                                    onAction(
+                                        LoginViewModel.LoginAction.OnEmailChange(
+                                            it
+                                        )
+                                    )
+                                }
+                            )
 
-                        Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
+                            Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
 
-                        CredentialsTextField(
-                            modifier = Modifier.fillMaxWidth(),
-                            fieldInput = state.password,
-                            errorStatus = state.passwordErrorStatus,
-                            placeholderValue = stringResource(R.string.Password),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Password,
-                                imeAction = ImeAction.Next
-                            ),
-                            onValueChange = {
-                                onAction(
-                                    LoginViewModel.LoginAction.OnPasswordChange(
-                                        it
+                            CredentialsTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                fieldInput = state.password,
+                                errorStatus = state.passwordErrorStatus,
+                                placeholderValue = stringResource(R.string.Password),
+                                isPasswordField = true,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Password,
+                                    imeAction = ImeAction.Next
+                                ),
+                                onValueChange = {
+                                    onAction(
+                                        LoginViewModel.LoginAction.OnPasswordChange(
+                                            it
+                                        )
+                                    )
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(dimensions.large32dp))
+
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                MainButton(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = {
+                                        onAction(
+                                            LoginViewModel.LoginAction.OnLoginClick
+                                        )
+                                    },
+                                    btnString = stringResource(R.string.Log_in).uppercase(),
+                                    textStyle = typography.buttonText
+                                )
+
+                                Text(
+                                    text = "Don't have an account? Sign up".uppercase(),
+                                    modifier = Modifier
+                                        .align(Alignment.CenterHorizontally)
+                                        .clickable {
+                                            onAction(LoginViewModel.LoginAction.OnNavigateToRegister)
+                                        },
+                                    style = TextStyle(
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.W500,
+                                        lineHeight = 30.sp
                                     )
                                 )
                             }
-                        )
-
-                        Spacer(modifier = Modifier.height(dimensions.large32dp))
-
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            MainButton(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = {
-                                    onAction(
-                                        LoginViewModel.LoginAction.OnLoginClick
-                                    )
-                                },
-                                btnString = stringResource(R.string.Log_in).uppercase(),
-                                textStyle = typography.buttonText
-                            )
-
-                            Text(
-                                text = "Don't have an account? Sign up".uppercase(),
-                                modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
-                                    .clickable {
-                                        onAction(LoginViewModel.LoginAction.OnNavigateToRegister)
-                                    },
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.W500,
-                                    lineHeight = 30.sp
-                                )
-                            )
                         }
                     }
                 }
-            }
 
+            }
         }
     }
 }

@@ -12,6 +12,11 @@
     <string name="Password_already_in_use_error">Please choose another password</string>
     <string name="Name_length_error">"Name should be 4 to 50 characters long"</string>
     <string name="Enter_at_least_x_characters_long">At least %1$s characters long</string>
-    <string name="Password_error">Requires a number, capital and a lowercase letter</string>
+    <string name="Password_error">Requires a number, a capital and a lowercase letter</string>
     <string name="Error">Error</string>
+    <string name="Check_your_credentials">Check your credentials!</string>
+    <string name="No_internet_connection">No internet connection!</string>
+    <string name="Login_failed">Login failed!</string>
+    <string name="Email_already_in_use">Email is already in use!</string>
+    <string name="Registration_failed">Registration failed!</string>
 </resources>

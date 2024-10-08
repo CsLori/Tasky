@@ -2,11 +2,13 @@ package com.example.tasky.onboarding.onboarding.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tasky.R
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.util.CredentialsValidator
 import com.example.tasky.core.util.ErrorStatus
 import com.example.tasky.core.util.FieldInput
 import com.example.tasky.core.util.Result
+import com.example.tasky.core.util.UiText
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import com.example.tasky.onboarding.onboarding_domain.util.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,6 +37,7 @@ class RegisterViewModel @Inject constructor(
         val fullNameErrorStatus = CredentialsValidator.validateName(name.value)
         val emailErrorStatus = CredentialsValidator.validateEmail(email.value)
         val passwordErrorStatus = CredentialsValidator.validatePassword(password.value)
+        var errorMessage: String
 
         _state.update {
             it.copy(
@@ -49,23 +52,30 @@ class RegisterViewModel @Inject constructor(
 
 
         if (isFormValid(fullNameErrorStatus, emailErrorStatus, passwordErrorStatus)) {
-            _uiState.update { RegisterUiState.Loading }
+            _state.update { it.copy(isLoading = true) }
 
             viewModelScope.launch {
                 val result = defaultUserRepository.register(name.value, email.value, password.value)
                 when (result) {
                     is Result.Success -> {
+                        _state.update { it.copy(isLoading = false) }
+                        TODO()
 //                        login(email.value, password.value)
 //                        _uiState.update { RegisterUiState.Success }
                     }
 
                     is Result.Error -> {
-                        val errorMessage = when (result.error) {
-                            AuthError.Register.EMAIL_ALREADY_EXISTS -> "Email is already in use!"
-                            AuthError.General.NO_INTERNET -> "No internet connection!"
-                            else -> "Registration failed!"
+                        _state.update { it.copy(isLoading = false) }
+
+                        errorMessage = when (result.error) {
+                            AuthError.Register.EMAIL_ALREADY_EXISTS -> UiText.StringResource(R.string.Email_already_in_use)
+                                .toString()
+
+                            AuthError.General.NO_INTERNET -> UiText.StringResource(R.string.No_internet_connection)
+                                .toString()
+
+                            else -> UiText.StringResource(R.string.Registration_failed).toString()
                         }
-                        _uiState.update { RegisterUiState.None }
                         _dialogState.update { DialogState.Show(errorMessage) }
                     }
                 }
@@ -144,7 +154,8 @@ class RegisterViewModel @Inject constructor(
         val email: FieldInput = FieldInput(),
         val emailErrorStatus: ErrorStatus = ErrorStatus(false),
         val password: FieldInput = FieldInput(),
-        val passwordErrorStatus: ErrorStatus = ErrorStatus(false)
+        val passwordErrorStatus: ErrorStatus = ErrorStatus(false),
+        val isLoading: Boolean = false
     )
 
     sealed interface RegisterAction {
@@ -158,7 +169,6 @@ class RegisterViewModel @Inject constructor(
 
     sealed class RegisterUiState {
         data object None : RegisterUiState()
-        data object Loading : RegisterUiState()
         data object Success : RegisterUiState()
     }
 }

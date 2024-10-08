@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.tasky.ui.theme.AppTheme
-import java.util.Locale
 
 @ExperimentalComposeUiApi
 @Composable
@@ -59,7 +58,7 @@ fun SuccessDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    title?.uppercase(Locale.getDefault())?.let {
+                    title?.uppercase()?.let {
                         Text(
                             modifier = Modifier.padding(bottom = 18.dp),
                             text = it,

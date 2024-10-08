@@ -1,14 +1,15 @@
 package com.example.tasky.onboarding.onboarding.presentation.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tasky.R
 import com.example.tasky.core.local.UserPrefsRepository
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.util.CredentialsValidator
 import com.example.tasky.core.util.ErrorStatus
 import com.example.tasky.core.util.FieldInput
 import com.example.tasky.core.util.Result
+import com.example.tasky.core.util.UiText
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import com.example.tasky.onboarding.onboarding_domain.util.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,16 +35,10 @@ class LoginViewModel @Inject constructor(
     private var _state = MutableStateFlow(LoginState())
     val state: StateFlow<LoginState> = _state.asStateFlow()
 
-    data class LoginState(
-        val email: FieldInput = FieldInput(),
-        val emailErrorStatus: ErrorStatus = ErrorStatus(false),
-        val password: FieldInput = FieldInput(),
-        val passwordErrorStatus: ErrorStatus = ErrorStatus(false)
-    )
-
     fun login(email: FieldInput, password: FieldInput) {
         val emailErrorStatus = CredentialsValidator.validateEmail(email.value)
         val passwordErrorStatus = CredentialsValidator.validatePassword(password.value)
+        var errorMessage: String
 
         _state.update {
             it.copy(
@@ -54,32 +49,43 @@ class LoginViewModel @Inject constructor(
             )
         }
 
-        _uiState.update { LoginUiState.Loading }
-        viewModelScope.launch {
-            val result = defaultUserRepository.login(email.value, password.value)
-            when (result) {
-                is Result.Success -> {
-                    Log.d("DDD", result.data.accessToken ?: "")
-                    _uiState.update { LoginUiState.Success }
-                    result.data.accessToken?.let { userPrefsRepository.updateAccessToken(it) }
-                }
+        if (isFormValid(emailErrorStatus, passwordErrorStatus)) {
+            _state.update { it.copy(isLoading = true) }
+            viewModelScope.launch {
+                val result = defaultUserRepository.login(email.value, password.value)
+                when (result) {
+                    is Result.Success -> {
+                        _state.update { it.copy(isLoading = false) }
 
-                is Result.Error -> {
-                    val errorMessage = when (result.error) {
-                        AuthError.Login.INVALID_CREDENTIALS -> "Check your credentials!"
-                        AuthError.General.NO_INTERNET -> "No internet connection!"
-                        else -> "Login failed!"
+                        _uiState.update { LoginUiState.Success }
+                        result.data.accessToken?.let { userPrefsRepository.updateAccessToken(it) }
                     }
-                    _uiState.update { LoginUiState.None }
-                    _dialogState.update { DialogState.Show(errorMessage) }
+
+                    is Result.Error -> {
+                        _state.update { it.copy(isLoading = false) }
+
+                        errorMessage = when (result.error) {
+                            AuthError.Login.INVALID_CREDENTIALS -> UiText.StringResource(R.string.Check_your_credentials)
+                                .toString()
+
+                            AuthError.General.NO_INTERNET -> UiText.StringResource(R.string.No_internet_connection)
+                                .toString()
+
+                            else -> UiText.StringResource(R.string.Login_failed).toString()
+                        }
+                        _uiState.update { LoginUiState.None }
+                        _dialogState.update { DialogState.Show(errorMessage) }
+                    }
                 }
             }
+            errorMessage = UiText.StringResource(R.string.Login_failed).toString()
+            _dialogState.update { DialogState.Show(errorMessage) }
+
         }
-
-        _uiState.update { LoginUiState.None }
-        _dialogState.update { DialogState.Show("Login failed!") }
-
     }
+
+    private fun isFormValid(emailErrorStatus: ErrorStatus, passwordErrorStatus: ErrorStatus) =
+        !emailErrorStatus.isError && !passwordErrorStatus.isError
 
     fun onEmailChange(emailInput: String) {
         val emailErrorStatus = CredentialsValidator.validateEmail(emailInput)
@@ -109,6 +115,14 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    data class LoginState(
+        val email: FieldInput = FieldInput(),
+        val emailErrorStatus: ErrorStatus = ErrorStatus(false),
+        val password: FieldInput = FieldInput(),
+        val passwordErrorStatus: ErrorStatus = ErrorStatus(false),
+        val isLoading: Boolean = false
+    )
+
     sealed interface LoginAction {
         data class OnEmailChange(val email: String) : LoginAction
         data class OnPasswordChange(val password: String) : LoginAction
@@ -120,7 +134,6 @@ class LoginViewModel @Inject constructor(
 
     sealed class LoginUiState {
         data object None : LoginUiState()
-        data object Loading : LoginUiState()
         data object Success : LoginUiState()
     }
 
