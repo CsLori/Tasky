@@ -58,15 +58,12 @@ class RegisterViewModel @Inject constructor(
                 val result = defaultUserRepository.register(name.value, email.value, password.value)
                 when (result) {
                     is Result.Success -> {
-                        _state.update { it.copy(isLoading = false) }
                         TODO()
 //                        login(email.value, password.value)
 //                        _uiState.update { RegisterUiState.Success }
                     }
 
                     is Result.Error -> {
-                        _state.update { it.copy(isLoading = false) }
-
                         errorMessage = when (result.error) {
                             AuthError.Register.EMAIL_ALREADY_EXISTS -> UiText.StringResource(R.string.Email_already_in_use)
                                 .toString()
@@ -79,6 +76,7 @@ class RegisterViewModel @Inject constructor(
                         _dialogState.update { DialogState.Show(errorMessage) }
                     }
                 }
+                _state.update { it.copy(isLoading = false) }
             }
         }
     }
