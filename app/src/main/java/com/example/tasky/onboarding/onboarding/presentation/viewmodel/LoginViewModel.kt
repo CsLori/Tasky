@@ -55,15 +55,11 @@ class LoginViewModel @Inject constructor(
                 val result = defaultUserRepository.login(email.value, password.value)
                 when (result) {
                     is Result.Success -> {
-                        _state.update { it.copy(isLoading = false) }
-
                         _uiState.update { LoginUiState.Success }
                         result.data.accessToken?.let { userPrefsRepository.updateAccessToken(it) }
                     }
 
                     is Result.Error -> {
-                        _state.update { it.copy(isLoading = false) }
-
                         errorMessage = when (result.error) {
                             AuthError.Login.INVALID_CREDENTIALS -> UiText.StringResource(R.string.Check_your_credentials)
                                 .toString()
@@ -77,6 +73,8 @@ class LoginViewModel @Inject constructor(
                         _dialogState.update { DialogState.Show(errorMessage) }
                     }
                 }
+                _state.update { it.copy(isLoading = false) }
+
             }
             errorMessage = UiText.StringResource(R.string.Login_failed).toString()
             _dialogState.update { DialogState.Show(errorMessage) }
@@ -85,7 +83,7 @@ class LoginViewModel @Inject constructor(
     }
 
     private fun isFormValid(emailErrorStatus: ErrorStatus, passwordErrorStatus: ErrorStatus) =
-        !emailErrorStatus.isError && !passwordErrorStatus.isError
+        !emailErrorStatus.hasError && !passwordErrorStatus.hasError
 
     fun onEmailChange(emailInput: String) {
         val emailErrorStatus = CredentialsValidator.validateEmail(emailInput)

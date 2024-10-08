@@ -73,9 +73,9 @@ fun CredentialsTextField(
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         placeholder = placeholder,
-        isError = fieldInput.hasInteracted && errorStatus.isError,
+        isError = fieldInput.hasInteracted && errorStatus.hasError,
         supportingText = {
-            if (fieldInput.hasInteracted && errorStatus.isError) {
+            if (fieldInput.hasInteracted && errorStatus.hasError) {
                 errorStatus.errorMsg?.let {
                     Text(
                         text = it.asString(),
@@ -97,7 +97,7 @@ fun CredentialsTextField(
                         tint = AppTheme.colors.gray
                     )
                 }
-            } else if (fieldInput.hasInteracted && !errorStatus.isError) {
+            } else if (fieldInput.hasInteracted && !errorStatus.hasError) {
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = null,

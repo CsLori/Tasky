@@ -18,7 +18,7 @@ class UserPrefsRepository(context: Context) {
 
     private val userPrefsStore: DataStore<UserPreferences> = context.userPreferencesStore
 
-    val readProto: Flow<UserPreferences> = userPrefsStore.data
+    val userPreferencesFlow: Flow<UserPreferences> = userPrefsStore.data
         .catch { exception ->
             if (exception is IOException) {
                 Log.d("Error", exception.message.toString())

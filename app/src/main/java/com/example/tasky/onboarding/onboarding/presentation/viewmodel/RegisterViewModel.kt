@@ -143,9 +143,9 @@ class RegisterViewModel @Inject constructor(
         emailErrorStatus: ErrorStatus,
         passwordErrorStatus: ErrorStatus
     ): Boolean {
-        return !fullNameErrorStatus.isError &&
-                !emailErrorStatus.isError &&
-                !passwordErrorStatus.isError
+        return !fullNameErrorStatus.hasError &&
+                !emailErrorStatus.hasError &&
+                !passwordErrorStatus.hasError
     }
 
     data class RegisterState(
