@@ -217,13 +217,13 @@ private fun LoginContent(
                                 val styledText = buildAnnotatedString {
                                     withStyle(style = SpanStyle(color = colors.gray)) {
                                         append(
-                                            "DON'T HAVE AN ACCOUNT? "
+                                            stringResource(R.string.Don_t_have_an_account)
                                         )
                                     }
                                     withStyle(
                                         style = SpanStyle(color = colors.lightBlue)
                                     ) {
-                                        append("SIGN UP")
+                                        append(stringResource(R.string.Sign_up))
                                     }
                                 }
                                 Text(

@@ -132,10 +132,6 @@ class RegisterViewModel @Inject constructor(
         }
     }
 
-    fun closeDialog() {
-        _dialogState.value = DialogState.Hide
-    }
-
     private fun isFormValid(
         fullNameErrorStatus: ErrorStatus,
         emailErrorStatus: ErrorStatus,

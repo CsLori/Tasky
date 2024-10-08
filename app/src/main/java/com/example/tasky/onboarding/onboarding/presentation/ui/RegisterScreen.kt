@@ -1,6 +1,5 @@
 package com.example.tasky.onboarding.onboarding.presentation.ui
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -84,9 +83,7 @@ internal fun RegisterScreen(
                     onNavigateToLogin()
                 }
 
-                RegisterViewModel.RegisterAction.OnDismissDialog -> {
-                    registerViewModel.closeDialog()
-                }
+                RegisterViewModel.RegisterAction.OnDismissDialog -> DialogState.Hide
 
             }
         }
@@ -115,7 +112,6 @@ private fun RegisterContent(
         when (uiState) {
 
             RegisterViewModel.RegisterUiState.Success -> {
-                Log.d("DDD", "Success!")
                 RegisterViewModel.RegisterAction.OnNavigateToLogin
             }
 

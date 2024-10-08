@@ -21,4 +21,6 @@
     <string name="Registration_failed">Registration failed!</string>
     <string name="OK">OK</string>
     <string name="Something_went_wrong">Something went wrong</string>
+    <string name="Don_t_have_an_account">"DON'T HAVE AN ACCOUNT? "</string>
+    <string name="Sign_up">SIGN UP</string>
 </resources>
