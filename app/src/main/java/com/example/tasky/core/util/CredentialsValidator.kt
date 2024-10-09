@@ -53,27 +53,6 @@ object CredentialsValidator {
             hasLower && hasUpper && hasNumber
         }
 
-//        val containsLettersDigitsLowerCaseAndUpperCase = run {
-//            var hasDigit = false
-//            var hasLetter = false
-//            var hasLower = false
-//            var hasUpper = false
-//
-//            for (char in password) {
-//                when {
-//                    char.isDigit() -> hasDigit = true
-//                    char.isLowerCase() -> hasLower = true
-//                    char.isUpperCase() -> hasUpper = true
-//                    char.isLetter() -> hasLetter = true
-//                }
-//                if (hasDigit && hasLetter && hasLower && hasUpper) {
-//                    break
-//                }
-//            }
-//
-//            hasDigit && hasLower && hasUpper
-//        }
-
         return when {
             password.trim().isEmpty() -> {
                 ErrorStatus(true, UiText.StringResource(R.string.This_field_is_required))

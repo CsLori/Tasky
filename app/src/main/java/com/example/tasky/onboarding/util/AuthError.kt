@@ -1,4 +1,4 @@
-package com.example.tasky.onboarding.onboarding_domain.util
+package com.example.tasky.onboarding.util
 
 sealed interface AuthError: Error {
     enum class Login : AuthError {

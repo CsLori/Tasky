@@ -11,38 +11,40 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.tasky.Screen
+import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
+import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 
 @Composable
 fun Navigation() {
-    val registerViewModel = hiltViewModel<RegisterViewModel>()
     val navController = rememberNavController()
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
             NavHost(
                 navController = navController,
-                startDestination = Screen.Register,
+                startDestination = Screen.Login,
             ) {
                 composable<Screen.Register> {
+                    val registerViewModel = hiltViewModel<RegisterViewModel>()
                     RegisterScreen(registerViewModel = registerViewModel,
                         onNavigateToLogin = {
                             navController.navigate(Screen.Login) {
-                                popUpTo(
-                                    0
-                                )
+                                popUpTo(Screen.Register) { inclusive = true }
                             }
                         })
                 }
                 composable<Screen.Login> {
-                    LoginScreen(onNavigateLoRegister = {
+                    val loginViewModel = hiltViewModel<LoginViewModel>()
+                    LoginScreen(loginViewModel = loginViewModel, onNavigateToRegister = {
                         navController.navigate(Screen.Register) {
-                            popUpTo(
-                                0
-                            )
+                            popUpTo(Screen.Login) { inclusive = true }
                         }
-                    })
+                    }, onNavigateToAgenda = { navController.navigate(Screen.Agenda) })
+                }
+                composable<Screen.Agenda> {
+                    AgendaScreen()
                 }
             }
         }

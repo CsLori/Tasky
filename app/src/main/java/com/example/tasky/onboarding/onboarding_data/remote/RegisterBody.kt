@@ -1,11 +1,10 @@
 package com.example.tasky.onboarding.onboarding_data.remote
 
-import com.google.gson.annotations.SerializedName
-import java.io.Serializable
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class RegisterBody(
-    @SerializedName("full_name")
     val fullName: String,
     val email: String,
     val password: String
-) : Serializable
+)

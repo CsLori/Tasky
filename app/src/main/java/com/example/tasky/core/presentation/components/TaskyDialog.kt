@@ -24,11 +24,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.tasky.ui.theme.AppTheme
-import java.util.Locale
 
 @ExperimentalComposeUiApi
 @Composable
-fun SuccessDialog(
+fun ErrorDialog(
     title: String? = null,
     label: String,
     displayCloseIcon: Boolean = false,
@@ -59,7 +58,7 @@ fun SuccessDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    title?.uppercase(Locale.getDefault())?.let {
+                    title?.uppercase()?.let {
                         Text(
                             modifier = Modifier.padding(bottom = 18.dp),
                             text = it,
@@ -103,12 +102,17 @@ fun SuccessDialog(
     }
 }
 
+sealed class DialogState {
+    data object Hide : DialogState()
+    data class Show(val errorMessage: String?) : DialogState()
+}
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Preview
 @Composable
 fun DialogPreview() {
     AppTheme {
-        SuccessDialog(
+        ErrorDialog(
             title = "Title", label = "Label",
             displayCloseIcon = false,
             positiveButtonText = "Ok",

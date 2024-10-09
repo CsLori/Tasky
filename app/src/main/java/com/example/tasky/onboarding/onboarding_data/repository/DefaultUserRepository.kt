@@ -1,12 +1,13 @@
 package com.example.tasky.onboarding.onboarding_data.repository
 
-import com.example.tasky.core.remote.TaskyApi
-import com.example.tasky.onboarding.onboarding_domain.util.AuthError
+import android.util.Log
+import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.core.util.Result
 import com.example.tasky.onboarding.onboarding_data.remote.LoginBody
 import com.example.tasky.onboarding.onboarding_data.remote.LoginResponse
 import com.example.tasky.onboarding.onboarding_data.remote.RegisterBody
 import com.example.tasky.onboarding.onboarding_domain.UserRepository
+import com.example.tasky.onboarding.util.AuthError
 import retrofit2.HttpException
 import java.io.IOException
 import java.util.concurrent.CancellationException
@@ -53,9 +54,9 @@ class DefaultUserRepository(
     ): Result<LoginResponse, AuthError> {
         return try {
             val result = api.login(LoginBody(email, password))
-//            result.refreshToken
+            Log.d("DDD", result.userId.toString())
+            Log.d("DDD", result.fullName.toString())
             Result.Success(result)
-            TODO()
         } catch (e: Exception) {
             if (e is CancellationException) {
                 throw e

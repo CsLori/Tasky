@@ -1,4 +1,4 @@
-package com.example.tasky.core.remote
+package com.example.tasky.core.data.remote
 
 import com.example.tasky.onboarding.onboarding_data.remote.LoginBody
 import com.example.tasky.onboarding.onboarding_data.remote.LoginResponse

@@ -1,11 +1,15 @@
 package com.example.tasky.core.di
 
+import android.content.Context
+import android.util.Log
 import com.example.tasky.BuildConfig.API_KEY
-import com.example.tasky.core.remote.TaskyApi
+import com.example.tasky.core.data.local.ProtoUserPrefsRepository
+import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -32,9 +36,13 @@ object TaskyModule {
                 val original: Request = chain.request()
                 val request = original.newBuilder()
                     .header("x-api-key", API_KEY)
+                    .header("Content-Type", "application/json")
                     .method(original.method, original.body)
                     .build()
-                chain.proceed(request)
+                chain.proceed(request).also {
+                    Log.d("API Request", request.toString())
+                }
+
             }.build()
     }
 
@@ -53,5 +61,11 @@ object TaskyModule {
     @Singleton
     fun provideUserRepo(api: TaskyApi): DefaultUserRepository {
         return DefaultUserRepository(api)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserPrefs(@ApplicationContext context: Context): ProtoUserPrefsRepository {
+        return ProtoUserPrefsRepository(context)
     }
 }
