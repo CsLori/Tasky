@@ -1,4 +1,4 @@
-package com.example.tasky.core.local
+package com.example.tasky.core.data.local
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer

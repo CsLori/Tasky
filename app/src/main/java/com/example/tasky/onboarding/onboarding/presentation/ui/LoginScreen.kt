@@ -2,7 +2,6 @@ package com.example.tasky.onboarding.onboarding.presentation.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -109,6 +109,7 @@ private fun LoginContent(
             }
 
             LoginViewModel.LoginUiState.None -> {
+                val cornerRadius = 30.dp
                 if (dialogState is DialogState.Show) {
                     ErrorDialog(
                         title = stringResource(R.string.Something_went_wrong),
@@ -123,27 +124,12 @@ private fun LoginContent(
                     modifier = Modifier
                         .fillMaxSize(),
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .background(colors.black),
-                        contentAlignment = Alignment.Center
-                    )
-                    {
-                        Text(
-                            text = stringResource(R.string.Welcome_Back),
-                            style = typography.title,
-                            textAlign = TextAlign.Center,
-                            color = colors.white,
-                            modifier = Modifier.padding(bottom = dimensions.large32dp)
-                        )
-                    }
+                    Header()
 
                     Surface(
                         shape = RoundedCornerShape(
-                            topStart = 30.dp,
-                            topEnd = 30.dp
+                            topStart = cornerRadius,
+                            topEnd = cornerRadius
                         ),
                         color = colors.white,
                         modifier = Modifier
@@ -151,101 +137,135 @@ private fun LoginContent(
                             .fillMaxHeight()
                             .padding(top = 150.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight()
-                                .padding(top = 50.dp)
-                                .padding(horizontal = dimensions.default16dp)
-                        ) {
-                            CredentialsTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                fieldInput = state.email,
-                                errorStatus = state.emailErrorStatus,
-                                placeholderValue = stringResource(R.string.Email_address),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Email,
-                                    imeAction = ImeAction.Next
-                                ),
-                                onValueChange = {
-                                    onAction(
-                                        LoginViewModel.LoginAction.OnEmailChange(
-                                            it
-                                        )
-                                    )
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
-
-                            CredentialsTextField(
-                                modifier = Modifier.fillMaxWidth(),
-                                fieldInput = state.password,
-                                errorStatus = state.passwordErrorStatus,
-                                placeholderValue = stringResource(R.string.Password),
-                                isPasswordField = true,
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Password,
-                                    imeAction = ImeAction.Next
-                                ),
-                                onValueChange = {
-                                    onAction(
-                                        LoginViewModel.LoginAction.OnPasswordChange(
-                                            it
-                                        )
-                                    )
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.height(dimensions.default16dp))
-
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                MainButton(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onClick = {
-                                        onAction(
-                                            LoginViewModel.LoginAction.OnLoginClick
-                                        )
-                                    },
-                                    btnString = stringResource(R.string.Log_in).uppercase(),
-                                    textStyle = typography.buttonText
-                                )
-
-                                val styledText = buildAnnotatedString {
-                                    withStyle(style = SpanStyle(color = colors.gray)) {
-                                        append(
-                                            stringResource(R.string.Don_t_have_an_account)
-                                        )
-                                    }
-                                    withStyle(
-                                        style = SpanStyle(color = colors.lightBlue)
-                                    ) {
-                                        append(stringResource(R.string.Sign_up))
-                                    }
-                                }
-                                Text(
-                                    text = styledText,
-                                    modifier = Modifier
-                                        .align(Alignment.CenterHorizontally)
-                                        .padding(bottom = 70.dp)
-                                        .clickable {
-                                            onAction(LoginViewModel.LoginAction.OnNavigateToRegister)
-                                        },
-                                    style = typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.W500,
-                                        lineHeight = 30.sp
-                                    )
-                                )
-                            }
-                        }
+                        MainContent(state, onAction)
+                        BottomText(onAction)
                     }
                 }
 
             }
         }
+    }
+}
+
+@Composable
+private fun Header() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .background(colors.black),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = stringResource(R.string.Welcome_Back),
+            style = typography.title,
+            textAlign = TextAlign.Center,
+            color = colors.white,
+            modifier = Modifier.padding(bottom = dimensions.large32dp)
+        )
+    }
+}
+
+@Composable
+private fun MainContent(
+    state: LoginViewModel.LoginState,
+    onAction: (LoginViewModel.LoginAction) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .padding(top = 50.dp)
+            .padding(horizontal = dimensions.default16dp)
+            .imePadding()
+    ) {
+        CredentialsTextField(
+            modifier = Modifier.fillMaxWidth(),
+            fieldInput = state.email,
+            errorStatus = state.emailErrorStatus,
+            placeholderValue = stringResource(R.string.Email_address),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            ),
+            onValueChange = {
+                onAction(
+                    LoginViewModel.LoginAction.OnEmailChange(
+                        it
+                    )
+                )
+            }
+        )
+
+        Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
+
+        CredentialsTextField(
+            modifier = Modifier.fillMaxWidth(),
+            fieldInput = state.password,
+            errorStatus = state.passwordErrorStatus,
+            placeholderValue = stringResource(R.string.Password),
+            isPasswordField = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Next
+            ),
+            onValueChange = {
+                onAction(
+                    LoginViewModel.LoginAction.OnPasswordChange(
+                        it
+                    )
+                )
+            }
+        )
+
+        Spacer(modifier = Modifier.height(dimensions.default16dp))
+
+        MainButton(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                onAction(
+                    LoginViewModel.LoginAction.OnLoginClick
+                )
+            },
+            btnString = stringResource(R.string.Log_in).uppercase(),
+            textStyle = typography.buttonText
+        )
+
+    }
+}
+
+@Composable
+private fun BottomText(
+    onAction: (LoginViewModel.LoginAction) -> Unit
+) {
+    val styledText = buildAnnotatedString {
+        withStyle(style = SpanStyle(color = colors.gray)) {
+            append(
+                stringResource(R.string.Don_t_have_an_account)
+            )
+        }
+        withStyle(
+            style = SpanStyle(color = colors.lightBlue)
+        ) {
+            append(stringResource(R.string.Sign_up))
+        }
+    }
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        Text(
+            text = styledText,
+            modifier = Modifier
+                .padding(bottom = 70.dp)
+                .clickable {
+                    onAction(LoginViewModel.LoginAction.OnNavigateToRegister)
+                },
+            style = typography.bodyMedium.copy(
+                fontWeight = FontWeight.W500,
+                lineHeight = 30.sp
+            )
+        )
     }
 }
 

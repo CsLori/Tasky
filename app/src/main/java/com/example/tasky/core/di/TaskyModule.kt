@@ -3,8 +3,8 @@ package com.example.tasky.core.di
 import android.content.Context
 import android.util.Log
 import com.example.tasky.BuildConfig.API_KEY
-import com.example.tasky.core.local.UserPrefsRepository
-import com.example.tasky.core.remote.TaskyApi
+import com.example.tasky.core.data.local.ProtoUserPrefsRepository
+import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import dagger.Module
 import dagger.Provides
@@ -65,7 +65,7 @@ object TaskyModule {
 
     @Provides
     @Singleton
-    fun provideUserPrefs(@ApplicationContext context: Context): UserPrefsRepository {
-        return UserPrefsRepository(context)
+    fun provideUserPrefs(@ApplicationContext context: Context): ProtoUserPrefsRepository {
+        return ProtoUserPrefsRepository(context)
     }
 }
