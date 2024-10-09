@@ -1,5 +1,7 @@
 package com.example.tasky.onboarding.onboarding_domain.util
 
+import com.example.tasky.core.domain.util.Error
+
 sealed interface AuthError: Error {
     enum class Login : AuthError {
         INVALID_CREDENTIALS,

@@ -1,12 +1,16 @@
 package com.example.tasky.core.remote
 
+import com.example.tasky.agenda.agenda_data.AgendaResponse
+import com.example.tasky.agenda.agenda_data.TaskBody
 import com.example.tasky.onboarding.onboarding_data.remote.LoginBody
 import com.example.tasky.onboarding.onboarding_data.remote.LoginResponse
 import com.example.tasky.onboarding.onboarding_data.remote.RefreshTokenBody
 import com.example.tasky.onboarding.onboarding_data.remote.RegisterBody
 import com.example.tasky.onboarding.onboarding_data.remote.TokenResponse
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Query
 
 interface TaskyApi {
 
@@ -17,7 +21,16 @@ interface TaskyApi {
     suspend fun login(@Body loginBody: LoginBody): LoginResponse
 
     @POST("/accessToken")
-    suspend fun refreshToken(@Body body: RefreshTokenBody): TokenResponse
+    suspend fun refreshToken(@Body accessTokenBody: RefreshTokenBody): TokenResponse
+
+    @GET("/agenda")
+    suspend fun getAgenda(@Query("time") time: Long): AgendaResponse
+
+    @POST("/event")
+    suspend fun addEvent()
+
+    @POST("/task")
+    suspend fun addTask(@Body taskBody: TaskBody)
 
     companion object {
         const val BASE_URL = "https://tasky.pl-coding.com/"

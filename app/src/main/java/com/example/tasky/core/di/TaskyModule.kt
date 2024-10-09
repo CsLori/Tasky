@@ -3,6 +3,8 @@ package com.example.tasky.core.di
 import android.content.Context
 import android.util.Log
 import com.example.tasky.BuildConfig.API_KEY
+import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
+import com.example.tasky.agenda.agenda_domain.AgendaRepository
 import com.example.tasky.core.local.UserPrefsRepository
 import com.example.tasky.core.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
@@ -67,5 +69,11 @@ object TaskyModule {
     @Singleton
     fun provideUserPrefs(@ApplicationContext context: Context): UserPrefsRepository {
         return UserPrefsRepository(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAgendaRepository(api: TaskyApi): AgendaRepository {
+        return AgendaRepositoryImpl(api)
     }
 }

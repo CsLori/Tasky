@@ -1,6 +1,5 @@
 package com.example.tasky.onboarding.onboarding_data.repository
 
-import android.util.Log
 import com.example.tasky.core.remote.TaskyApi
 import com.example.tasky.core.util.Result
 import com.example.tasky.onboarding.onboarding_data.remote.LoginBody
@@ -54,8 +53,6 @@ class DefaultUserRepository(
     ): Result<LoginResponse, AuthError> {
         return try {
             val result = api.login(LoginBody(email, password))
-            Log.d("DDD", result.userId.toString())
-            Log.d("DDD", result.fullName.toString())
             Result.Success(result)
         } catch (e: Exception) {
             if (e is CancellationException) {

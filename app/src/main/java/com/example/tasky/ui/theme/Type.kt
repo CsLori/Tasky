@@ -51,9 +51,9 @@ val Inter = FontFamily(
 data class AppTypography(
     val title: TextStyle = TextStyle(
         fontFamily = Inter,
-        fontSize = 22.sp,
+        fontSize = 28.sp,
         fontWeight = FontWeight.Bold,
-        lineHeight = 28.sp,
+        lineHeight = 30.sp,
         letterSpacing = 0.sp
     ),
 
