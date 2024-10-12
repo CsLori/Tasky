@@ -7,6 +7,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.tasky.ui.theme.AppTheme
@@ -18,7 +19,8 @@ fun MainButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     btnString: String,
-    textStyle: TextStyle
+    textStyle: TextStyle,
+    shape: Shape? = null
 ) {
     Button(
         modifier = modifier,

@@ -101,5 +101,24 @@ data class AppTypography(
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
+    ),
+
+    val userButton: TextStyle = TextStyle(
+        fontSize = 13.sp,
+        fontWeight = FontWeight.W600,
+        lineHeight = 16.sp,
+        fontFamily = Inter
+    ),
+    val calendarDayText: TextStyle = TextStyle(
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        lineHeight = 13.sp,
+        fontFamily = Inter
+    ),
+    val calendarDayNumber: TextStyle = TextStyle(
+        fontSize = 17.sp,
+        fontWeight = FontWeight.Bold,
+        lineHeight = 20.sp,
+        fontFamily = Inter
     )
 )

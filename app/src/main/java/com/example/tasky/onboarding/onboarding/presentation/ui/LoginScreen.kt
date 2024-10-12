@@ -64,7 +64,10 @@ internal fun LoginScreen(
                 onNavigateToRegister()
             }
 
-            LoginViewModel.LoginAction.OnDismissDialog -> DialogState.Hide
+            LoginViewModel.LoginAction.OnDismissDialog -> {
+                loginViewModel.onDismissDialog()
+            }
+
             is LoginViewModel.LoginAction.OnEmailChange -> {
                 loginViewModel.onEmailChange(action.email)
             }
@@ -115,22 +118,22 @@ private fun LoginContent(
                         label = dialogState.errorMessage.toString(),
                         displayCloseIcon = false,
                         positiveButtonText = stringResource(R.string.OK),
-                        positiveOnClick = { DialogState.Hide },
-                        onCancelClicked = { DialogState.Hide }
+                        positiveOnClick = { onAction(LoginViewModel.LoginAction.OnDismissDialog) },
+                        onCancelClicked = { onAction(LoginViewModel.LoginAction.OnDismissDialog) }
                     )
                 }
                 Box(
                     modifier = Modifier
-                        .fillMaxSize(),
+                        .fillMaxWidth()
+                        .background(colors.black)
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp)
-                            .background(colors.black),
+                            .height(200.dp),
                         contentAlignment = Alignment.Center
-                    )
-                    {
+                    ) {
+
                         Text(
                             text = stringResource(R.string.Welcome_Back),
                             style = typography.title,

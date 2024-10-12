@@ -12,6 +12,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
+import com.example.tasky.agenda.agenda_presentation.ui.EventScreen
+import com.example.tasky.agenda.agenda_presentation.ui.ReminderScreen
+import com.example.tasky.agenda.agenda_presentation.ui.TaskScreen
+import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.onboarding.onboarding.presentation.ui.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
@@ -24,7 +28,7 @@ fun Navigation() {
         Column(modifier = Modifier.padding(innerPadding)) {
             NavHost(
                 navController = navController,
-                startDestination = Screen.Login,
+                startDestination = Screen.Agenda,
             ) {
                 composable<Screen.Register> {
                     val registerViewModel = hiltViewModel<RegisterViewModel>()
@@ -44,7 +48,21 @@ fun Navigation() {
                     }, onNavigateToAgenda = { navController.navigate(Screen.Agenda) })
                 }
                 composable<Screen.Agenda> {
-                    AgendaScreen()
+                    val agendaViewModel = hiltViewModel<AgendaViewModel>()
+                    AgendaScreen(
+                        agendaViewModel = agendaViewModel,
+                        onTaskPressed = { navController.navigate(Screen.Task) },
+                        onEventPressed = { navController.navigate(Screen.Event) },
+                        onReminderPressed = { navController.navigate(Screen.Reminder) })
+                }
+                composable<Screen.Task> {
+                    TaskScreen()
+                }
+                composable<Screen.Reminder> {
+                    ReminderScreen()
+                }
+                composable<Screen.Event> {
+                    EventScreen()
                 }
             }
         }

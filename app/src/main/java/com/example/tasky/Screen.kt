@@ -12,4 +12,13 @@ object Screen {
 
     @Serializable
     object Agenda
+
+    @Serializable
+    object Task
+
+    @Serializable
+    object Event
+
+    @Serializable
+    object Reminder
 }

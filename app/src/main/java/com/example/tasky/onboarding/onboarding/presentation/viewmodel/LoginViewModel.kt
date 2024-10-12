@@ -74,12 +74,12 @@ class LoginViewModel @Inject constructor(
                     }
                 }
                 _state.update { it.copy(isLoading = false) }
-
             }
-            errorMessage = UiText.StringResource(R.string.Login_failed).toString()
-            _dialogState.update { DialogState.Show(errorMessage) }
-
         }
+    }
+
+    fun onDismissDialog() {
+        _dialogState.value = DialogState.Hide
     }
 
     private fun isFormValid(emailErrorStatus: ErrorStatus, passwordErrorStatus: ErrorStatus) =

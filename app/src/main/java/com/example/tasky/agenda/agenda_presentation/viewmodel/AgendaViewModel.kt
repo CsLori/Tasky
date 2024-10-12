@@ -9,4 +9,5 @@ import javax.inject.Inject
 class AgendaViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository
 ) : ViewModel() {
+
 }
