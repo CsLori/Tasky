@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import java.io.IOException
 
-class ProtoUserPrefsRepository(context: Context): UserPrefsRepository {
+class ProtoUserPrefsRepository(context: Context) : UserPrefsRepository {
     private val Context.userPreferencesStore: DataStore<UserPreferences> by dataStore(
         fileName = "user_prefs.pb",
         serializer = UserSerializer
@@ -29,6 +29,7 @@ class ProtoUserPrefsRepository(context: Context): UserPrefsRepository {
             }
         }
 
+    // Access token
     override suspend fun updateAccessToken(accessToken: String) {
         userPrefsStore.updateData { preference ->
             preference.toBuilder().setAccessToken(accessToken).build()
@@ -36,4 +37,24 @@ class ProtoUserPrefsRepository(context: Context): UserPrefsRepository {
     }
 
     override suspend fun getAccessToken() = userPrefsStore.data.first()
+
+
+    // Refresh token
+    override suspend fun updateRefreshToken(refreshToken: String) {
+        userPrefsStore.updateData { preference ->
+            preference.toBuilder().setRefreshToken(refreshToken).build()
+        }
+    }
+
+    override suspend fun getRefreshToken() = userPrefsStore.data.first()
+
+
+    // UserId
+    override suspend fun updateUserId(userId: String) {
+        userPrefsStore.updateData { preference ->
+            preference.toBuilder().setUserId(userId).build()
+        }
+    }
+
+    override suspend fun getUserId(): UserPreferences = userPrefsStore.data.first()
 }

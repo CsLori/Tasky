@@ -28,7 +28,7 @@ fun Navigation() {
         Column(modifier = Modifier.padding(innerPadding)) {
             NavHost(
                 navController = navController,
-                startDestination = Screen.Agenda,
+                startDestination = Screen.Login,
             ) {
                 composable<Screen.Register> {
                     val registerViewModel = hiltViewModel<RegisterViewModel>()

@@ -7,4 +7,5 @@ message UserPreferences {
   string accessToken = 1;
   string refreshToken = 2;
   string accessTokenExpirationTimestamp = 3;
+  string userId = 4;
 }

@@ -10,6 +10,7 @@ import com.example.tasky.core.util.ErrorStatus
 import com.example.tasky.core.util.FieldInput
 import com.example.tasky.core.util.Result
 import com.example.tasky.core.util.UiText
+import com.example.tasky.onboarding.onboarding_data.remote.LoginResponse
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import com.example.tasky.onboarding.util.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,7 +57,8 @@ class LoginViewModel @Inject constructor(
                 when (result) {
                     is Result.Success -> {
                         _uiState.update { LoginUiState.Success }
-                        result.data.accessToken?.let { userPrefsRepository.updateAccessToken(it) }
+                        // Update auth related tokens
+                        updateTokens(result)
                     }
 
                     is Result.Error -> {
@@ -75,6 +77,14 @@ class LoginViewModel @Inject constructor(
                 }
                 _state.update { it.copy(isLoading = false) }
             }
+        }
+    }
+
+    private suspend fun updateTokens(result: Result.Success<LoginResponse>) {
+        result.data.apply {
+            refreshToken?.let { userPrefsRepository.updateRefreshToken(it) }
+            accessToken?.let { userPrefsRepository.updateAccessToken(it) }
+            userId?.let { userPrefsRepository.updateUserId(it) }
         }
     }
 
