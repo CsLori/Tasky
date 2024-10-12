@@ -10,7 +10,7 @@ import com.example.tasky.core.util.FieldInput
 import com.example.tasky.core.util.Result
 import com.example.tasky.core.util.UiText
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
-import com.example.tasky.onboarding.onboarding_domain.util.AuthError
+import com.example.tasky.onboarding.util.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

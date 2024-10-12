@@ -3,7 +3,7 @@ package com.example.tasky.onboarding.onboarding.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
-import com.example.tasky.core.local.UserPrefsRepository
+import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.util.CredentialsValidator
 import com.example.tasky.core.util.ErrorStatus
@@ -11,7 +11,7 @@ import com.example.tasky.core.util.FieldInput
 import com.example.tasky.core.util.Result
 import com.example.tasky.core.util.UiText
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
-import com.example.tasky.onboarding.onboarding_domain.util.AuthError
+import com.example.tasky.onboarding.util.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val defaultUserRepository: DefaultUserRepository,
-    private val userPrefsRepository: UserPrefsRepository
+    private val userPrefsRepository: ProtoUserPrefsRepository
 ) : ViewModel() {
 
     private var _uiState = MutableStateFlow<LoginUiState>(LoginUiState.None)

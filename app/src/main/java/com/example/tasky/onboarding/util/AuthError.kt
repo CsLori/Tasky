@@ -1,4 +1,4 @@
-package com.example.tasky.onboarding.onboarding_domain.util
+package com.example.tasky.onboarding.util
 
 import com.example.tasky.core.domain.util.Error
 

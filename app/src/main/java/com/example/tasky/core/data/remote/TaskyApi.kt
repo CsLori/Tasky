@@ -1,4 +1,4 @@
-package com.example.tasky.core.remote
+package com.example.tasky.core.data.remote
 
 import com.example.tasky.agenda.agenda_data.AgendaResponse
 import com.example.tasky.agenda.agenda_data.TaskBody
