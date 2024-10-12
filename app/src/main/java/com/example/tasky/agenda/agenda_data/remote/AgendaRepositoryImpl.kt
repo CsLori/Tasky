@@ -3,7 +3,7 @@ package com.example.tasky.agenda.agenda_data.remote
 import com.example.tasky.agenda.agenda_data.TaskBody
 import com.example.tasky.agenda.agenda_domain.AgendaRepository
 import com.example.tasky.agenda.agenda_domain.util.AgendaError
-import com.example.tasky.core.remote.TaskyApi
+import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.core.util.Result
 import retrofit2.HttpException
 import java.net.UnknownHostException

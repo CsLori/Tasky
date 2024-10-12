@@ -1,7 +1,5 @@
 package com.example.tasky.onboarding.onboarding_data.repository
 
-import com.example.tasky.core.remote.TaskyApi
-import android.util.Log
 import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.core.util.Result
 import com.example.tasky.onboarding.onboarding_data.remote.LoginBody
