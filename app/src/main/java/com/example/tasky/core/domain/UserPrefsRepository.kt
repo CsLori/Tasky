@@ -9,16 +9,16 @@ interface UserPrefsRepository {
     // Access token
     suspend fun updateAccessToken(accessToken: String)
 
-    suspend fun getAccessToken(): UserPreferences
+    suspend fun getAccessToken(): String
 
     // Refresh token
     suspend fun updateRefreshToken(refreshToken: String)
 
-    suspend fun getRefreshToken(): UserPreferences
+    suspend fun getRefreshToken(): String
 
     // UserId
     suspend fun updateUserId(userId: String)
 
-    suspend fun getUserId(): UserPreferences
+    suspend fun getUserId(): String
 
 }

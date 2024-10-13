@@ -36,7 +36,7 @@ class ProtoUserPrefsRepository(context: Context) : UserPrefsRepository {
         }
     }
 
-    override suspend fun getAccessToken() = userPrefsStore.data.first()
+    override suspend fun getAccessToken(): String = userPrefsStore.data.first().accessToken
 
 
     // Refresh token
@@ -46,7 +46,7 @@ class ProtoUserPrefsRepository(context: Context) : UserPrefsRepository {
         }
     }
 
-    override suspend fun getRefreshToken() = userPrefsStore.data.first()
+    override suspend fun getRefreshToken(): String = userPrefsStore.data.first().refreshToken
 
 
     // UserId
@@ -56,5 +56,5 @@ class ProtoUserPrefsRepository(context: Context) : UserPrefsRepository {
         }
     }
 
-    override suspend fun getUserId(): UserPreferences = userPrefsStore.data.first()
+    override suspend fun getUserId(): String = userPrefsStore.data.first().userId
 }
