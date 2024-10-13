@@ -29,8 +29,4 @@ interface TaskyApi {
 
     @POST("/task")
     suspend fun addTask(@Body taskBody: TaskBody)
-
-    companion object {
-        const val BASE_URL = "https://tasky.pl-coding.com/"
-    }
 }

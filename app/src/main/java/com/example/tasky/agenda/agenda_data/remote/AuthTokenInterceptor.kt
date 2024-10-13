@@ -19,12 +19,12 @@ class AuthTokenInterceptor(
 
             val requestWithToken = originalRequest.newBuilder()
                 .header("x-api-key", API_KEY)
-                .header("Authorization", "Bearer ${userPrefsRepository.getAccessToken()}")
                 .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer ${userPrefsRepository.getAccessToken()}")
                 .method(originalRequest.method, originalRequest.body)
                 .build()
 
-            var response = chain.proceed(originalRequest)
+            var response = chain.proceed(requestWithToken)
 
             if (response.code == 401) {
                 response.close()
@@ -45,10 +45,10 @@ class AuthTokenInterceptor(
                 userPrefsRepository.updateAccessToken(accessTokenResponse.accessToken.toString())
 
                 val newRequest = originalRequest.newBuilder()
-                    .addHeader("Authorization", "Bearer ${accessTokenResponse.accessToken}")
+                    .header("x-api-key", API_KEY)
+                    .header("Authorization", "Bearer ${accessTokenResponse.accessToken}")
                     .build()
 
-                response.close()
                 response = chain.proceed(newRequest)
             }
             response

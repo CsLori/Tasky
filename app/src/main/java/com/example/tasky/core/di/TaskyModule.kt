@@ -1,6 +1,8 @@
 package com.example.tasky.core.di
 
 import android.content.Context
+import com.example.tasky.Constants.BASE_URL
+import com.example.tasky.agenda.agenda_data.di.BasicOkHttpClient
 import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
 import com.example.tasky.agenda.agenda_data.remote.AuthTokenInterceptor
 import com.example.tasky.agenda.agenda_domain.AgendaRepository
@@ -13,7 +15,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -24,9 +25,21 @@ object TaskyModule {
 
     @Provides
     @Singleton
+    fun provideOkhttpClient(
+        @BasicOkHttpClient basicOkHttpClient: OkHttpClient,
+        authTokenInterceptor: AuthTokenInterceptor
+    ): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor {
+                authTokenInterceptor.intercept(it)
+            }.build()
+    }
+
+    @Provides
+    @Singleton
     fun provideTaskyApi(client: OkHttpClient): TaskyApi {
         return Retrofit.Builder()
-            .baseUrl(TaskyApi.BASE_URL)
+            .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .client(client)
             .build()
@@ -35,21 +48,9 @@ object TaskyModule {
 
     @Provides
     @Singleton
-    fun provideOkhttpClient(
-        userPrefsRepository: ProtoUserPrefsRepository,
-        authTokenInterceptor: AuthTokenInterceptor
-    ): OkHttpClient {
-        return OkHttpClient.Builder()
-            .addInterceptor(
-                HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY
-                }
-            )
-            .addInterceptor {
-                authTokenInterceptor.intercept(it)
-            }.build()
+    fun provideUserPrefs(@ApplicationContext context: Context): ProtoUserPrefsRepository {
+        return ProtoUserPrefsRepository(context)
     }
-
 
     @Provides
     @Singleton
@@ -57,11 +58,6 @@ object TaskyModule {
         return DefaultUserRepository(api)
     }
 
-    @Provides
-    @Singleton
-    fun provideUserPrefs(@ApplicationContext context: Context): ProtoUserPrefsRepository {
-        return ProtoUserPrefsRepository(context)
-    }
 
     @Provides
     @Singleton
