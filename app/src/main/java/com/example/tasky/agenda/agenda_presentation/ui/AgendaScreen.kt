@@ -1,6 +1,9 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.FabPosition
@@ -26,7 +30,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,45 +38,58 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
+import com.example.tasky.agenda.util.AgendaDetailOption
 import com.example.tasky.agenda.util.AgendaDropdown
+import com.example.tasky.core.presentation.components.AgendaDetailDropdown
 import com.example.tasky.core.presentation.components.AgendaDropdown
-import com.example.tasky.core.presentation.components.AgendaMonthDropdown
+import com.example.tasky.core.presentation.components.LogoutDropdown
+import com.example.tasky.core.util.DateUtils
 import com.example.tasky.core.util.DateUtils.getCurrentMonth
 import com.example.tasky.core.util.DateUtils.getDaysWithDates
+import com.example.tasky.core.util.DateUtils.localDateToStringddMMMMyyyyFormat
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 const val NUMBER_OF_DAYS_TO_SHOW = 5
 
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 internal fun AgendaScreen(
     agendaViewModel: AgendaViewModel,
-    onTaskPressed: () -> Unit,
-    onEventPressed: () -> Unit,
-    onReminderPressed: () -> Unit,
+    onAgendaDetailPressed: () -> Unit
 ) {
+
+    val state = agendaViewModel.state.collectAsState().value
+
     AgendaContent(
-        onTaskPressed = { onTaskPressed() },
-        onReminderPressed = { onReminderPressed() },
-        onEventPressed = { onEventPressed() },
+        onAgendaDetailPressed = { onAgendaDetailPressed() },
+        onSelectedDate = { agendaViewModel.setSelectedDate(it) },
+        selectedDate = state.selectedDate
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 private fun AgendaContent(
-    onTaskPressed: () -> Unit,
-    onReminderPressed: () -> Unit,
-    onEventPressed: () -> Unit,
+    onAgendaDetailPressed: () -> Unit,
+    onSelectedDate: (LocalDate) -> Unit,
+    selectedDate: LocalDate
 ) {
     var itemSelected: AgendaDropdown? by remember { mutableStateOf(null) }
     var visible by remember { mutableStateOf(false) }
-    val currentMonth by remember { derivedStateOf { getCurrentMonth() } }
+    var shouldShowDatePicker by remember { mutableStateOf(false) }
+    var month by remember { mutableStateOf("") }
+    var date by remember { (mutableStateOf<LocalDate>(LocalDate.now())) }
     Scaffold(floatingActionButton = {
         FloatingActionButton(
             containerColor = colors.black,
@@ -88,10 +105,11 @@ private fun AgendaContent(
                 listItems = AgendaDropdown.entries,
                 onItemSelected = { agendaItem ->
                     itemSelected = agendaItem
+                    onAgendaDetailPressed()
                     when (agendaItem) {
-                        AgendaDropdown.TASK -> onTaskPressed()
-                        AgendaDropdown.EVENT -> onEventPressed()
-                        AgendaDropdown.REMINDER -> onReminderPressed()
+                        AgendaDropdown.TASK -> {}
+                        AgendaDropdown.EVENT -> {}
+                        AgendaDropdown.REMINDER -> {}
                     }
                 },
                 selectedItem = itemSelected,
@@ -119,31 +137,46 @@ private fun AgendaContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AgendaMonthDropdown(
-                        listItems = listOf(
-                            "January",
-                            "February",
-                            "March",
-                            "April",
-                            "May",
-                            "June",
-                            "July",
-                            "August",
-                            "September",
-                            "October",
-                            "November",
-                            "December"
-                        ),
-                        onItemSelected = {},
-                        selectedItem = currentMonth,
-                        visible = true
-                    )
-//                    Text(
-//                        text = "MARCH",
-//                        style = typography.title,
-//                        textAlign = TextAlign.Center,
-//                        color = colors.white,
-//                    )
+                    Row(
+                        modifier = Modifier
+                            .clickable {
+                                shouldShowDatePicker = !shouldShowDatePicker
+                            },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = month.ifEmpty { getCurrentMonth() },
+                            style = typography.title,
+                            textAlign = TextAlign.Center,
+                            color = colors.white,
+                            modifier = Modifier.clickable {
+                                shouldShowDatePicker = !shouldShowDatePicker
+                            }
+                        )
+
+                        Icon(
+                            imageVector = Icons.Filled.ArrowDropDown,
+                            contentDescription = "",
+                            tint = colors.white
+                        )
+                    }
+
+                    if (shouldShowDatePicker) {
+                        DatePickerModal(
+                            onDateSelected = { date ->
+                                date?.let { safeDate ->
+                                    val result = DateUtils.convertMillisToLocalDate(safeDate)
+                                    month = result.month.toString()
+                                    onSelectedDate(DateUtils.longToLocalDate(safeDate))
+                                }
+                            },
+                            onDismiss = {
+                                shouldShowDatePicker = false
+                            },
+                            initialDate = selectedDate.atStartOfDay(ZoneOffset.UTC).toInstant()
+                                .toEpochMilli()
+                        )
+                    }
                     UserInitialsButton()
                 }
             }
@@ -166,11 +199,11 @@ private fun AgendaContent(
                     .padding(horizontal = dimensions.default16dp)
             ) {
 
-                CalendarDays()
+                CalendarDays(selectedDate)
 
                 Text(
-                    "Today",
-                    style = typography.title,
+                    if (selectedDate == LocalDate.now()) "Today" else selectedDate.localDateToStringddMMMMyyyyFormat(),
+                    style = typography.calendarTitle,
                     modifier = Modifier.padding(vertical = dimensions.default16dp)
                 )
 
@@ -191,6 +224,7 @@ fun TaskItem() {
             .height(150.dp)
             .background(colors.light2)
     ) {
+        var visible by remember { mutableStateOf(false) }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -214,14 +248,28 @@ fun TaskItem() {
                 )
             }
 
-            Icon(
-                imageVector = Icons.Filled.MoreHoriz, contentDescription = "Icon more",
-                modifier = Modifier.padding(
-                    top = dimensions.default16dp,
-                    end = dimensions.default16dp
+            Box {
+                Icon(
+                    imageVector = Icons.Filled.MoreHoriz, contentDescription = "Icon more",
+                    modifier = Modifier
+                        .padding(
+                            top = dimensions.default16dp,
+                            end = dimensions.default16dp
+                        )
+                        .clickable {
+                            visible = !visible
+                        }
                 )
-            )
-
+                if (visible) {
+                    AgendaDetailDropdown(
+                        options = AgendaDetailOption.entries,
+                        onItemSelected = {},
+                        selectedItem = AgendaDetailOption.OPEN,
+                        visible = visible,
+                        onDismiss = { visible = false },
+                    )
+                }
+            }
         }
         Text(
             "Amet minim mollit non deserunt",
@@ -240,8 +288,8 @@ fun TaskItem() {
 }
 
 @Composable
-fun CalendarDays() {
-    val days by remember { derivedStateOf { getDaysWithDates(NUMBER_OF_DAYS_TO_SHOW) } }
+fun CalendarDays(date: LocalDate) {
+    val days = getDaysWithDates(date, NUMBER_OF_DAYS_TO_SHOW)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -249,7 +297,7 @@ fun CalendarDays() {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         days.forEachIndexed { index, (dayLetter, dayNumber) ->
-            run {
+            if (dayLetter != null) {
                 CalendarComponent(
                     dayLetter = dayLetter,
                     dayNumber = dayNumber.toString(),
@@ -257,7 +305,6 @@ fun CalendarDays() {
                 )
             }
         }
-
     }
 }
 
@@ -284,11 +331,12 @@ private fun CalendarComponent(dayLetter: String, dayNumber: String, isSelected: 
 
 @Composable
 fun UserInitialsButton() {
+    var visible by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier.size(56.dp),
         shape = CircleShape,
         color = colors.light,
-        onClick = { /* Handle click */ }
+        onClick = { visible = !visible }
     ) {
         Box(
             modifier = Modifier
@@ -301,17 +349,25 @@ fun UserInitialsButton() {
                 style = typography.userButton
             )
         }
+        if (visible) {
+            LogoutDropdown(
+                onItemSelected = {},
+                visible = visible,
+                onDismiss = { visible = false }
+            )
+        }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Preview
 @Composable
 fun AgendaContentPreview() {
     AppTheme {
         AgendaContent(
-            onTaskPressed = {},
-            onReminderPressed = {},
-            onEventPressed = {}
+            onAgendaDetailPressed = {},
+            onSelectedDate = {},
+            selectedDate = LocalDate.now()
         )
     }
 }
