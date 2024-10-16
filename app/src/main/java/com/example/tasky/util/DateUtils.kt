@@ -1,4 +1,4 @@
-package com.example.tasky.core.util
+package com.example.tasky.util
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -54,6 +54,8 @@ object DateUtils {
     }
 
     fun getCurrentMonth(): String = LocalDate.now().month.toString()
+
+    fun getCurrentDate(): LocalDate = LocalDate.now()
 
     fun LocalDate.localDateToStringddMMMMyyyyFormat(): String {
         return this.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))

@@ -1,10 +1,10 @@
 package com.example.tasky.agenda.agenda_data.remote
 
-import com.example.tasky.agenda.agenda_data.TaskBody
-import com.example.tasky.agenda.agenda_domain.AgendaRepository
-import com.example.tasky.agenda.agenda_domain.util.AgendaError
+import com.example.tasky.agenda.agenda_domain.model.Task
+import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
+import com.example.tasky.util.AgendaError
 import com.example.tasky.core.data.remote.TaskyApi
-import com.example.tasky.core.util.Result
+import com.example.tasky.util.Result
 import retrofit2.HttpException
 import java.net.UnknownHostException
 import java.util.concurrent.CancellationException
@@ -20,7 +20,7 @@ class AgendaRepositoryImpl(private val api: TaskyApi) : AgendaRepository {
     ): Result<Unit, AgendaError> {
         return try {
             api.addTask(
-                TaskBody(
+                Task(
                     id = id,
                     title = title,
                     description = description,

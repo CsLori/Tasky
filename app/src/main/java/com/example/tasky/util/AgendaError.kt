@@ -1,6 +1,4 @@
-package com.example.tasky.agenda.agenda_domain.util
-
-import com.example.tasky.core.domain.util.Error
+package com.example.tasky.util
 
 sealed interface AgendaError : Error {
     enum class General : AgendaError {

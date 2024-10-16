@@ -1,4 +1,4 @@
-package com.example.tasky.core.util
+package com.example.tasky.util
 
 import android.content.Context
 import androidx.annotation.StringRes

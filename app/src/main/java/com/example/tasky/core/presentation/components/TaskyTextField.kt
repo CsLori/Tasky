@@ -26,8 +26,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.tasky.core.util.ErrorStatus
-import com.example.tasky.core.util.FieldInput
+import com.example.tasky.util.ErrorStatus
+import com.example.tasky.util.FieldInput
 import com.example.tasky.ui.theme.AppTheme
 
 @Composable

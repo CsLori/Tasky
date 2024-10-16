@@ -42,21 +42,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
+import com.example.tasky.agenda.agenda_presentation.components.AgendaDropdown
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
-import com.example.tasky.agenda.util.AgendaDetailOption
-import com.example.tasky.agenda.util.AgendaDropdown
 import com.example.tasky.core.presentation.components.AgendaDetailDropdown
 import com.example.tasky.core.presentation.components.AgendaDropdown
 import com.example.tasky.core.presentation.components.LogoutDropdown
-import com.example.tasky.core.util.DateUtils
-import com.example.tasky.core.util.DateUtils.getCurrentMonth
-import com.example.tasky.core.util.DateUtils.getDaysWithDates
-import com.example.tasky.core.util.DateUtils.localDateToStringddMMMMyyyyFormat
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
+import com.example.tasky.util.DateUtils
+import com.example.tasky.util.DateUtils.getDaysWithDates
+import com.example.tasky.util.DateUtils.localDateToStringddMMMMyyyyFormat
 import java.time.LocalDate
 import java.time.ZoneOffset
 
@@ -73,8 +72,8 @@ internal fun AgendaScreen(
 
     AgendaContent(
         onAgendaDetailPressed = { onAgendaDetailPressed() },
-        onSelectedDate = { agendaViewModel.setSelectedDate(it) },
-        selectedDate = state.selectedDate
+        onUpdateState = { action -> agendaViewModel.updateState(action) },
+        state = state,
     )
 }
 
@@ -82,18 +81,16 @@ internal fun AgendaScreen(
 @Composable
 private fun AgendaContent(
     onAgendaDetailPressed: () -> Unit,
-    onSelectedDate: (LocalDate) -> Unit,
-    selectedDate: LocalDate
+    onUpdateState: (AgendaViewModel.AgendaAction) -> Unit,
+    state: AgendaViewModel.AgendaState,
 ) {
-    var itemSelected: AgendaDropdown? by remember { mutableStateOf(null) }
-    var visible by remember { mutableStateOf(false) }
-    var shouldShowDatePicker by remember { mutableStateOf(false) }
-    var month by remember { mutableStateOf("") }
-    var date by remember { (mutableStateOf<LocalDate>(LocalDate.now())) }
+
     Scaffold(floatingActionButton = {
         FloatingActionButton(
             containerColor = colors.black,
-            onClick = { visible = !visible },
+            onClick = {
+                onUpdateState(AgendaViewModel.AgendaAction.UpdateVisibility(!state.isVisible))
+            },
             shape = RoundedCornerShape(dimensions.default16dp),
         ) {
             Icon(
@@ -104,7 +101,7 @@ private fun AgendaContent(
             AgendaDropdown(
                 listItems = AgendaDropdown.entries,
                 onItemSelected = { agendaItem ->
-                    itemSelected = agendaItem
+                    onUpdateState(AgendaViewModel.AgendaAction.UpdateItemSelected(agendaItem))
                     onAgendaDetailPressed()
                     when (agendaItem) {
                         AgendaDropdown.TASK -> {}
@@ -112,8 +109,8 @@ private fun AgendaContent(
                         AgendaDropdown.REMINDER -> {}
                     }
                 },
-                selectedItem = itemSelected,
-                visible = visible
+                selectedItem = state.itemSelected,
+                visible = state.isVisible
             )
         }
     }, floatingActionButtonPosition = FabPosition.End) { innerPadding ->
@@ -140,17 +137,25 @@ private fun AgendaContent(
                     Row(
                         modifier = Modifier
                             .clickable {
-                                shouldShowDatePicker = !shouldShowDatePicker
+                                onUpdateState(
+                                    AgendaViewModel.AgendaAction.UpdateShouldShowDatePicker(
+                                        !state.shouldShowDatePicker
+                                    )
+                                )
                             },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = month.ifEmpty { getCurrentMonth() },
+                            text = state.month,
                             style = typography.title,
                             textAlign = TextAlign.Center,
                             color = colors.white,
                             modifier = Modifier.clickable {
-                                shouldShowDatePicker = !shouldShowDatePicker
+                                onUpdateState(
+                                    AgendaViewModel.AgendaAction.UpdateShouldShowDatePicker(
+                                        !state.shouldShowDatePicker
+                                    )
+                                )
                             }
                         )
 
@@ -161,23 +166,42 @@ private fun AgendaContent(
                         )
                     }
 
-                    if (shouldShowDatePicker) {
+                    if (state.shouldShowDatePicker) {
                         DatePickerModal(
                             onDateSelected = { date ->
                                 date?.let { safeDate ->
                                     val result = DateUtils.convertMillisToLocalDate(safeDate)
-                                    month = result.month.toString()
-                                    onSelectedDate(DateUtils.longToLocalDate(safeDate))
+                                    onUpdateState(
+                                        AgendaViewModel.AgendaAction.UpdateMonth(
+                                            result.month.name
+                                        )
+                                    )
+
+                                    onUpdateState(
+                                        AgendaViewModel.AgendaAction.UpdateSelectedDate(
+                                            DateUtils.longToLocalDate(safeDate)
+                                        )
+                                    )
+                                    onUpdateState(
+                                        AgendaViewModel.AgendaAction.UpdateIsDateSelectedFromDatePicker(
+                                            true
+                                        )
+                                    )
                                 }
                             },
                             onDismiss = {
-                                shouldShowDatePicker = false
+                                onUpdateState(
+                                    AgendaViewModel.AgendaAction.UpdateShouldShowDatePicker(
+                                        false
+                                    )
+                                )
                             },
-                            initialDate = selectedDate.atStartOfDay(ZoneOffset.UTC).toInstant()
+                            initialDate = state.selectedDate.atStartOfDay(ZoneOffset.UTC)
+                                .toInstant()
                                 .toEpochMilli()
                         )
                     }
-                    UserInitialsButton()
+                    UserInitialsButton(state = state, onUpdateState = onUpdateState)
                 }
             }
         }
@@ -199,10 +223,16 @@ private fun AgendaContent(
                     .padding(horizontal = dimensions.default16dp)
             ) {
 
-                CalendarDays(selectedDate)
+                CalendarDays(
+                    state.selectedDate,
+                    state.selectedIndex,
+                    state.isDateSelectedFromDatePicker,
+                    onSelectedIndexChanged = { action ->
+                        onUpdateState(AgendaViewModel.AgendaAction.UpdateSelectedIndex(action))
+                    })
 
                 Text(
-                    if (selectedDate == LocalDate.now()) "Today" else selectedDate.localDateToStringddMMMMyyyyFormat(),
+                    if (state.selectedDate == LocalDate.now()) "Today" else state.selectedDate.localDateToStringddMMMMyyyyFormat(),
                     style = typography.calendarTitle,
                     modifier = Modifier.padding(vertical = dimensions.default16dp)
                 )
@@ -288,8 +318,14 @@ fun TaskItem() {
 }
 
 @Composable
-fun CalendarDays(date: LocalDate) {
+fun CalendarDays(
+    date: LocalDate,
+    selectedIndex: Int,
+    isDateSelectedFromDatePicker: Boolean,
+    onSelectedIndexChanged: (Int) -> Unit
+) {
     val days = getDaysWithDates(date, NUMBER_OF_DAYS_TO_SHOW)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -301,7 +337,10 @@ fun CalendarDays(date: LocalDate) {
                 CalendarComponent(
                     dayLetter = dayLetter,
                     dayNumber = dayNumber.toString(),
-                    isSelected = index == 0
+                    isSelected = index == if (isDateSelectedFromDatePicker) 0 else selectedIndex,
+                    onClick = {
+                        onSelectedIndexChanged(index)
+                    }
                 )
             }
         }
@@ -309,7 +348,12 @@ fun CalendarDays(date: LocalDate) {
 }
 
 @Composable
-private fun CalendarComponent(dayLetter: String, dayNumber: String, isSelected: Boolean = false) {
+private fun CalendarComponent(
+    dayLetter: String,
+    dayNumber: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
     val componentHeight = 61.dp
     val componentWidth = 40.dp
     Column(
@@ -317,7 +361,10 @@ private fun CalendarComponent(dayLetter: String, dayNumber: String, isSelected: 
             .height(componentHeight)
             .width(componentWidth)
             .clip(RoundedCornerShape(dimensions.large24dp))
-            .background(if (isSelected) colors.orange else colors.white),
+            .background(if (isSelected) colors.orange else colors.white)
+            .clickable {
+                onClick()
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
@@ -330,13 +377,17 @@ private fun CalendarComponent(dayLetter: String, dayNumber: String, isSelected: 
 }
 
 @Composable
-fun UserInitialsButton() {
-    var visible by remember { mutableStateOf(false) }
+fun UserInitialsButton(
+    state: AgendaViewModel.AgendaState,
+    onUpdateState: (AgendaViewModel.AgendaAction) -> Unit
+) {
     Surface(
         modifier = Modifier.size(56.dp),
         shape = CircleShape,
         color = colors.light,
-        onClick = { visible = !visible }
+        onClick = {
+            onUpdateState(AgendaViewModel.AgendaAction.UpdateVisibility(!state.isVisible))
+        }
     ) {
         Box(
             modifier = Modifier
@@ -349,11 +400,13 @@ fun UserInitialsButton() {
                 style = typography.userButton
             )
         }
-        if (visible) {
+        if (state.isVisible) {
             LogoutDropdown(
                 onItemSelected = {},
-                visible = visible,
-                onDismiss = { visible = false }
+                visible = state.isVisible,
+                onDismiss = {
+                    onUpdateState(AgendaViewModel.AgendaAction.UpdateVisibility(false))
+                }
             )
         }
     }
@@ -366,8 +419,8 @@ fun AgendaContentPreview() {
     AppTheme {
         AgendaContent(
             onAgendaDetailPressed = {},
-            onSelectedDate = {},
-            selectedDate = LocalDate.now()
+            onUpdateState = {},
+            state = AgendaViewModel.AgendaState()
         )
     }
 }

@@ -1,4 +1,4 @@
-package com.example.tasky.core.util
+package com.example.tasky.util
 
 import android.os.Build
 import androidx.annotation.RequiresApi

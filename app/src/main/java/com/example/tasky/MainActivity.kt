@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowInsetsControllerCompat
-import com.example.tasky.core.util.Navigation
+import com.example.tasky.util.Navigation
 import com.example.tasky.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 

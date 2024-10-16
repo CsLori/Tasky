@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.example.tasky.BuildConfig.API_KEY
 import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
-import com.example.tasky.agenda.agenda_domain.AgendaRepository
+import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
