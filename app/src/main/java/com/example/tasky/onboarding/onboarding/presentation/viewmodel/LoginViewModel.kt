@@ -6,11 +6,11 @@ import com.example.tasky.R
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
-import com.example.tasky.util.AuthError
 import com.example.tasky.util.CredentialsValidator
 import com.example.tasky.util.ErrorStatus
 import com.example.tasky.util.FieldInput
 import com.example.tasky.util.Result
+import com.example.tasky.util.TaskyError
 import com.example.tasky.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,10 +61,10 @@ class LoginViewModel @Inject constructor(
 
                     is Result.Error -> {
                         errorMessage = when (result.error) {
-                            AuthError.Login.INVALID_CREDENTIALS -> UiText.StringResource(R.string.Check_your_credentials)
+                            TaskyError.LoginError.INVALID_CREDENTIALS -> UiText.StringResource(R.string.Check_your_credentials)
                                 .toString()
 
-                            AuthError.General.NO_INTERNET -> UiText.StringResource(R.string.No_internet_connection)
+                            TaskyError.NetworkError.NO_INTERNET -> UiText.StringResource(R.string.No_internet_connection)
                                 .toString()
 
                             else -> UiText.StringResource(R.string.Login_failed).toString()

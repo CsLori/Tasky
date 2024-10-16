@@ -5,6 +5,11 @@ sealed interface Result<out D, out E: Error> {
     data class Error<out E: com.example.tasky.util.Error>(val error: E): Result<Nothing, E>
 }
 
+fun <E : Error> Exception.asResult(mapToError: (Exception) -> E): Result.Error<E> {
+    val error = mapToError(this)
+    return Result.Error(error)
+}
+
 inline fun <T, E: Error, R> Result<T, E>.map(map: (T) -> R): Result<R, E> {
     return when(this) {
         is Result.Error -> Result.Error(error)
