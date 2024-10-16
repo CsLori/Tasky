@@ -120,5 +120,11 @@ data class AppTypography(
         fontWeight = FontWeight.Bold,
         lineHeight = 20.sp,
         fontFamily = Inter
+    ),
+    val calendarTitle: TextStyle = TextStyle(
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        lineHeight = 16.sp,
+        fontFamily = Inter
     )
 )

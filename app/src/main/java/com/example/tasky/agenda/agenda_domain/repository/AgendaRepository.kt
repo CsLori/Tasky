@@ -1,7 +1,7 @@
-package com.example.tasky.agenda.agenda_domain
+package com.example.tasky.agenda.agenda_domain.repository
 
-import com.example.tasky.agenda.agenda_domain.util.AgendaError
-import com.example.tasky.core.util.Result
+import com.example.tasky.util.Result
+import com.example.tasky.util.TaskyError
 
 interface AgendaRepository {
     suspend fun addTask(
@@ -11,5 +11,5 @@ interface AgendaRepository {
         time: Long,
         remindAt: Long,
         isDone: Boolean
-    ): Result<Unit, AgendaError>
+    ): Result<Unit, TaskyError>
 }

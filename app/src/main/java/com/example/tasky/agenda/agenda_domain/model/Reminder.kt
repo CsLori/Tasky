@@ -1,4 +1,4 @@
-package com.example.tasky.agenda.agenda_data
+package com.example.tasky.agenda.agenda_domain.model
 
 import kotlinx.serialization.Serializable
 

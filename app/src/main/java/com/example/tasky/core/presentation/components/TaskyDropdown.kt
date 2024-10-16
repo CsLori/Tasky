@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -36,7 +35,7 @@ fun <T> AgendaDropdown(
     selectedItem: T?,
     visible: Boolean?,
 ) {
-    val interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
+    val interactionSource = MutableInteractionSource()
     var expanded by remember { mutableStateOf(false) }
     var itemIndex: Int
     val lastItem = listItems.size - 1
@@ -85,7 +84,6 @@ fun <T> AgendaDropdown(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> AgendaMonthDropdown(
     modifier: Modifier = Modifier,
@@ -151,3 +149,94 @@ fun <T> AgendaMonthDropdown(
         }
     }
 }
+
+@Composable
+fun LogoutDropdown(
+    modifier: Modifier = Modifier,
+    onItemSelected: () -> Unit,
+    visible: Boolean,
+    onDismiss: () -> Unit
+) {
+    val interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
+
+    Row(
+        modifier = modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {}),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AnimateDropdownMenu(targetState = visible) {
+            DropdownMenu(
+                modifier = Modifier
+                    .background(colors.white)
+                    .clip(RoundedCornerShape(7.dp)),
+                expanded = visible,
+                onDismissRequest = { onDismiss() },
+                offset = DpOffset(x = (50).dp, y = 0.dp),
+
+                ) {
+
+                DropdownMenuItem(
+                    onClick = {
+                        onItemSelected()
+                    },
+                    modifier = Modifier.background(colors.white),
+                    text = { Text("Logout") },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun <T> AgendaDetailDropdown(
+    modifier: Modifier = Modifier,
+    options: List<T>,
+    onItemSelected: (T) -> Unit,
+    selectedItem: T?,
+    visible: Boolean,
+    onDismiss: () -> Unit
+) {
+    val interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
+    var itemIndex: Int
+    val lastItem = options.size - 1
+
+    Row(
+        modifier = modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {}),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AnimateDropdownMenu(targetState = visible) {
+            DropdownMenu(
+                modifier = Modifier
+                    .background(colors.white)
+                    .clip(RoundedCornerShape(7.dp)),
+                expanded = visible,
+                onDismissRequest = { onDismiss() },
+                offset = DpOffset(x = (50).dp, y = 0.dp),
+
+                ) {
+                options.forEachIndexed { index, option ->
+                    val rowBackgroundColor =
+                        if (options.indexOf(selectedItem) == index) colors.light2 else colors.white
+                    itemIndex = index
+                    DropdownMenuItem(
+                        onClick = {
+                            onItemSelected(option)
+                        },
+                        modifier = Modifier.background(rowBackgroundColor),
+                        text = { Text(option.toString()) },
+                    )
+                    if (itemIndex != lastItem)
+                        HorizontalDivider(color = colors.light, thickness = 1.dp)
+                }
+            }
+        }
+    }
+}
+

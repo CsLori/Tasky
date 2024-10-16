@@ -1,9 +1,9 @@
-package com.example.tasky.agenda.agenda_data
+package com.example.tasky.agenda.agenda_domain.model
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class TaskBody(
+data class Task(
     val id: String?,
     val title: String?,
     val description: String?,

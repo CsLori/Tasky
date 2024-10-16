@@ -39,9 +39,9 @@ import com.example.tasky.core.presentation.components.CredentialsTextField
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.presentation.components.ErrorDialog
 import com.example.tasky.core.presentation.components.MainButton
-import com.example.tasky.core.util.ErrorStatus
-import com.example.tasky.core.util.FieldInput
-import com.example.tasky.core.util.UiText
+import com.example.tasky.util.ErrorStatus
+import com.example.tasky.util.FieldInput
+import com.example.tasky.util.UiText
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors

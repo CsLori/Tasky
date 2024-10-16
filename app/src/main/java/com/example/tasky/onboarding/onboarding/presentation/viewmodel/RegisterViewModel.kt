@@ -4,13 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
 import com.example.tasky.core.presentation.components.DialogState
-import com.example.tasky.core.util.CredentialsValidator
-import com.example.tasky.core.util.ErrorStatus
-import com.example.tasky.core.util.FieldInput
-import com.example.tasky.core.util.Result
-import com.example.tasky.core.util.UiText
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
-import com.example.tasky.onboarding.util.AuthError
+import com.example.tasky.util.CredentialsValidator
+import com.example.tasky.util.ErrorStatus
+import com.example.tasky.util.FieldInput
+import com.example.tasky.util.Result
+import com.example.tasky.util.TaskyError
+import com.example.tasky.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -65,10 +65,10 @@ class RegisterViewModel @Inject constructor(
 
                     is Result.Error -> {
                         errorMessage = when (result.error) {
-                            AuthError.Register.EMAIL_ALREADY_EXISTS -> UiText.StringResource(R.string.Email_already_in_use)
+                            TaskyError.RegisterError.EMAIL_ALREADY_EXISTS -> UiText.StringResource(R.string.Email_already_in_use)
                                 .toString()
 
-                            AuthError.General.NO_INTERNET -> UiText.StringResource(R.string.No_internet_connection)
+                            TaskyError.NetworkError.NO_INTERNET -> UiText.StringResource(R.string.No_internet_connection)
                                 .toString()
 
                             else -> UiText.StringResource(R.string.Registration_failed).toString()

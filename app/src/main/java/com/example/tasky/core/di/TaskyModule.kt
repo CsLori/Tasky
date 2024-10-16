@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.tasky.Constants.BASE_URL
 import com.example.tasky.agenda.agenda_data.di.BasicOkHttpClient
 import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
+import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_data.remote.AuthTokenInterceptor
 import com.example.tasky.agenda.agenda_domain.AgendaRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
