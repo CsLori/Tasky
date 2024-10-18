@@ -111,7 +111,6 @@ private fun AgendaContent(
                         AgendaOption.REMINDER -> {}
                     }
                 },
-//                selectedItem = state.itemSelected,
                 visible = state.isVisible
             )
         }
@@ -296,7 +295,6 @@ fun TaskItem() {
                     AgendaDetailDropdown(
                         options = AgendaDetailOption.entries,
                         onItemSelected = {},
-//                        selectedItem = AgendaDetailOption.OPEN,
                         visible = visible,
                         onDismiss = { visible = false },
                     )

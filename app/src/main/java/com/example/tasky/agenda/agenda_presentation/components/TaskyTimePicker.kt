@@ -13,17 +13,24 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.tasky.R
+import com.example.tasky.ui.theme.AppTheme
 
 @Composable
 fun TimePickerDialog(
-    title: String = "Select Time",
+    title: String = stringResource(R.string.select_time),
     onDismissRequest: () -> Unit,
     confirmButton: @Composable (() -> Unit),
     dismissButton: @Composable (() -> Unit)? = null,
@@ -71,5 +78,32 @@ fun TimePickerDialog(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+fun TimePickerPreview() {
+    AppTheme {
+        TimePickerDialog(
+            onDismissRequest = {},
+            confirmButton = {
+                TextButton(
+                    onClick = {}
+                ) { Text(stringResource(R.string.OK)) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {}
+                ) { Text(stringResource(R.string.cancel)) }
+            },
+            content = {
+                TimePicker(
+                    state = TimePickerState(1, 12, true)
+                )
+
+            }
+        )
     }
 }

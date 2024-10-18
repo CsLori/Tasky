@@ -297,7 +297,6 @@ fun MainContent(
                         ) { Text(stringResource(R.string.cancel)) }
                     },
                     content = {
-
                         TimePicker(
                             state = state.time
                         )

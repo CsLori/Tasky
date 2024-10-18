@@ -11,24 +11,10 @@ import java.util.concurrent.CancellationException
 
 class AgendaRepositoryImpl(private val api: TaskyApi) : AgendaRepository {
     override suspend fun addTask(
-        id: String,
-        title: String,
-        description: String,
-        time: Long,
-        remindAt: Long,
-        isDone: Boolean
+        task: Task
     ): Result<Unit, TaskyError> {
         return try {
-            api.addTask(
-                Task(
-                    id = id,
-                    title = title,
-                    description = description,
-                    time = time,
-                    remindAt = remindAt,
-                    isDone = isDone
-                )
-            )
+            api.addTask(task)
             Result.Success(Unit)
 
         } catch (e: Exception) {

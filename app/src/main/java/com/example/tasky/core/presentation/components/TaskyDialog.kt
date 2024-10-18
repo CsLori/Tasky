@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.tasky.ui.theme.AppTheme
+import com.example.tasky.util.UiText
 
 @ExperimentalComposeUiApi
 @Composable
@@ -104,7 +105,7 @@ fun ErrorDialog(
 
 sealed class DialogState {
     data object Hide : DialogState()
-    data class Show(val errorMessage: String?) : DialogState()
+    data class Show(val errorMessage: UiText?) : DialogState()
 }
 
 @OptIn(ExperimentalComposeUiApi::class)

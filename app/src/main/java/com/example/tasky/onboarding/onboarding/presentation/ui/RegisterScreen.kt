@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -99,6 +100,7 @@ private fun RegisterContent(
     dialogState: DialogState,
     onAction: (RegisterViewModel.RegisterAction) -> Unit
 ) {
+    val context = LocalContext.current
 
     if (state.isLoading) {
         Box(
@@ -120,7 +122,7 @@ private fun RegisterContent(
                 if (dialogState is DialogState.Show) {
                     ErrorDialog(
                         title = stringResource(R.string.Something_went_wrong),
-                        label = dialogState.errorMessage.toString(),
+                        label = dialogState.errorMessage?.asString(context) ?: "",
                         displayCloseIcon = true,
                         positiveButtonText = stringResource(R.string.OK),
                         positiveOnClick = { onAction(RegisterViewModel.RegisterAction.OnDismissDialog) },
@@ -317,7 +319,7 @@ fun RegisterScreenWithErrorDialogPreview() {
                 )
             ),
             uiState = RegisterViewModel.RegisterUiState.None,
-            dialogState = DialogState.Show(stringResource(R.string.Registration_failed)),
+            dialogState = DialogState.Show(UiText.StringResource(R.string.Registration_failed)),
             onAction = {}
         )
     }

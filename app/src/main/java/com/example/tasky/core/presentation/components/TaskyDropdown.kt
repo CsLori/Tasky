@@ -28,7 +28,6 @@ fun AgendaDropdown(
     modifier: Modifier = Modifier,
     listItems: List<AgendaOption> = emptyList(),
     onItemSelected: (AgendaOption) -> Unit,
-//    selectedItem: AgendaOption?,
     visible: Boolean?,
 ) {
     var interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
@@ -46,10 +45,6 @@ fun AgendaDropdown(
                 }),
         verticalAlignment = Alignment.CenterVertically
     ) {
-//        Text(
-//            text = "",
-//        )
-
         AnimateDropdownMenu(targetState = visible) {
             DropdownMenu(
                 modifier = Modifier
@@ -62,7 +57,6 @@ fun AgendaDropdown(
                 ) {
                 listItems.forEachIndexed { index, listItem ->
                     val rowBackgroundColor = colors.white
-//                        if (listItems.indexOf(selectedItem) == index) colors.light2 else colors.white
                     itemIndex = index
                     DropdownMenuItem(
                         onClick = {
@@ -125,7 +119,6 @@ fun AgendaDetailDropdown(
     modifier: Modifier = Modifier,
     options: List<AgendaDetailOption>,
     onItemSelected: (AgendaDetailOption) -> Unit,
-//    selectedItem: AgendaDetailOption?,
     visible: Boolean,
     onDismiss: () -> Unit
 ) {
@@ -152,8 +145,7 @@ fun AgendaDetailDropdown(
 
                 ) {
                 options.forEachIndexed { index, option ->
-                    val rowBackgroundColor =colors.white
-//                        if (options.indexOf(selectedItem) == index) colors.light2 else colors.white
+                    val rowBackgroundColor = colors.white
                     itemIndex = index
                     DropdownMenuItem(
                         onClick = {

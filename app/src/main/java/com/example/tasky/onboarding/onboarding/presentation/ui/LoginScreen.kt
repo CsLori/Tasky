@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -39,14 +40,14 @@ import com.example.tasky.core.presentation.components.CredentialsTextField
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.presentation.components.ErrorDialog
 import com.example.tasky.core.presentation.components.MainButton
-import com.example.tasky.util.ErrorStatus
-import com.example.tasky.util.FieldInput
-import com.example.tasky.util.UiText
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
+import com.example.tasky.util.ErrorStatus
+import com.example.tasky.util.FieldInput
+import com.example.tasky.util.UiText
 
 @Composable
 internal fun LoginScreen(
@@ -96,6 +97,7 @@ private fun LoginContent(
     onAction: (LoginViewModel.LoginAction) -> Unit,
     dialogState: DialogState
 ) {
+    val context = LocalContext.current
     if (state.isLoading) {
         Box(
             modifier = Modifier
@@ -116,8 +118,8 @@ private fun LoginContent(
                 if (dialogState is DialogState.Show) {
                     ErrorDialog(
                         title = stringResource(R.string.Something_went_wrong),
-                        label = dialogState.errorMessage.toString(),
-                        displayCloseIcon = false,
+                        label = dialogState.errorMessage?.asString(context) ?: "",
+                                displayCloseIcon = false,
                         positiveButtonText = stringResource(R.string.OK),
                         positiveOnClick = { onAction(LoginViewModel.LoginAction.OnDismissDialog) },
                         onCancelClicked = { onAction(LoginViewModel.LoginAction.OnDismissDialog) }

@@ -37,7 +37,7 @@ class RegisterViewModel @Inject constructor(
         val fullNameErrorStatus = CredentialsValidator.validateName(name.value)
         val emailErrorStatus = CredentialsValidator.validateEmail(email.value)
         val passwordErrorStatus = CredentialsValidator.validatePassword(password.value)
-        var errorMessage: String
+        var errorMessage: UiText
 
         _state.update {
             it.copy(
@@ -66,12 +66,8 @@ class RegisterViewModel @Inject constructor(
                     is Result.Error -> {
                         errorMessage = when (result.error) {
                             TaskyError.RegisterError.EMAIL_ALREADY_EXISTS -> UiText.StringResource(R.string.Email_already_in_use)
-                                .toString()
-
                             TaskyError.NetworkError.NO_INTERNET -> UiText.StringResource(R.string.No_internet_connection)
-                                .toString()
-
-                            else -> UiText.StringResource(R.string.Registration_failed).toString()
+                            else -> UiText.StringResource(R.string.Registration_failed)
                         }
                         _dialogState.update { DialogState.Show(errorMessage) }
                     }
@@ -86,7 +82,7 @@ class RegisterViewModel @Inject constructor(
             defaultUserRepository.login(email, password)
             _uiState.update { RegisterUiState.Success }
         } catch (e: Exception) {
-            _dialogState.update { DialogState.Show("Login failed!") }
+            _dialogState.update { DialogState.Show(UiText.StringResource(R.string.Login_failed)) }
         }
     }
 

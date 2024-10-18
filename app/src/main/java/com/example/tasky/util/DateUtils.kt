@@ -75,29 +75,7 @@ object DateUtils {
         return String.format(Locale.getDefault(), "%02d:%02d", hours, minutes)
     }
 
-    // Output 15:00
-    fun LocalDate.toHourMinuteFormatFromMillis(millis: Long): String {
-        val localDateTime = this.atTime(LocalTime.ofSecondOfDay(TimeUnit.MILLISECONDS.toSeconds(millis) % 86400))
-        val formatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
-
-        return localDateTime.format(formatter)
-    }
-
     fun LocalTime.toMillis(): Long {
         return this.toSecondOfDay() * 1000L
     }
-
-//     Output Jul 15 2024
-//    fun LocalDate.toLocalizedDateFormat(): String {
-//        val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
-//        return this.format(formatter)
-//    }
-//
-//    // Output Jul 15 2024
-//    fun Long.toLocalizedDateFormat(): String {
-//        val localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
-//        val formatter = DateTimeFormatter.ofPattern("MMM d yyyy", Locale.getDefault())
-//
-//        return localDateTime.format(formatter)
-//    }
 }

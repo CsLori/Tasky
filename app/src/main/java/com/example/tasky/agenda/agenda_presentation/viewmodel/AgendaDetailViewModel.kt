@@ -5,7 +5,7 @@ package com.example.tasky.agenda.agenda_presentation.viewmodel
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
+import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.util.DateUtils.localDateToStringMMMdyyyyFormat
@@ -23,7 +23,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AgendaDetailViewModel @Inject constructor(
-    private val agendaRepository: AgendaRepositoryImpl
+    private val agendaRepository: AgendaRepository
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaDetailState())
@@ -63,14 +63,8 @@ class AgendaDetailViewModel @Inject constructor(
             it.copy(isLoading = true)
         }
         viewModelScope.launch {
-            val task = state.value.task
             val result = agendaRepository.addTask(
-                id = task.id,
-                title = task.title,
-                description = task.description,
-                time = task.time,
-                remindAt = task.remindAt,
-                isDone = task.isDone
+             task = state.value.task
             )
             when (result) {
                 is Success -> {

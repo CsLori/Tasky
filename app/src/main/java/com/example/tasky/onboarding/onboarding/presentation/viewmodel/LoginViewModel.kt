@@ -39,7 +39,7 @@ class LoginViewModel @Inject constructor(
     fun login(email: FieldInput, password: FieldInput) {
         val emailErrorStatus = CredentialsValidator.validateEmail(email.value)
         val passwordErrorStatus = CredentialsValidator.validatePassword(password.value)
-        var errorMessage: String
+        var errorMessage: UiText
 
         _state.update {
             it.copy(
@@ -64,12 +64,8 @@ class LoginViewModel @Inject constructor(
                     is Result.Error -> {
                         errorMessage = when (result.error) {
                             TaskyError.LoginError.INVALID_CREDENTIALS -> UiText.StringResource(R.string.Check_your_credentials)
-                                .toString()
-
                             TaskyError.NetworkError.NO_INTERNET -> UiText.StringResource(R.string.No_internet_connection)
-                                .toString()
-
-                            else -> UiText.StringResource(R.string.Login_failed).toString()
+                            else -> UiText.StringResource(R.string.Login_failed)
                         }
                         _uiState.update { LoginUiState.None }
                         _dialogState.update { DialogState.Show(errorMessage) }
