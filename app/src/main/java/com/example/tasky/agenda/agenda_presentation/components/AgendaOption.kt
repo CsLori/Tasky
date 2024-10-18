@@ -1,8 +1,7 @@
 package com.example.tasky.agenda.agenda_presentation.components
 
-enum class AgendaDropdown(item: String) {
+enum class AgendaOption(val displayName: String) {
     EVENT("Event"),
     TASK("Task"),
     REMINDER("Reminder")
-
 }

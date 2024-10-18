@@ -23,4 +23,6 @@
     <string name="Something_went_wrong">Something went wrong</string>
     <string name="Don_t_have_an_account">"DON'T HAVE AN ACCOUNT? "</string>
     <string name="Sign_up">SIGN UP</string>
+    <string name="delete_task">DELETE TASK</string>
+    <string name="cancel">Cancel</string>
 </resources>

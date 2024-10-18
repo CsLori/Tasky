@@ -1,19 +1,18 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
-import com.example.tasky.agenda.agenda_presentation.components.AgendaDropdown
-import com.example.tasky.util.DateUtils
+import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
+import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaAction
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class AgendaViewModel @Inject constructor(
-    private val agendaRepository: AgendaRepository
+    private val agendaRepository: AgendaRepositoryImpl
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaState())
@@ -38,27 +37,4 @@ class AgendaViewModel @Inject constructor(
             }
         }
     }
-
-    sealed interface AgendaAction {
-        data class UpdateSelectedDate(val newDate: LocalDate) : AgendaAction
-        data class UpdateItemSelected(val item: AgendaDropdown?) : AgendaAction
-        data class UpdateVisibility(val visible: Boolean) : AgendaAction
-        data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaAction
-        data class UpdateMonth(val month: String) : AgendaAction
-        data class UpdateIsDateSelectedFromDatePicker(val isDateSelectedFromDatePicker: Boolean) :
-            AgendaAction
-
-        data class UpdateSelectedIndex(val selectedIndex: Int) :
-            AgendaAction
-    }
-
-    data class AgendaState(
-        val selectedDate: LocalDate = DateUtils.getCurrentDate(),
-        val itemSelected: AgendaDropdown? = null,
-        val isVisible: Boolean = false,
-        val shouldShowDatePicker: Boolean = false,
-        val month: String = DateUtils.getCurrentMonth(),
-        val isDateSelectedFromDatePicker: Boolean = false,
-        val selectedIndex: Int = 0
-    )
 }
