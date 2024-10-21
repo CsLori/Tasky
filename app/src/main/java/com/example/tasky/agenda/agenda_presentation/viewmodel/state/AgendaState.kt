@@ -11,5 +11,7 @@ data class AgendaState(
     val shouldShowDatePicker: Boolean = false,
     val month: String = DateUtils.getCurrentMonth(),
     val isDateSelectedFromDatePicker: Boolean = false,
-    val selectedIndex: Int = 0
+    val selectedIndex: Int = 0,
+    val isLoading: Boolean = false,
+    val agendaItems: List<Any> = emptyList()
 )

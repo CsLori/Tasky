@@ -68,7 +68,8 @@ import java.time.ZoneOffset
 internal fun AgendaDetailScreen(
     agendaDetailViewModel: AgendaDetailViewModel,
     onNavigateToAgendaScreen: () -> Unit,
-    onClose: () -> Boolean
+    onClose: () -> Boolean,
+    onEditPressed: () -> Unit
 ) {
     val state = agendaDetailViewModel.state.collectAsState().value
     val uiState = agendaDetailViewModel.uiState.collectAsState().value
@@ -80,7 +81,7 @@ internal fun AgendaDetailScreen(
             when (action) {
                 AgendaDetailAction.OnClosePress -> onNavigateToAgendaScreen()
                 AgendaDetailAction.OnCreateSuccess -> onNavigateToAgendaScreen()
-                AgendaDetailAction.OnEditField -> {}
+                AgendaDetailAction.OnEditField -> onEditPressed()
                 AgendaDetailAction.OnReminderPress -> {}
                 AgendaDetailAction.OnSavePress -> agendaDetailViewModel.createTask()
             }
@@ -210,7 +211,10 @@ fun MainContent(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = dimensions.default16dp),
+            .padding(vertical = dimensions.default16dp)
+            .clickable {
+                onAction(AgendaDetailAction.OnEditField)
+            },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {

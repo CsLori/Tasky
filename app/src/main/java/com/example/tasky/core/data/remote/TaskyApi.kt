@@ -6,6 +6,7 @@ import com.example.tasky.onboarding.onboarding_data.remote.LoginRequest
 import com.example.tasky.onboarding.onboarding_data.remote.RegisterRequest
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginResponse
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
@@ -26,6 +27,9 @@ interface TaskyApi {
 
     @POST("/task")
     suspend fun addTask(@Body taskBody: Task)
+
+    @DELETE("/task")
+    suspend fun deleteTaskById(@Query("taskId") taskId: String)
 
     companion object {
         const val BASE_URL = "https://tasky.pl-coding.com/"

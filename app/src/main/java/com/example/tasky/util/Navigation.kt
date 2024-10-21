@@ -12,10 +12,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
+import com.example.tasky.agenda.agenda_presentation.ui.AgendaItemEditScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
+import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.onboarding.onboarding.presentation.ui.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
@@ -63,7 +66,25 @@ fun Navigation() {
                         onNavigateToAgendaScreen = {
                             navController.navigate(Screen.Agenda)
                         },
-                        onClose = { navController.popBackStack() })
+                        onClose = { navController.popBackStack() },
+                        onEditPressed = {
+                            navController.navigate(
+                                Screen.AgendaItemEdit(
+                                    title = agendaDetailViewModel.state.value.task.title ?: "This",
+                                    description = agendaDetailViewModel.state.value.task.title
+                                )
+                            )
+                        }
+                    )
+                }
+                composable<Screen.AgendaItemEdit> {
+                    val args = it.toRoute<Screen.AgendaItemEdit>()
+                    val agendaItemEditViewModel = hiltViewModel<AgendaItemEditViewModel>()
+                    AgendaItemEditScreen(
+                        agendaItemEditViewModel = agendaItemEditViewModel,
+                        title = args.title,
+                        description = args.description ?: ""
+                    )
                 }
             }
         }

@@ -15,4 +15,10 @@ object Screen {
 
     @Serializable
     object AgendaDetail
+
+    @Serializable
+    data class AgendaItemEdit(
+        val title: String,
+        val description: String?,
+    )
 }

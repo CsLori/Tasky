@@ -28,4 +28,20 @@ class AgendaRepositoryImpl(private val api: TaskyApi) : AgendaRepository {
             Result.Error(error)
         }
     }
+
+    override suspend fun deleteTask(task: Task): Result<Unit, TaskyError> {
+        return try {
+            api.deleteTaskById(task.id)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            if (e is CancellationException) {
+                throw e
+            }
+            e.printStackTrace()
+
+            val error = e.asResult(::mapToTaskyError).error
+
+            Result.Error(error)
+        }
+    }
 }

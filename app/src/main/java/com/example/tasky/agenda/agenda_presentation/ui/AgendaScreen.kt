@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,21 +39,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
+import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
+import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaAction
+import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.presentation.components.AgendaDetailDropdown
 import com.example.tasky.core.presentation.components.AgendaDropdown
 import com.example.tasky.core.presentation.components.LogoutDropdown
-import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
@@ -76,6 +82,11 @@ internal fun AgendaScreen(
         onAgendaDetailPressed = { onAgendaDetailPressed() },
         onUpdateState = { action -> agendaViewModel.updateState(action) },
         state = state,
+        onAction = { action, taskId ->
+            if (action is AgendaAction.OnDeleteAgendaItem) {
+                agendaViewModel.deleteTask(taskId)
+            }
+        },
     )
 }
 
@@ -83,15 +94,16 @@ internal fun AgendaScreen(
 @Composable
 private fun AgendaContent(
     onAgendaDetailPressed: () -> Unit,
-    onUpdateState: (AgendaAction) -> Unit,
+    onUpdateState: (AgendaUpdateState) -> Unit,
     state: AgendaState,
+    onAction: (AgendaAction, String) -> Unit
 ) {
 
     Scaffold(floatingActionButton = {
         FloatingActionButton(
             containerColor = colors.black,
             onClick = {
-                onUpdateState(AgendaAction.UpdateVisibility(!state.isVisible))
+                onUpdateState(AgendaUpdateState.UpdateVisibility(!state.isVisible))
             },
             shape = RoundedCornerShape(dimensions.default16dp),
         ) {
@@ -103,7 +115,7 @@ private fun AgendaContent(
             AgendaDropdown(
                 listItems = AgendaOption.entries,
                 onItemSelected = { agendaItem ->
-                    onUpdateState(AgendaAction.UpdateItemSelected(agendaItem))
+                    onUpdateState(AgendaUpdateState.UpdateItemSelected(agendaItem))
                     onAgendaDetailPressed()
                     when (agendaItem) {
                         AgendaOption.TASK -> {}
@@ -139,7 +151,7 @@ private fun AgendaContent(
                         modifier = Modifier
                             .clickable {
                                 onUpdateState(
-                                    AgendaAction.UpdateShouldShowDatePicker(
+                                    AgendaUpdateState.UpdateShouldShowDatePicker(
                                         !state.shouldShowDatePicker
                                     )
                                 )
@@ -153,7 +165,7 @@ private fun AgendaContent(
                             color = colors.white,
                             modifier = Modifier.clickable {
                                 onUpdateState(
-                                    AgendaAction.UpdateShouldShowDatePicker(
+                                    AgendaUpdateState.UpdateShouldShowDatePicker(
                                         !state.shouldShowDatePicker
                                     )
                                 )
@@ -173,18 +185,18 @@ private fun AgendaContent(
                                 date?.let { safeDate ->
                                     val result = DateUtils.convertMillisToLocalDate(safeDate)
                                     onUpdateState(
-                                        AgendaAction.UpdateMonth(
+                                        AgendaUpdateState.UpdateMonth(
                                             result.month.name
                                         )
                                     )
 
                                     onUpdateState(
-                                        AgendaAction.UpdateSelectedDate(
+                                        AgendaUpdateState.UpdateSelectedDate(
                                             DateUtils.longToLocalDate(safeDate)
                                         )
                                     )
                                     onUpdateState(
-                                        AgendaAction.UpdateIsDateSelectedFromDatePicker(
+                                        AgendaUpdateState.UpdateIsDateSelectedFromDatePicker(
                                             true
                                         )
                                     )
@@ -192,7 +204,7 @@ private fun AgendaContent(
                             },
                             onDismiss = {
                                 onUpdateState(
-                                    AgendaAction.UpdateShouldShowDatePicker(
+                                    AgendaUpdateState.UpdateShouldShowDatePicker(
                                         false
                                     )
                                 )
@@ -229,7 +241,7 @@ private fun AgendaContent(
                     state.selectedIndex,
                     state.isDateSelectedFromDatePicker,
                     onSelectedIndexChanged = { action ->
-                        onUpdateState(AgendaAction.UpdateSelectedIndex(action))
+                        onUpdateState(AgendaUpdateState.UpdateSelectedIndex(action))
                     })
 
                 Text(
@@ -239,7 +251,36 @@ private fun AgendaContent(
                 )
 
                 LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    items(3) { TaskItem() }
+                    items(state.agendaItems) { agendaItem ->
+                        when (agendaItem) {
+                            is TaskEntity -> {
+                                AgendaItem(agendaItem = agendaItem,
+                                    backgroundColor = colors.green,
+                                    onDelete = { taskId ->
+                                        onAction(
+                                            AgendaAction.OnDeleteAgendaItem,
+                                            taskId
+                                        )
+                                    }
+                                )
+                            }
+
+                            is EventEntity -> {
+                                AgendaItem(
+                                    agendaItem = agendaItem,
+                                    backgroundColor = colors.lightGreen,
+                                    onDelete = {}
+                                )
+                            }
+
+                            is ReminderEntity -> {
+                                AgendaItem(
+                                    agendaItem = agendaItem,
+                                    backgroundColor = colors.light2,
+                                    onDelete = {})
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -247,13 +288,17 @@ private fun AgendaContent(
 }
 
 @Composable
-fun TaskItem() {
+fun AgendaItem(
+    agendaItem: Any,
+    backgroundColor: Color,
+    onDelete: (String) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape = RoundedCornerShape(dimensions.default16dp))
             .height(150.dp)
-            .background(colors.light2)
+            .background(backgroundColor)
     ) {
         var visible by remember { mutableStateOf(false) }
         Row(
@@ -268,14 +313,19 @@ fun TaskItem() {
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Circle,
-                    contentDescription = "Icon checked"
+                    contentDescription = "Icon checked",
+                    tint = if (agendaItem is TaskEntity) colors.white else colors.black
                 )
 
                 Spacer(Modifier.width(dimensions.small8dp))
 
                 Text(
-                    "Project X",
-                    style = typography.title.copy(lineHeight = 16.sp, fontSize = 20.sp)
+                    text = (agendaItem as TaskEntity).title,
+                    style = typography.title.copy(
+                        lineHeight = 16.sp,
+                        fontSize = 20.sp,
+                        color = if (agendaItem is TaskEntity) colors.white else colors.black
+                    )
                 )
             }
 
@@ -289,12 +339,17 @@ fun TaskItem() {
                         )
                         .clickable {
                             visible = !visible
-                        }
+                        },
+                    tint = if (agendaItem is TaskEntity) colors.white else colors.black
                 )
                 if (visible) {
                     AgendaDetailDropdown(
                         options = AgendaDetailOption.entries,
-                        onItemSelected = {},
+                        onItemSelected = {
+                            if (it.option == AgendaDetailOption.DELETE.option) {
+                                onDelete((agendaItem as TaskEntity).id)
+                            }
+                        },
                         visible = visible,
                         onDismiss = { visible = false },
                     )
@@ -302,7 +357,8 @@ fun TaskItem() {
             }
         }
         Text(
-            "Amet minim mollit non deserunt",
+            text = (agendaItem as TaskEntity).description,
+            style = TextStyle(color = if (agendaItem is TaskEntity) colors.white else colors.black),
             modifier = Modifier.padding(start = 44.dp)
         )
         Box(
@@ -311,7 +367,10 @@ fun TaskItem() {
                 .padding(bottom = dimensions.default16dp, end = dimensions.default16dp),
             contentAlignment = Alignment.BottomEnd
         ) {
-            Text("Mar 5, 10:30 - Mar 5, 11:00")
+            Text(
+                text = "Mar 5, 10:30 - Mar 5, 11:00",
+                style = TextStyle(color = if (agendaItem is TaskEntity) colors.white else colors.black)
+            )
         }
     }
     Spacer(modifier = Modifier.height(dimensions.default16dp))
@@ -379,14 +438,14 @@ private fun CalendarComponent(
 @Composable
 fun UserInitialsButton(
     state: AgendaState,
-    onUpdateState: (AgendaAction) -> Unit
+    onUpdateState: (AgendaUpdateState) -> Unit
 ) {
     Surface(
         modifier = Modifier.size(56.dp),
         shape = CircleShape,
         color = colors.light,
         onClick = {
-            onUpdateState(AgendaAction.UpdateVisibility(!state.isVisible))
+            onUpdateState(AgendaUpdateState.UpdateVisibility(!state.isVisible))
         }
     ) {
         Box(
@@ -405,7 +464,7 @@ fun UserInitialsButton(
                 onItemSelected = {},
                 visible = state.isVisible,
                 onDismiss = {
-                    onUpdateState(AgendaAction.UpdateVisibility(false))
+                    onUpdateState(AgendaUpdateState.UpdateVisibility(false))
                 }
             )
         }
@@ -418,11 +477,11 @@ fun UserInitialsButton(
 @Preview(name = "Pixel 7 PRO", device = Devices.PIXEL_7_PRO)
 @Composable
 fun AgendaContentPreview() {
-    AppTheme {
-        AgendaContent(
-            onAgendaDetailPressed = {},
-            onUpdateState = {},
-            state = AgendaState()
-        )
-    }
+//    AppTheme {
+//        AgendaContent(
+//            onAgendaDetailPressed = {},
+//            onUpdateState = {},
+//            state = AgendaState(),
+//        )
+//    }
 }
