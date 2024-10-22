@@ -49,11 +49,16 @@ import com.example.tasky.R
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.components.TimePickerDialog
+import com.example.tasky.agenda.agenda_presentation.components.reminderOptions
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.defaultReminderSelection
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.toReminderLabel
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
+import com.example.tasky.core.presentation.components.ReminderDropdown
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
@@ -71,19 +76,20 @@ internal fun AgendaDetailScreen(
     onClose: () -> Boolean,
     onEditPressed: () -> Unit
 ) {
+
     val state = agendaDetailViewModel.state.collectAsState().value
     val uiState = agendaDetailViewModel.uiState.collectAsState().value
+
     AgendaDetailContent(
         state = state,
         uiState = uiState,
-        onUpdateState = { action  -> agendaDetailViewModel.updateState(action) },
+        onUpdateState = { action -> agendaDetailViewModel.updateState(action) },
         onAction = { action ->
             when (action) {
-                AgendaDetailAction.OnClosePress -> onNavigateToAgendaScreen()
+                AgendaDetailAction.OnClosePressed -> onNavigateToAgendaScreen()
                 AgendaDetailAction.OnCreateSuccess -> onNavigateToAgendaScreen()
                 AgendaDetailAction.OnEditField -> onEditPressed()
-                AgendaDetailAction.OnReminderPress -> {}
-                AgendaDetailAction.OnSavePress -> agendaDetailViewModel.createTask()
+                AgendaDetailAction.OnSavePressed -> agendaDetailViewModel.createTask()
             }
         })
 }
@@ -116,8 +122,8 @@ private fun AgendaDetailContent(
                         .fillMaxSize(),
                 ) {
                     Header(
-                        onSavePressed = { onAction(AgendaDetailAction.OnSavePress) },
-                        onClosePressed = { onAction(AgendaDetailAction.OnClosePress) })
+                        onSavePressed = { onAction(AgendaDetailAction.OnSavePressed) },
+                        onClosePressed = { onAction(AgendaDetailAction.OnClosePressed) })
                 }
 
                 Surface(
@@ -184,7 +190,11 @@ fun MainContent(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = dimensions.default16dp),
+            .padding(bottom = dimensions.default16dp)
+            .clickable {
+                onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.TITLE))
+                onAction(AgendaDetailAction.OnEditField)
+            },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -213,6 +223,7 @@ fun MainContent(
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
             .clickable {
+                onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.DESCRIPTION))
                 onAction(AgendaDetailAction.OnEditField)
             },
         verticalAlignment = Alignment.CenterVertically,
@@ -366,7 +377,9 @@ fun MainContent(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
-            .clickable {},
+            .clickable {
+                onUpdateState(AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(true))
+            },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -390,7 +403,7 @@ fun MainContent(
             Spacer(Modifier.width(dimensions.small8dp))
 
             Text(
-                text = "30 minutes before",
+                text = (state.selectedReminder.toReminderLabel() ?: defaultReminderSelection()),
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
         }
@@ -398,6 +411,23 @@ fun MainContent(
         Icon(
             imageVector = Icons.AutoMirrored.Filled.NavigateNext,
             contentDescription = "Navigate next"
+        )
+    }
+    if (state.shouldShowReminderDropdown) {
+        ReminderDropdown(
+            options = reminderOptions,
+            onItemSelected = {
+                onUpdateState(AgendaDetailStateUpdate.UpdateSelectedReminder(it.timeBeforeInMillis))
+                onUpdateState(AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(false))
+            },
+            visible = state.shouldShowReminderDropdown,
+            onDismiss = {
+                onUpdateState(
+                    AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(
+                        false
+                    )
+                )
+            }
         )
     }
     DefaultHorizontalDivider()

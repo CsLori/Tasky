@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
+import com.example.tasky.agenda.agenda_presentation.components.ReminderOption
 import com.example.tasky.core.presentation.animation.AnimateDropdownMenu
 import com.example.tasky.ui.theme.AppTheme.colors
 
@@ -162,3 +163,50 @@ fun AgendaDetailDropdown(
     }
 }
 
+@Composable
+fun ReminderDropdown(
+    modifier: Modifier = Modifier,
+    options: List<ReminderOption>,
+    onItemSelected: (ReminderOption) -> Unit,
+    visible: Boolean,
+    onDismiss: () -> Unit
+) {
+    val interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
+    var itemIndex: Int
+    val lastItem = options.size - 1
+
+    Row(
+        modifier = modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {}),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AnimateDropdownMenu(targetState = visible) {
+            DropdownMenu(
+                modifier = Modifier
+                    .background(colors.white)
+                    .clip(RoundedCornerShape(7.dp)),
+                expanded = visible,
+                onDismissRequest = { onDismiss() },
+                offset = DpOffset(x = (50).dp, y = 0.dp),
+
+                ) {
+                options.forEachIndexed { index, option ->
+                    val rowBackgroundColor = colors.white
+                    itemIndex = index
+                    DropdownMenuItem(
+                        onClick = {
+                            onItemSelected(option)
+                        },
+                        modifier = Modifier.background(rowBackgroundColor),
+                        text = { Text(option.label) },
+                    )
+                    if (itemIndex != lastItem)
+                        DefaultHorizontalDivider()
+                }
+            }
+        }
+    }
+}

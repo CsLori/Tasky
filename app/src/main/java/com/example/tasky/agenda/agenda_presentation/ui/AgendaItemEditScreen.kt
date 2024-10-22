@@ -5,6 +5,7 @@ package com.example.tasky.agenda.agenda_presentation.ui
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,17 +23,22 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Devices
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditUpdate
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditViewModel
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
@@ -45,13 +51,35 @@ import com.example.tasky.ui.theme.AppTheme.typography
 internal fun AgendaItemEditScreen(
     agendaItemEditViewModel: AgendaItemEditViewModel,
     title: String,
-    description: String
+    description: String,
+    editType: EditType,
+    onBackPressed: () -> Unit,
+    onSavePressed: () -> Unit
 ) {
+    LaunchedEffect(Unit) {
+        agendaItemEditViewModel.updateState(
+            AgendaItemEditUpdate.UpdateDescription(
+                description
+            )
+        )
+        agendaItemEditViewModel.updateState(
+            AgendaItemEditUpdate.UpdateTitle(
+                title
+            )
+        )
+    }
+
     val state = agendaItemEditViewModel.state.collectAsState().value
     AgendaItemEditContent(
         state = state,
+        editType = editType,
         onUpdate = { action -> agendaItemEditViewModel.updateState(action) },
-        description = description
+        onAction = { action ->
+            when (action) {
+                AgendaItemEditAction.OnBackPressed -> onBackPressed()
+                AgendaItemEditAction.OnSavePressed -> onSavePressed()
+            }
+        }
     )
 }
 
@@ -59,8 +87,9 @@ internal fun AgendaItemEditScreen(
 @Composable
 private fun AgendaItemEditContent(
     state: AgendaItemEditState,
+    editType: EditType,
     onUpdate: (AgendaItemEditUpdate) -> Unit,
-    description: String
+    onAction: (AgendaItemEditAction) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -68,28 +97,45 @@ private fun AgendaItemEditContent(
             .background(colors.white),
     ) {
         Header(
-            onSavePressed = { },
-            onClosePressed = { })
-
-        Textarea(state = state,
-            onUpdate = { updatedText ->
-                onUpdate(
-                    AgendaItemEditUpdate.UpdateEditField(updatedText)
-                )
-            }, description = description
+            editType = editType,
+            onSavePressed = { onAction(AgendaItemEditAction.OnSavePressed) },
+            onBackPressed = { onAction(AgendaItemEditAction.OnBackPressed) }
         )
+
+        if (editType == EditType.TITLE) {
+            Textarea(
+                onUpdate = { updatedText ->
+                    onUpdate(
+                        AgendaItemEditUpdate.UpdateTitle(updatedText)
+                    )
+                },
+                textValue = state.title,
+            )
+
+        } else {
+            Textarea(
+                onUpdate = { updatedText ->
+                    onUpdate(
+                        AgendaItemEditUpdate.UpdateDescription(updatedText)
+                    )
+                },
+                textValue = state.description,
+            )
+        }
+
     }
 }
 
 @Composable
 private fun Header(
     onSavePressed: () -> Unit,
-    onClosePressed: () -> Unit
+    onBackPressed: () -> Unit,
+    editType: EditType
 ) {
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(dimensions.default16dp),
+            .padding(horizontal = dimensions.default16dp, vertical = dimensions.large32dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -101,7 +147,7 @@ private fun Header(
         ) {
             IconButton(
                 modifier = Modifier.size(24.dp),
-                onClick = { onClosePressed() },
+                onClick = { onBackPressed() },
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
@@ -110,8 +156,10 @@ private fun Header(
                 )
             }
 
+            val title =
+                if (editType == EditType.TITLE) EditType.TITLE.name else EditType.DESCRIPTION.name
             Text(
-                text = "EDIT DESCRIPTION",
+                text = "Edit $title".uppercase(),
                 style = typography.bodyLarge.copy(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.W600,
@@ -127,7 +175,8 @@ private fun Header(
                     fontWeight = FontWeight.W600,
                     lineHeight = 12.sp,
                     color = colors.green
-                )
+                ),
+                modifier = Modifier.clickable { onSavePressed() }
             )
 
         }
@@ -137,7 +186,6 @@ private fun Header(
 
 @Composable
 fun Textarea(
-    state: AgendaItemEditState,
     colors: TextFieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = AppTheme.colors.transparent,
         unfocusedBorderColor = AppTheme.colors.transparent,
@@ -152,10 +200,8 @@ fun Textarea(
         lineHeight = 12.sp
     ),
     onUpdate: (String) -> Unit,
-    description: String
+    textValue: String,
 ) {
-    val textValue = state.textFieldState?.takeIf { it.isNotBlank() } ?: description
-
     TextField(
         value = textValue,
         onValueChange = { newValue -> onUpdate(newValue) },
@@ -167,14 +213,18 @@ fun Textarea(
     )
 }
 
-//@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-//@Preview(name = "Pixel 3", device = Devices.PIXEL_3)
-//@Preview(name = "Pixel 6", device = Devices.PIXEL_6)
-//@Preview(name = "Pixel 7 PRO", device = Devices.PIXEL_7_PRO)
-//@Composable
-//fun AgendaItemEditPreview() {
-//    AppTheme {
-//        AgendaItemEditContent(
-//        )
-//    }
-//}
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+@Preview(name = "Pixel 3", device = Devices.PIXEL_3)
+@Preview(name = "Pixel 6", device = Devices.PIXEL_6)
+@Preview(name = "Pixel 7 PRO", device = Devices.PIXEL_7_PRO)
+@Composable
+fun AgendaItemEditPreview() {
+    AppTheme {
+        AgendaItemEditContent(
+            state = AgendaItemEditState("Title", "Edit this title"),
+            editType = EditType.TITLE,
+            onAction = {},
+            onUpdate = {}
+        )
+    }
+}

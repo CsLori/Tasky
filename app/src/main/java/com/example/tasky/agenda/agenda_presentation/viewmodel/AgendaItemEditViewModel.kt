@@ -19,19 +19,29 @@ class AgendaItemEditViewModel @Inject constructor(
     fun updateState(action: AgendaItemEditUpdate) {
         _state.update {
             when (action) {
-                is AgendaItemEditUpdate.UpdateEditField -> it.copy(
-                    textFieldState = action.fieldValue
+                is AgendaItemEditUpdate.UpdateDescription -> it.copy(
+                    description = action.description
+                )
+
+                is AgendaItemEditUpdate.UpdateTitle -> it.copy(
+                    title = action.title
                 )
             }
         }
     }
-
 }
 
 sealed interface AgendaItemEditUpdate {
-    data class UpdateEditField(val fieldValue: String) : AgendaItemEditUpdate
+    data class UpdateDescription(val description: String) : AgendaItemEditUpdate
+    data class UpdateTitle(val title: String) : AgendaItemEditUpdate
 }
 
 data class AgendaItemEditState(
-    val textFieldState: String? = ""
+    val title: String = "",
+    val description: String = ""
 )
+
+sealed interface AgendaItemEditAction {
+    data object OnBackPressed: AgendaItemEditAction
+    data object OnSavePressed: AgendaItemEditAction
+}

@@ -10,8 +10,11 @@ import com.example.tasky.agenda.agenda_domain.model.toEntity
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
+import com.example.tasky.util.Result.Error
+import com.example.tasky.util.Result.Success
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -25,6 +28,9 @@ class AgendaViewModel @Inject constructor(
 
     private var _state = MutableStateFlow(AgendaState())
     val state = _state.asStateFlow()
+
+    private var _uiState = MutableStateFlow<AgendaUiState>(AgendaUiState.None)
+    val uiState: StateFlow<AgendaUiState> = _uiState.asStateFlow()
 
     init {
         getAgendaItems()
@@ -51,14 +57,14 @@ class AgendaViewModel @Inject constructor(
             var task: Task? = null
             _state.update { it.copy(isLoading = true) }
             state.value.agendaItems.forEach {
-                if(it is TaskEntity && it.id == taskId) {
+                if (it is TaskEntity && it.id == taskId) {
                     task = it.toEntity()
                     localDatabaseRepository.deleteTask(it)
                 }
             }
             task?.let { agendaRepository.deleteTask(it) }
+            _state.update { it.copy(isLoading = false) }
         }
-        _state.update { it.copy(isLoading = false) }
     }
 
     fun updateState(action: AgendaUpdateState) {
@@ -79,5 +85,21 @@ class AgendaViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            when (val result = agendaRepository.logout()) {
+                is Success -> _uiState.update { AgendaViewModel.AgendaUiState.Success }
+                is Error -> _uiState.update { AgendaViewModel.AgendaUiState.None }
+            }
+            _state.update { it.copy(isLoading = false) }
+        }
+    }
+
+    sealed class AgendaUiState {
+        data object None : AgendaUiState()
+        data object Success : AgendaUiState()
     }
 }

@@ -9,7 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,7 +24,7 @@ fun <T> AnimateDropdownMenu(
     targetState: T,
     modifier: Modifier = Modifier,
     transitionSpec: AnimatedContentTransitionScope<T>.() -> ContentTransform = {
-        fadeIn(animationSpec = tween(ENTER_TRANSITION_DURATION_500, DELAY_DURATION_MILLIS_90)) with
+        fadeIn(animationSpec = tween(ENTER_TRANSITION_DURATION_500, DELAY_DURATION_MILLIS_90)) togetherWith
                 fadeOut(
                     animationSpec = tween(
                         EXIT_TRANSITION_DURATION_300,

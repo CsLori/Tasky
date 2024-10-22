@@ -41,6 +41,7 @@ import com.example.tasky.core.presentation.components.CredentialsTextField
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.presentation.components.ErrorDialog
 import com.example.tasky.core.presentation.components.MainButton
+import com.example.tasky.core.presentation.components.TaskyLoader
 import com.example.tasky.util.ErrorStatus
 import com.example.tasky.util.FieldInput
 import com.example.tasky.util.UiText
@@ -103,13 +104,7 @@ private fun RegisterContent(
     val context = LocalContext.current
 
     if (state.isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
+        TaskyLoader()
     } else {
 
         when (uiState) {

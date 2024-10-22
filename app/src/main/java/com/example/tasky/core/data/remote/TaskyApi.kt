@@ -31,7 +31,7 @@ interface TaskyApi {
     @DELETE("/task")
     suspend fun deleteTaskById(@Query("taskId") taskId: String)
 
-    companion object {
-        const val BASE_URL = "https://tasky.pl-coding.com/"
-    }
+    @GET("/logout")
+    suspend fun logout()
+
 }

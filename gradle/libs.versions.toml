@@ -1,6 +1,6 @@
 [versions]
 activityComposeVersion = "1.9.3"
-agp = "8.7.1"
+agp = "8.6.1"
 converterMoshi = "2.9.0"
 coreSplashscreen = "1.0.1"
 hiltAndroid = "2.52"

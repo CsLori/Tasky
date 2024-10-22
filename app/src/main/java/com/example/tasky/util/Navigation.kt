@@ -13,6 +13,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.example.tasky.Constants.DESCRIPTION
+import com.example.tasky.Constants.TITLE
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaItemEditScreen
@@ -20,6 +22,7 @@ import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.onboarding.onboarding.presentation.ui.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
@@ -50,28 +53,55 @@ fun Navigation() {
                         navController.navigate(Screen.Register) {
                             popUpTo(Screen.Login) { inclusive = true }
                         }
-                    }, onNavigateToAgenda = { navController.navigate(Screen.Agenda) })
+                    }, onNavigateToAgenda = { navController.navigate(Screen.Agenda) }
+                    )
                 }
                 composable<Screen.Agenda> {
                     val agendaViewModel = hiltViewModel<AgendaViewModel>()
                     AgendaScreen(
                         agendaViewModel = agendaViewModel,
                         onAgendaDetailPressed = { navController.navigate(Screen.AgendaDetail) },
+                        onLogout = {
+                            navController.navigate(Screen.Login) {
+                                popUpTo(Screen.Login) {
+                                    inclusive = true
+                                }
+                            }
+                        }
                     )
                 }
                 composable<Screen.AgendaDetail> {
                     val agendaDetailViewModel = hiltViewModel<AgendaDetailViewModel>()
+                    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+
+                    savedStateHandle?.get<String>(TITLE)?.let { newTitle ->
+                        agendaDetailViewModel.updateState(
+                            AgendaDetailStateUpdate.UpdateTitle(
+                                newTitle
+                            )
+                        )
+                    }
+
+                    savedStateHandle?.get<String>(DESCRIPTION)?.let { newDescription ->
+                        agendaDetailViewModel.updateState(
+                            AgendaDetailStateUpdate.UpdateDescription(
+                                newDescription
+                            )
+                        )
+                    }
+
                     AgendaDetailScreen(
                         agendaDetailViewModel = agendaDetailViewModel,
                         onNavigateToAgendaScreen = {
                             navController.navigate(Screen.Agenda)
                         },
-                        onClose = { navController.popBackStack() },
+                        onClose = { navController.navigateUp() },
                         onEditPressed = {
                             navController.navigate(
                                 Screen.AgendaItemEdit(
-                                    title = agendaDetailViewModel.state.value.task.title ?: "This",
-                                    description = agendaDetailViewModel.state.value.task.title
+                                    title = agendaDetailViewModel.state.value.task.title,
+                                    description = agendaDetailViewModel.state.value.task.description,
+                                    agendaDetailViewModel.state.value.editType
                                 )
                             )
                         }
@@ -83,7 +113,20 @@ fun Navigation() {
                     AgendaItemEditScreen(
                         agendaItemEditViewModel = agendaItemEditViewModel,
                         title = args.title,
-                        description = args.description ?: ""
+                        description = args.description ?: "",
+                        editType = args.editType,
+                        onBackPressed = { navController.navigateUp() },
+                        onSavePressed = {
+                            navController.previousBackStackEntry?.savedStateHandle?.set(
+                                TITLE,
+                                agendaItemEditViewModel.state.value.title
+                            )
+                            navController.previousBackStackEntry?.savedStateHandle?.set(
+                                DESCRIPTION,
+                                agendaItemEditViewModel.state.value.description
+                            )
+                            navController.navigateUp()
+                        }
                     )
                 }
             }

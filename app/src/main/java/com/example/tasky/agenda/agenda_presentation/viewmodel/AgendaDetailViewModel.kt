@@ -57,6 +57,18 @@ class AgendaDetailViewModel @Inject constructor(
                 is AgendaDetailStateUpdate.UpdateShouldShowTimePicker -> it.copy(
                     shouldShowTimePicker = action.shouldShowTimePicker
                 )
+
+                is AgendaDetailStateUpdate.UpdateEditType -> it.copy(editType = action.editType)
+                is AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown -> it.copy(
+                    shouldShowReminderDropdown = action.shouldShowReminderDropdown
+                )
+
+                is AgendaDetailStateUpdate.UpdateSelectedReminder -> it.copy(
+                    selectedReminder = action.selectedReminder
+                )
+
+                is AgendaDetailStateUpdate.UpdateDescription -> it.copy(task = it.task.copy(description = action.description))
+                is AgendaDetailStateUpdate.UpdateTitle -> it.copy(task = it.task.copy(title = action.title))
             }
         }
     }

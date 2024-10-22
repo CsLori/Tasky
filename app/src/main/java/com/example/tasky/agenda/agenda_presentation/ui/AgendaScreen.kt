@@ -59,6 +59,8 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.presentation.components.AgendaDetailDropdown
 import com.example.tasky.core.presentation.components.AgendaDropdown
 import com.example.tasky.core.presentation.components.LogoutDropdown
+import com.example.tasky.core.presentation.components.TaskyLoader
+import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
@@ -66,7 +68,7 @@ import com.example.tasky.util.DateUtils
 import com.example.tasky.util.DateUtils.getDaysWithDates
 import com.example.tasky.util.DateUtils.localDateToStringddMMMMyyyyFormat
 import java.time.LocalDate
-import java.time.ZoneOffset
+import java.time.ZoneId
 
 const val NUMBER_OF_DAYS_TO_SHOW = 5
 
@@ -74,17 +76,24 @@ const val NUMBER_OF_DAYS_TO_SHOW = 5
 @Composable
 internal fun AgendaScreen(
     agendaViewModel: AgendaViewModel,
-    onAgendaDetailPressed: () -> Unit
+    onAgendaDetailPressed: () -> Unit,
+    onLogout: () -> Unit
 ) {
     val state = agendaViewModel.state.collectAsState().value
+    val uiState = agendaViewModel.uiState.collectAsState().value
 
     AgendaContent(
+        state = state,
+        uiState = uiState,
         onAgendaDetailPressed = { onAgendaDetailPressed() },
         onUpdateState = { action -> agendaViewModel.updateState(action) },
-        state = state,
         onAction = { action, taskId ->
-            if (action is AgendaAction.OnDeleteAgendaItem) {
-                agendaViewModel.deleteTask(taskId)
+            when (action) {
+                AgendaAction.OnDeleteAgendaItem -> agendaViewModel.deleteTask(taskId)
+                AgendaAction.OnLogout -> {
+                    agendaViewModel.logout()
+                    onLogout()
+                }
             }
         },
     )
@@ -93,196 +102,210 @@ internal fun AgendaScreen(
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 private fun AgendaContent(
+    state: AgendaState,
+    uiState: AgendaViewModel.AgendaUiState,
     onAgendaDetailPressed: () -> Unit,
     onUpdateState: (AgendaUpdateState) -> Unit,
-    state: AgendaState,
     onAction: (AgendaAction, String) -> Unit
 ) {
-
-    Scaffold(floatingActionButton = {
-        FloatingActionButton(
-            containerColor = colors.black,
-            onClick = {
-                onUpdateState(AgendaUpdateState.UpdateVisibility(!state.isVisible))
-            },
-            shape = RoundedCornerShape(dimensions.default16dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = "Add button",
-                tint = colors.white,
-            )
-            AgendaDropdown(
-                listItems = AgendaOption.entries,
-                onItemSelected = { agendaItem ->
-                    onUpdateState(AgendaUpdateState.UpdateItemSelected(agendaItem))
-                    onAgendaDetailPressed()
-                    when (agendaItem) {
-                        AgendaOption.TASK -> {}
-                        AgendaOption.EVENT -> {}
-                        AgendaOption.REMINDER -> {}
-                    }
-                },
-                visible = state.isVisible
-            )
-        }
-    }, floatingActionButtonPosition = FabPosition.End) { innerPadding ->
-        val cornerRadius = 30.dp
-        Box(
-            modifier = Modifier
-                .fillMaxSize(),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .background(colors.black),
-                contentAlignment = Alignment.Center
-            )
-            {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = dimensions.default16dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+    if (state.isLoading) {
+      TaskyLoader()
+    } else {
+        when(uiState) {
+            AgendaViewModel.AgendaUiState.None -> {
+            Scaffold(floatingActionButton = {
+                FloatingActionButton(
+                    containerColor = colors.black,
+                    onClick = {
+                        onUpdateState(AgendaUpdateState.UpdateVisibility(!state.isVisible))
+                    },
+                    shape = RoundedCornerShape(dimensions.default16dp),
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .clickable {
-                                onUpdateState(
-                                    AgendaUpdateState.UpdateShouldShowDatePicker(
-                                        !state.shouldShowDatePicker
-                                    )
-                                )
-                            },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = state.month,
-                            style = typography.title,
-                            textAlign = TextAlign.Center,
-                            color = colors.white,
-                            modifier = Modifier.clickable {
-                                onUpdateState(
-                                    AgendaUpdateState.UpdateShouldShowDatePicker(
-                                        !state.shouldShowDatePicker
-                                    )
-                                )
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Add button",
+                        tint = colors.white,
+                    )
+                    AgendaDropdown(
+                        listItems = AgendaOption.entries,
+                        onItemSelected = { agendaItem ->
+                            onUpdateState(AgendaUpdateState.UpdateItemSelected(agendaItem))
+                            onAgendaDetailPressed()
+                            when (agendaItem) {
+                                AgendaOption.TASK -> {}
+                                AgendaOption.EVENT -> {}
+                                AgendaOption.REMINDER -> {}
                             }
-                        )
-
-                        Icon(
-                            imageVector = Icons.Filled.ArrowDropDown,
-                            contentDescription = "",
-                            tint = colors.white
-                        )
-                    }
-
-                    if (state.shouldShowDatePicker) {
-                        DatePickerModal(
-                            onDateSelected = { date ->
-                                date?.let { safeDate ->
-                                    val result = DateUtils.convertMillisToLocalDate(safeDate)
-                                    onUpdateState(
-                                        AgendaUpdateState.UpdateMonth(
-                                            result.month.name
-                                        )
-                                    )
-
-                                    onUpdateState(
-                                        AgendaUpdateState.UpdateSelectedDate(
-                                            DateUtils.longToLocalDate(safeDate)
-                                        )
-                                    )
-                                    onUpdateState(
-                                        AgendaUpdateState.UpdateIsDateSelectedFromDatePicker(
-                                            true
-                                        )
-                                    )
-                                }
-                            },
-                            onDismiss = {
-                                onUpdateState(
-                                    AgendaUpdateState.UpdateShouldShowDatePicker(
-                                        false
-                                    )
-                                )
-                            },
-                            initialDate = state.selectedDate.atStartOfDay(ZoneOffset.UTC)
-                                .toInstant()
-                                .toEpochMilli()
-                        )
-                    }
-                    UserInitialsButton(state = state, onUpdateState = onUpdateState)
+                        },
+                        visible = state.isVisible
+                    )
                 }
-            }
-        }
-
-        Surface(
-            shape = RoundedCornerShape(
-                topStart = cornerRadius,
-                topEnd = cornerRadius
-            ),
-            color = colors.white,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 150.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 40.dp)
-                    .padding(horizontal = dimensions.default16dp)
-            ) {
-
-                CalendarDays(
-                    state.selectedDate,
-                    state.selectedIndex,
-                    state.isDateSelectedFromDatePicker,
-                    onSelectedIndexChanged = { action ->
-                        onUpdateState(AgendaUpdateState.UpdateSelectedIndex(action))
-                    })
-
-                Text(
-                    if (state.selectedDate == LocalDate.now()) "Today" else state.selectedDate.localDateToStringddMMMMyyyyFormat(),
-                    style = typography.calendarTitle,
-                    modifier = Modifier.padding(vertical = dimensions.default16dp)
-                )
-
-                LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    items(state.agendaItems) { agendaItem ->
-                        when (agendaItem) {
-                            is TaskEntity -> {
-                                AgendaItem(agendaItem = agendaItem,
-                                    backgroundColor = colors.green,
-                                    onDelete = { taskId ->
-                                        onAction(
-                                            AgendaAction.OnDeleteAgendaItem,
-                                            taskId
+            }, floatingActionButtonPosition = FabPosition.End) { innerPadding ->
+                val cornerRadius = 30.dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .background(colors.black),
+                        contentAlignment = Alignment.Center
+                    )
+                    {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = dimensions.default16dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .clickable {
+                                        onUpdateState(
+                                            AgendaUpdateState.UpdateShouldShowDatePicker(
+                                                !state.shouldShowDatePicker
+                                            )
+                                        )
+                                    },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = state.month,
+                                    style = typography.title,
+                                    textAlign = TextAlign.Center,
+                                    color = colors.white,
+                                    modifier = Modifier.clickable {
+                                        onUpdateState(
+                                            AgendaUpdateState.UpdateShouldShowDatePicker(
+                                                !state.shouldShowDatePicker
+                                            )
                                         )
                                     }
                                 )
-                            }
 
-                            is EventEntity -> {
-                                AgendaItem(
-                                    agendaItem = agendaItem,
-                                    backgroundColor = colors.lightGreen,
-                                    onDelete = {}
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowDropDown,
+                                    contentDescription = "",
+                                    tint = colors.white
                                 )
                             }
 
-                            is ReminderEntity -> {
-                                AgendaItem(
-                                    agendaItem = agendaItem,
-                                    backgroundColor = colors.light2,
-                                    onDelete = {})
+                            if (state.shouldShowDatePicker) {
+                                DatePickerModal(
+                                    onDateSelected = { date ->
+                                        date?.let { safeDate ->
+                                            val result = DateUtils.convertMillisToLocalDate(safeDate)
+                                            onUpdateState(
+                                                AgendaUpdateState.UpdateMonth(
+                                                    result.month.name
+                                                )
+                                            )
+
+                                            onUpdateState(
+                                                AgendaUpdateState.UpdateSelectedDate(
+                                                    DateUtils.longToLocalDate(safeDate)
+                                                )
+                                            )
+                                            onUpdateState(
+                                                AgendaUpdateState.UpdateIsDateSelectedFromDatePicker(
+                                                    true
+                                                )
+                                            )
+                                        }
+                                    },
+                                    onDismiss = {
+                                        onUpdateState(
+                                            AgendaUpdateState.UpdateShouldShowDatePicker(
+                                                false
+                                            )
+                                        )
+                                    },
+                                    initialDate = state.selectedDate.atStartOfDay(ZoneId.systemDefault())
+                                        .toInstant()
+                                        .toEpochMilli()
+                                )
+                            }
+                            UserInitialsButton(
+                                state = state,
+                                onUpdateState = onUpdateState,
+                                onAction = onAction
+                            )
+                        }
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(
+                        topStart = cornerRadius,
+                        topEnd = cornerRadius
+                    ),
+                    color = colors.white,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 150.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 40.dp)
+                            .padding(horizontal = dimensions.default16dp)
+                    ) {
+
+                        CalendarDays(
+                            state.selectedDate,
+                            state.selectedIndex,
+                            state.isDateSelectedFromDatePicker,
+                            onSelectedIndexChanged = { action ->
+                                onUpdateState(AgendaUpdateState.UpdateSelectedIndex(action))
+                            })
+
+                        Text(
+                            if (state.selectedDate == LocalDate.now()) "Today" else state.selectedDate.localDateToStringddMMMMyyyyFormat(),
+                            style = typography.calendarTitle,
+                            modifier = Modifier.padding(vertical = dimensions.default16dp)
+                        )
+
+                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            items(items = state.agendaItems, key = { it }) { agendaItem ->
+                                when (agendaItem) {
+                                    is TaskEntity -> {
+                                        AgendaItem(agendaItem = agendaItem,
+                                            backgroundColor = colors.green,
+                                            onDelete = { taskId ->
+                                                onAction(
+                                                    AgendaAction.OnDeleteAgendaItem,
+                                                    taskId
+                                                )
+                                            }
+                                        )
+                                    }
+
+                                    is EventEntity -> {
+                                        AgendaItem(
+                                            agendaItem = agendaItem,
+                                            backgroundColor = colors.lightGreen,
+                                            onDelete = {}
+                                        )
+                                    }
+
+                                    is ReminderEntity -> {
+                                        AgendaItem(
+                                            agendaItem = agendaItem,
+                                            backgroundColor = colors.light2,
+                                            onDelete = {})
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+
+            }
+            AgendaViewModel.AgendaUiState.Success -> {}
         }
     }
 }
@@ -438,7 +461,8 @@ private fun CalendarComponent(
 @Composable
 fun UserInitialsButton(
     state: AgendaState,
-    onUpdateState: (AgendaUpdateState) -> Unit
+    onUpdateState: (AgendaUpdateState) -> Unit,
+    onAction: (AgendaAction, String) -> Unit
 ) {
     Surface(
         modifier = Modifier.size(56.dp),
@@ -461,7 +485,7 @@ fun UserInitialsButton(
         }
         if (state.isVisible) {
             LogoutDropdown(
-                onItemSelected = {},
+                onItemSelected = { onAction(AgendaAction.OnLogout, "") },
                 visible = state.isVisible,
                 onDismiss = {
                     onUpdateState(AgendaUpdateState.UpdateVisibility(false))
@@ -477,11 +501,47 @@ fun UserInitialsButton(
 @Preview(name = "Pixel 7 PRO", device = Devices.PIXEL_7_PRO)
 @Composable
 fun AgendaContentPreview() {
-//    AppTheme {
-//        AgendaContent(
-//            onAgendaDetailPressed = {},
-//            onUpdateState = {},
-//            state = AgendaState(),
-//        )
-//    }
+    AppTheme {
+        AgendaContent(
+            state = AgendaState(
+                agendaItems = listOf(
+                    TaskEntity(
+                        "12345",
+                        title = "facilisi",
+                        description = "sapien",
+                        time = 1701,
+                        remindAt = 7947,
+                        isDone = false
+                    ),
+                    TaskEntity(
+                        "12345",
+                        title = "facilisi",
+                        description = "sapien",
+                        time = 1701,
+                        remindAt = 7947,
+                        isDone = false
+                    ),
+                    EventEntity(
+                        id = "323233",
+                        title = "ancillae",
+                        description = "nullam",
+                        from = 6357,
+                        to = 5203,
+                        remindAt = 6933
+                    ),
+                    ReminderEntity(
+                        id = "55",
+                        title = "reque",
+                        description = null,
+                        time = 8072,
+                        remindAt = 5135
+                    )
+                )
+            ),
+            onAgendaDetailPressed = {},
+            onUpdateState = {},
+            onAction = { action, message -> },
+            uiState = AgendaViewModel.AgendaUiState.None
+        )
+    }
 }

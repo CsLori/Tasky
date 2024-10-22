@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +39,7 @@ import com.example.tasky.core.presentation.components.CredentialsTextField
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.presentation.components.ErrorDialog
 import com.example.tasky.core.presentation.components.MainButton
+import com.example.tasky.core.presentation.components.TaskyLoader
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
@@ -99,13 +99,7 @@ private fun LoginContent(
 ) {
     val context = LocalContext.current
     if (state.isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
+        TaskyLoader()
     } else {
         when (uiState) {
 
@@ -119,7 +113,7 @@ private fun LoginContent(
                     ErrorDialog(
                         title = stringResource(R.string.Something_went_wrong),
                         label = dialogState.errorMessage?.asString(context) ?: "",
-                                displayCloseIcon = false,
+                        displayCloseIcon = false,
                         positiveButtonText = stringResource(R.string.OK),
                         positiveOnClick = { onAction(LoginViewModel.LoginAction.OnDismissDialog) },
                         onCancelClicked = { onAction(LoginViewModel.LoginAction.OnDismissDialog) }

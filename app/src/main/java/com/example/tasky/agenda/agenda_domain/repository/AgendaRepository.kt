@@ -8,4 +8,6 @@ interface AgendaRepository {
     suspend fun addTask(task: Task): Result<Unit, TaskyError>
 
     suspend fun deleteTask(task: Task): Result<Unit, TaskyError>
+
+    suspend fun logout(): Result<Unit, TaskyError>
 }

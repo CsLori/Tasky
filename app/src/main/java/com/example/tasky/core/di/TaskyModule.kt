@@ -105,7 +105,7 @@ object TaskyModule {
 
     @Provides
     @Singleton
-    fun provideAgendaRepository(api: TaskyApi): AgendaRepository {
-        return AgendaRepositoryImpl(api)
+    fun provideAgendaRepository(api: TaskyApi, userPrefsRepository: ProtoUserPrefsRepository): AgendaRepository {
+        return AgendaRepositoryImpl(api, userPrefsRepository)
     }
 }
