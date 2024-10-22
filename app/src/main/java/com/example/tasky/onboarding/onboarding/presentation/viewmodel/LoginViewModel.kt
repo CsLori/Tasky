@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.presentation.components.DialogState
+import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginResponse
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import com.example.tasky.util.CredentialsValidator
 import com.example.tasky.util.ErrorStatus

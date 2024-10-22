@@ -39,13 +39,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
-import com.example.tasky.agenda.agenda_presentation.components.AgendaDropdown
+import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
+import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaAction
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.presentation.components.AgendaDetailDropdown
 import com.example.tasky.core.presentation.components.AgendaDropdown
 import com.example.tasky.core.presentation.components.LogoutDropdown
@@ -67,7 +70,6 @@ internal fun AgendaScreen(
     agendaViewModel: AgendaViewModel,
     onAgendaDetailPressed: () -> Unit
 ) {
-
     val state = agendaViewModel.state.collectAsState().value
 
     AgendaContent(
@@ -81,15 +83,15 @@ internal fun AgendaScreen(
 @Composable
 private fun AgendaContent(
     onAgendaDetailPressed: () -> Unit,
-    onUpdateState: (AgendaViewModel.AgendaAction) -> Unit,
-    state: AgendaViewModel.AgendaState,
+    onUpdateState: (AgendaAction) -> Unit,
+    state: AgendaState,
 ) {
 
     Scaffold(floatingActionButton = {
         FloatingActionButton(
             containerColor = colors.black,
             onClick = {
-                onUpdateState(AgendaViewModel.AgendaAction.UpdateVisibility(!state.isVisible))
+                onUpdateState(AgendaAction.UpdateVisibility(!state.isVisible))
             },
             shape = RoundedCornerShape(dimensions.default16dp),
         ) {
@@ -99,17 +101,17 @@ private fun AgendaContent(
                 tint = colors.white,
             )
             AgendaDropdown(
-                listItems = AgendaDropdown.entries,
+                listItems = AgendaOption.entries,
                 onItemSelected = { agendaItem ->
-                    onUpdateState(AgendaViewModel.AgendaAction.UpdateItemSelected(agendaItem))
+                    onUpdateState(AgendaAction.UpdateItemSelected(agendaItem))
                     onAgendaDetailPressed()
                     when (agendaItem) {
-                        AgendaDropdown.TASK -> {}
-                        AgendaDropdown.EVENT -> {}
-                        AgendaDropdown.REMINDER -> {}
+                        AgendaOption.TASK -> {}
+                        AgendaOption.EVENT -> {}
+                        AgendaOption.REMINDER -> {}
                     }
                 },
-                selectedItem = state.itemSelected,
+//                selectedItem = state.itemSelected,
                 visible = state.isVisible
             )
         }
@@ -138,7 +140,7 @@ private fun AgendaContent(
                         modifier = Modifier
                             .clickable {
                                 onUpdateState(
-                                    AgendaViewModel.AgendaAction.UpdateShouldShowDatePicker(
+                                    AgendaAction.UpdateShouldShowDatePicker(
                                         !state.shouldShowDatePicker
                                     )
                                 )
@@ -152,7 +154,7 @@ private fun AgendaContent(
                             color = colors.white,
                             modifier = Modifier.clickable {
                                 onUpdateState(
-                                    AgendaViewModel.AgendaAction.UpdateShouldShowDatePicker(
+                                    AgendaAction.UpdateShouldShowDatePicker(
                                         !state.shouldShowDatePicker
                                     )
                                 )
@@ -172,18 +174,18 @@ private fun AgendaContent(
                                 date?.let { safeDate ->
                                     val result = DateUtils.convertMillisToLocalDate(safeDate)
                                     onUpdateState(
-                                        AgendaViewModel.AgendaAction.UpdateMonth(
+                                        AgendaAction.UpdateMonth(
                                             result.month.name
                                         )
                                     )
 
                                     onUpdateState(
-                                        AgendaViewModel.AgendaAction.UpdateSelectedDate(
+                                        AgendaAction.UpdateSelectedDate(
                                             DateUtils.longToLocalDate(safeDate)
                                         )
                                     )
                                     onUpdateState(
-                                        AgendaViewModel.AgendaAction.UpdateIsDateSelectedFromDatePicker(
+                                        AgendaAction.UpdateIsDateSelectedFromDatePicker(
                                             true
                                         )
                                     )
@@ -191,7 +193,7 @@ private fun AgendaContent(
                             },
                             onDismiss = {
                                 onUpdateState(
-                                    AgendaViewModel.AgendaAction.UpdateShouldShowDatePicker(
+                                    AgendaAction.UpdateShouldShowDatePicker(
                                         false
                                     )
                                 )
@@ -228,7 +230,7 @@ private fun AgendaContent(
                     state.selectedIndex,
                     state.isDateSelectedFromDatePicker,
                     onSelectedIndexChanged = { action ->
-                        onUpdateState(AgendaViewModel.AgendaAction.UpdateSelectedIndex(action))
+                        onUpdateState(AgendaAction.UpdateSelectedIndex(action))
                     })
 
                 Text(
@@ -294,7 +296,7 @@ fun TaskItem() {
                     AgendaDetailDropdown(
                         options = AgendaDetailOption.entries,
                         onItemSelected = {},
-                        selectedItem = AgendaDetailOption.OPEN,
+//                        selectedItem = AgendaDetailOption.OPEN,
                         visible = visible,
                         onDismiss = { visible = false },
                     )
@@ -378,15 +380,15 @@ private fun CalendarComponent(
 
 @Composable
 fun UserInitialsButton(
-    state: AgendaViewModel.AgendaState,
-    onUpdateState: (AgendaViewModel.AgendaAction) -> Unit
+    state: AgendaState,
+    onUpdateState: (AgendaAction) -> Unit
 ) {
     Surface(
         modifier = Modifier.size(56.dp),
         shape = CircleShape,
         color = colors.light,
         onClick = {
-            onUpdateState(AgendaViewModel.AgendaAction.UpdateVisibility(!state.isVisible))
+            onUpdateState(AgendaAction.UpdateVisibility(!state.isVisible))
         }
     ) {
         Box(
@@ -405,7 +407,7 @@ fun UserInitialsButton(
                 onItemSelected = {},
                 visible = state.isVisible,
                 onDismiss = {
-                    onUpdateState(AgendaViewModel.AgendaAction.UpdateVisibility(false))
+                    onUpdateState(AgendaAction.UpdateVisibility(false))
                 }
             )
         }
@@ -413,14 +415,16 @@ fun UserInitialsButton(
 }
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-@Preview
+@Preview(name = "Pixel 3", device = Devices.PIXEL_3)
+@Preview(name = "Pixel 6", device = Devices.PIXEL_6)
+@Preview(name = "Pixel 7 PRO", device = Devices.PIXEL_7_PRO)
 @Composable
 fun AgendaContentPreview() {
     AppTheme {
         AgendaContent(
             onAgendaDetailPressed = {},
             onUpdateState = {},
-            state = AgendaViewModel.AgendaState()
+            state = AgendaState()
         )
     }
 }

@@ -12,4 +12,6 @@ data class Dimensions (
     val large24dp: Dp = 24.dp,
     val large32dp: Dp = 32.dp,
     val extraLarge64dp: Dp = 64.dp,
+
+    val cornerRadius30dp: Dp = 30.dp,
 )

@@ -8,6 +8,7 @@ data class AppColors(
     val white: Color = Color(0xFFFFFFFF),
     val orange: Color = Color(0xFFFDEFA8),
     val gray: Color = Color(0xFFA1A4B2),
+    val lightGray: Color = Color(0xFFA9B4BE),
     val darkGray: Color = Color(0xFF5C5D5A),
 
 

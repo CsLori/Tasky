@@ -7,7 +7,7 @@ interface AgendaRepository {
     suspend fun addTask(
         id: String,
         title: String,
-        description: String?,
+        description: String,
         time: Long,
         remindAt: Long,
         isDone: Boolean

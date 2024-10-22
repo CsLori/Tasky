@@ -13,8 +13,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.tasky.Screen
+import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
-import com.example.tasky.agenda.agenda_presentation.ui.TaskScreen
+import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.onboarding.onboarding.presentation.ui.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
@@ -56,7 +57,13 @@ fun Navigation() {
                     )
                 }
                 composable<Screen.AgendaDetail> {
-                    TaskScreen()
+                    val agendaDetailViewModel = hiltViewModel<AgendaDetailViewModel>()
+                    AgendaDetailScreen(
+                        agendaDetailViewModel = agendaDetailViewModel,
+                        onNavigateToAgendaScreen = {
+                            navController.navigate(Screen.Agenda)
+                        },
+                        onClose = { navController.popBackStack() })
                 }
             }
         }
