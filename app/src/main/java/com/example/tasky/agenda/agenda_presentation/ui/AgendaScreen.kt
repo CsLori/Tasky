@@ -68,6 +68,9 @@ import com.example.tasky.ui.theme.AppTheme.typography
 import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.getDaysWithDates
 import com.example.tasky.core.presentation.DateUtils.localDateToStringddMMMMyyyyFormat
+import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
+import com.example.tasky.core.presentation.DateUtils.toLocalizedDateFormat
+import com.example.tasky.core.presentation.DateUtils.toMMMdHHmmFormat
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -78,7 +81,7 @@ const val NUMBER_OF_DAYS_TO_SHOW = 5
 internal fun AgendaScreen(
     agendaViewModel: AgendaViewModel,
     onAgendaDetailPressed: () -> Unit,
-    onLogout: () -> Unit
+    onLogoutNavigateToLogin: () -> Unit
 ) {
     val state = agendaViewModel.state.collectAsState().value
     val uiState = agendaViewModel.uiState.collectAsState().value
@@ -88,12 +91,12 @@ internal fun AgendaScreen(
         uiState = uiState,
         onAgendaDetailPressed = { onAgendaDetailPressed() },
         onUpdateState = { action -> agendaViewModel.updateState(action) },
-        onAction = { action, taskId ->
+        onAction = { action ->
             when (action) {
-                AgendaAction.OnDeleteAgendaItem -> agendaViewModel.deleteTask(taskId)
+                is AgendaAction.OnDeleteAgendaItem -> agendaViewModel.deleteTask(action.taskId)
                 AgendaAction.OnLogout -> {
                     agendaViewModel.logout()
-                    onLogout()
+                    onLogoutNavigateToLogin()
                 }
             }
         },
@@ -106,7 +109,7 @@ private fun AgendaContent(
     uiState: AgendaViewModel.AgendaUiState,
     onAgendaDetailPressed: () -> Unit,
     onUpdateState: (AgendaUpdateState) -> Unit,
-    onAction: (AgendaAction, String) -> Unit
+    onAction: (AgendaAction) -> Unit
 ) {
     if (state.isLoading) {
         TaskyLoader()
@@ -279,8 +282,7 @@ private fun AgendaContent(
                                                 backgroundColor = colors.green,
                                                 onDelete = { taskId ->
                                                     onAction(
-                                                        AgendaAction.OnDeleteAgendaItem,
-                                                        taskId
+                                                        AgendaAction.OnDeleteAgendaItem(taskId)
                                                     )
                                                 }
                                             )
@@ -344,7 +346,7 @@ fun AgendaItem(
                         else -> Icons.Outlined.Circle
                     },
                     contentDescription = "Icon checked",
-                    tint = colors.white
+                    tint = if (agendaItem is AgendaItem.Task) colors.white else colors.black
                 )
 
                 Spacer(Modifier.width(dimensions.small8dp))
@@ -355,7 +357,7 @@ fun AgendaItem(
                         lineHeight = 16.sp,
                         fontSize = 20.sp,
                         color = colors.white
-                    ),  textDecoration = when (agendaItem) {
+                    ), textDecoration = when (agendaItem) {
                         is AgendaItem.Task -> if (agendaItem.isDone) TextDecoration.LineThrough else TextDecoration.None
                         else -> TextDecoration.None
                     }
@@ -373,7 +375,7 @@ fun AgendaItem(
                         .clickable {
                             visible = !visible
                         },
-                    tint = colors.white
+                    tint = if (agendaItem is AgendaItem.Task) colors.white else colors.black
                 )
                 if (visible) {
                     AgendaDetailDropdown(
@@ -401,8 +403,12 @@ fun AgendaItem(
             contentAlignment = Alignment.BottomEnd
         ) {
             Text(
-                text = "Mar 5, 10:30 - Mar 5, 11:00",
-                style = TextStyle(color = colors.white)
+                text = when (agendaItem) {
+                    is AgendaItem.Task -> agendaItem.remindAtTime.toMMMdHHmmFormat()
+                    is AgendaItem.Event -> TODO()
+                    is AgendaItem.Reminder -> TODO()
+                },
+                style = TextStyle(color = if (agendaItem is AgendaItem.Task) colors.white else colors.black)
             )
         }
     }
@@ -472,7 +478,7 @@ private fun CalendarComponent(
 fun UserInitialsButton(
     state: AgendaState,
     onUpdateState: (AgendaUpdateState) -> Unit,
-    onAction: (AgendaAction, String) -> Unit
+    onAction: (AgendaAction) -> Unit
 ) {
     Surface(
         modifier = Modifier.size(56.dp),
@@ -492,15 +498,15 @@ fun UserInitialsButton(
                 color = colors.lightBlue,
                 style = typography.userButton
             )
-            if (state.isVisible) {
-                LogoutDropdown(
-                    onItemSelected = { onAction(AgendaAction.OnLogout, "") },
-                    visible = state.isVisible,
-                    onDismiss = {
-                        onUpdateState(AgendaUpdateState.UpdateVisibility(false))
-                    }
-                )
-            }
+        }
+        if (state.isVisible) {
+            LogoutDropdown(
+                onItemSelected = { onAction(AgendaAction.OnLogout) },
+                visible = state.isVisible,
+                onDismiss = {
+                    onUpdateState(AgendaUpdateState.UpdateVisibility(false))
+                }
+            )
         }
     }
 }
@@ -536,7 +542,7 @@ fun AgendaContentPreview() {
             ),
             onAgendaDetailPressed = {},
             onUpdateState = {},
-            onAction = { action, message -> },
+            onAction = { },
             uiState = AgendaViewModel.AgendaUiState.None
         )
     }

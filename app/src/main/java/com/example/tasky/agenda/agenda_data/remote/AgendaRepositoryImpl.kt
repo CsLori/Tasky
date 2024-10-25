@@ -46,20 +46,4 @@ class AgendaRepositoryImpl(
             Result.Error(error)
         }
     }
-
-    override suspend fun logout(): Result<Unit, TaskyError> {
-        return try {
-            api.logout()
-            userPrefsRepository.updateAccessToken("")
-            Result.Success(Unit)
-        } catch (e: Exception) {
-            if (e is CancellationException) {
-                throw e
-            }
-            e.printStackTrace()
-
-            val error = e.asResult(::mapToTaskyError).error
-            Result.Error(error)
-        }
-    }
 }

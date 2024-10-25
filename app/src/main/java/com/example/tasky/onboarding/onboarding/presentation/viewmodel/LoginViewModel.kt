@@ -36,6 +36,9 @@ class LoginViewModel @Inject constructor(
     private var _state = MutableStateFlow(LoginState())
     val state: StateFlow<LoginState> = _state.asStateFlow()
 
+    private val _sessionState = MutableStateFlow<SessionState?>(null)
+    val sessionState: StateFlow<SessionState?> = _sessionState.asStateFlow()
+
 //    init {
 //        login(FieldInput("lori123@boohoo.com"),FieldInput("Orlando123") )
 //    }
@@ -80,11 +83,26 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    fun checkUserSession() {
+        viewModelScope.launch {
+            val result = defaultUserRepository.authenticate()
+            when (result) {
+                is Result.Success -> _sessionState.update { SessionState.Valid }
+                is Result.Error -> _sessionState.update { SessionState.Invalid }
+            }
+        }
+    }
+
     private suspend fun updateTokens(result: Result.Success<LoginResponse>) {
         result.data.apply {
             refreshToken?.let { userPrefsRepository.updateRefreshToken(it) }
             accessToken?.let { userPrefsRepository.updateAccessToken(it) }
             userId?.let { userPrefsRepository.updateUserId(it) }
+            accessTokenExpirationTimestamp?.let {
+                userPrefsRepository.updateAccessTokenExpirationTimestamp(
+                    it
+                )
+            }
         }
     }
 
@@ -138,6 +156,11 @@ class LoginViewModel @Inject constructor(
         data object OnNavigateToRegister : LoginAction
         data object OnNavigateToAgenda : LoginAction
         data object OnDismissDialog : LoginAction
+    }
+
+    sealed class SessionState {
+        object Valid : SessionState()
+        object Invalid : SessionState()
     }
 
     sealed class LoginUiState {

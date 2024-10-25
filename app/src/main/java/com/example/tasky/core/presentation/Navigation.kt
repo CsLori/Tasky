@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -48,19 +51,45 @@ fun Navigation() {
                 }
                 composable<Screen.Login> {
                     val loginViewModel = hiltViewModel<LoginViewModel>()
-                    LoginScreen(loginViewModel = loginViewModel, onNavigateToRegister = {
-                        navController.navigate(Screen.Register) {
-                            popUpTo(Screen.Login) { inclusive = true }
+
+                    loginViewModel.checkUserSession()
+
+                    val sessionState by loginViewModel.sessionState.collectAsState()
+
+                    LaunchedEffect(sessionState) {
+                        sessionState?.let { state: LoginViewModel.SessionState ->
+                            when (state) {
+                                is LoginViewModel.SessionState.Valid -> {
+                                    navController.navigate(Screen.Agenda) {
+                                        popUpTo(Screen.Login) { inclusive = true }
+                                    }
+                                }
+
+                                // Do nothing
+                                is LoginViewModel.SessionState.Invalid -> {}
+                            }
                         }
-                    }, onNavigateToAgenda = { navController.navigate(Screen.Agenda) }
-                    )
+                    }
+                    if (sessionState is LoginViewModel.SessionState.Invalid) {
+                        // Stay on LoginScreen and allow the user to log in manually
+                        LoginScreen(
+                            loginViewModel = loginViewModel,
+                            onNavigateToRegister = {
+                                navController.navigate(Screen.Register) {
+                                    popUpTo(Screen.Login) { inclusive = true }
+                                }
+                            },
+                            onNavigateToAgenda = { navController.navigate(Screen.Agenda) }
+                        )
+                    }
+
                 }
                 composable<Screen.Agenda> {
                     val agendaViewModel = hiltViewModel<AgendaViewModel>()
                     AgendaScreen(
                         agendaViewModel = agendaViewModel,
                         onAgendaDetailPressed = { navController.navigate(Screen.AgendaDetail) },
-                        onLogout = {
+                        onLogoutNavigateToLogin = {
                             navController.navigate(Screen.Login) {
                                 popUpTo(Screen.Login) {
                                     inclusive = true

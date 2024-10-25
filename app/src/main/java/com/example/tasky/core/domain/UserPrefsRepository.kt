@@ -21,4 +21,9 @@ interface UserPrefsRepository {
 
     suspend fun getUserId(): String
 
+    // Access token expiration timestamp
+    suspend fun updateAccessTokenExpirationTimestamp(timestamp: Long)
+
+    suspend fun getAccessTokenExpirationTimestamp(): Long
+
 }

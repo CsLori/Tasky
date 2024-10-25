@@ -16,4 +16,8 @@ interface UserRepository {
         email: String,
         password: String
     ): Result<LoginResponse, TaskyError>
+
+    suspend fun logout(): Result<Unit, TaskyError>
+
+    suspend fun authenticate(): Result<Unit, TaskyError>
 }

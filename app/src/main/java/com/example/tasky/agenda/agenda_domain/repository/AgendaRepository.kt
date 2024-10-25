@@ -9,5 +9,4 @@ interface AgendaRepository {
 
     suspend fun deleteTask(task: AgendaItem.Task): Result<Unit, TaskyError>
 
-    suspend fun logout(): Result<Unit, TaskyError>
 }
