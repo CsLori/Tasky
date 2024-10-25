@@ -10,6 +10,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,7 +34,7 @@ fun AgendaDropdown(
     var interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
     var expanded by remember { mutableStateOf(false) }
     var itemIndex: Int
-    val lastItem by remember { mutableStateOf(listItems.size - 1) }
+    val lastItem by remember { mutableIntStateOf(listItems.size - 1) }
 
     Row(
         modifier = modifier
@@ -122,7 +123,7 @@ fun AgendaDetailDropdown(
 ) {
     val interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
     var itemIndex: Int
-    val lastItem = options.size - 1
+    val lastItem by remember { mutableIntStateOf(options.size - 1) }
 
     Row(
         modifier = modifier
@@ -169,7 +170,7 @@ fun ReminderDropdown(
 ) {
     val interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
     var itemIndex: Int
-    val lastItem = options.size - 1
+    val lastItem by remember { mutableIntStateOf(options.size - 1) }
 
     Row(
         modifier = modifier

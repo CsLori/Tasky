@@ -2,8 +2,6 @@
 
 package com.example.tasky.agenda.agenda_presentation.ui
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,7 +44,6 @@ import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 internal fun AgendaItemEditScreen(
     agendaItemEditViewModel: AgendaItemEditViewModel,
@@ -83,7 +80,6 @@ internal fun AgendaItemEditScreen(
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 private fun AgendaItemEditContent(
     state: AgendaItemEditState,
@@ -213,7 +209,6 @@ fun Textarea(
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Preview(name = "Pixel 3", device = Devices.PIXEL_3)
 @Preview(name = "Pixel 6", device = Devices.PIXEL_6)
 @Preview(name = "Pixel 7 PRO", device = Devices.PIXEL_7_PRO)

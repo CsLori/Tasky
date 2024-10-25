@@ -1,7 +1,5 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -68,15 +66,12 @@ import com.example.tasky.ui.theme.AppTheme.typography
 import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.getDaysWithDates
 import com.example.tasky.core.presentation.DateUtils.localDateToStringddMMMMyyyyFormat
-import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
-import com.example.tasky.core.presentation.DateUtils.toLocalizedDateFormat
 import com.example.tasky.core.presentation.DateUtils.toMMMdHHmmFormat
 import java.time.LocalDate
 import java.time.ZoneId
 
 const val NUMBER_OF_DAYS_TO_SHOW = 5
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 internal fun AgendaScreen(
     agendaViewModel: AgendaViewModel,
