@@ -6,14 +6,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_data.local.entity.toEntity
+import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
-import com.example.tasky.util.DateUtils.localDateToStringMMMdyyyyFormat
-import com.example.tasky.util.DateUtils.toMillis
-import com.example.tasky.util.Result.Error
-import com.example.tasky.util.Result.Success
+import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
+import com.example.tasky.core.presentation.DateUtils.toMillis
+import com.example.tasky.core.domain.Result.Error
+import com.example.tasky.core.domain.Result.Success
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -67,8 +67,8 @@ class AgendaDetailViewModel @Inject constructor(
                     selectedReminder = action.selectedReminder
                 )
 
-                is AgendaDetailStateUpdate.UpdateDescription -> it.copy(task = it.task.copy(description = action.description))
-                is AgendaDetailStateUpdate.UpdateTitle -> it.copy(task = it.task.copy(title = action.title))
+                is AgendaDetailStateUpdate.UpdateDescription -> it.copy(task = it.task.copy(taskDescription = action.description))
+                is AgendaDetailStateUpdate.UpdateTitle -> it.copy(task = it.task.copy(taskTitle = action.title))
             }
         }
     }
@@ -80,7 +80,7 @@ class AgendaDetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val task = state.value.task
-                localDatabaseRepository.insertTask(task.toEntity())
+                localDatabaseRepository.insertTask(task.toTaskEntity())
             } catch (e: Exception) {
                 e.printStackTrace()
 

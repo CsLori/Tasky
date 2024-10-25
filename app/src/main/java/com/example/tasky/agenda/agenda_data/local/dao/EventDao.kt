@@ -2,9 +2,8 @@ package com.example.tasky.agenda.agenda_data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -13,7 +12,7 @@ interface EventDao {
     @Query("SELECT * FROM events")
     fun getAllEvents(): Flow<List<EventEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertEvent(event: EventEntity)
 
     @Delete

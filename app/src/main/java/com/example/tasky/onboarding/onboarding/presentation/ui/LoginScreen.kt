@@ -45,9 +45,9 @@ import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import com.example.tasky.util.ErrorStatus
-import com.example.tasky.util.FieldInput
-import com.example.tasky.util.UiText
+import com.example.tasky.core.presentation.ErrorStatus
+import com.example.tasky.core.presentation.FieldInput
+import com.example.tasky.core.presentation.UiText
 
 @Composable
 internal fun LoginScreen(
@@ -112,7 +112,7 @@ private fun LoginContent(
                 if (dialogState is DialogState.Show) {
                     ErrorDialog(
                         title = stringResource(R.string.Something_went_wrong),
-                        label = dialogState.errorMessage?.asString(context) ?: "",
+                        label = dialogState.errorMessage?.asString(context).orEmpty(),
                         displayCloseIcon = false,
                         positiveButtonText = stringResource(R.string.OK),
                         positiveOnClick = { onAction(LoginViewModel.LoginAction.OnDismissDialog) },

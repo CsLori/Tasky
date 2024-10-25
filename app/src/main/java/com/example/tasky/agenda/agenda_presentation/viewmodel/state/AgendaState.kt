@@ -1,7 +1,8 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel.state
 
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
-import com.example.tasky.util.DateUtils
+import com.example.tasky.core.presentation.DateUtils
 import java.time.LocalDate
 
 data class AgendaState(
@@ -13,5 +14,5 @@ data class AgendaState(
     val isDateSelectedFromDatePicker: Boolean = false,
     val selectedIndex: Int = 0,
     val isLoading: Boolean = false,
-    val agendaItems: List<Any> = emptyList()
+    val agendaItems: List<AgendaItem> = emptyList()
 )

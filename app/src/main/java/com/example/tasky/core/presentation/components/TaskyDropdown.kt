@@ -16,7 +16,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
@@ -34,7 +33,7 @@ fun AgendaDropdown(
     var interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
     var expanded by remember { mutableStateOf(false) }
     var itemIndex: Int
-    val lastItem = listItems.size - 1
+    val lastItem by remember { mutableStateOf(listItems.size - 1) }
 
     Row(
         modifier = modifier
@@ -52,10 +51,9 @@ fun AgendaDropdown(
                     .background(colors.white)
                     .clip(RoundedCornerShape(7.dp)),
                 expanded = expanded,
-                onDismissRequest = { expanded = false },
-                offset = DpOffset(x = (25).dp, y = 0.dp),
+                onDismissRequest = { expanded = false }
 
-                ) {
+            ) {
                 listItems.forEachIndexed { index, listItem ->
                     val rowBackgroundColor = colors.white
                     itemIndex = index
@@ -98,10 +96,9 @@ fun LogoutDropdown(
                     .background(colors.white)
                     .clip(RoundedCornerShape(7.dp)),
                 expanded = visible,
-                onDismissRequest = { onDismiss() },
-                offset = DpOffset(x = (50).dp, y = 0.dp),
+                onDismissRequest = { onDismiss() }
 
-                ) {
+            ) {
 
                 DropdownMenuItem(
                     onClick = {
@@ -141,10 +138,9 @@ fun AgendaDetailDropdown(
                     .background(colors.white)
                     .clip(RoundedCornerShape(7.dp)),
                 expanded = visible,
-                onDismissRequest = { onDismiss() },
-                offset = DpOffset(x = (50).dp, y = 0.dp),
+                onDismissRequest = { onDismiss() }
 
-                ) {
+            ) {
                 options.forEachIndexed { index, option ->
                     val rowBackgroundColor = colors.white
                     itemIndex = index
@@ -189,10 +185,9 @@ fun ReminderDropdown(
                     .background(colors.white)
                     .clip(RoundedCornerShape(7.dp)),
                 expanded = visible,
-                onDismissRequest = { onDismiss() },
-                offset = DpOffset(x = (50).dp, y = 0.dp),
+                onDismissRequest = { onDismiss() }
 
-                ) {
+            ) {
                 options.forEachIndexed { index, option ->
                     val rowBackgroundColor = colors.white
                     itemIndex = index

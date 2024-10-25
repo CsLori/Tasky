@@ -2,7 +2,6 @@ package com.example.tasky.agenda.agenda_data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.serialization.Serializable
 
 @Entity(tableName = "reminders")
 data class ReminderEntity(

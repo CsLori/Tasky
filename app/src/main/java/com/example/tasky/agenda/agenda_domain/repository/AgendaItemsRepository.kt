@@ -3,6 +3,7 @@ package com.example.tasky.agenda.agenda_domain.repository
 import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import kotlinx.coroutines.flow.Flow
 
 interface AgendaItemsRepository {
@@ -25,5 +26,5 @@ interface AgendaItemsRepository {
 
     suspend fun deleteReminder(reminderEntity: ReminderEntity)
 
-    fun getAllAgendaItems(): Flow<List<Any>>
+    fun getAllAgendaItems(): Flow<List<AgendaItem>>
 }

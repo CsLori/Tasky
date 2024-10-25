@@ -1,4 +1,4 @@
-package com.example.tasky.util
+package com.example.tasky.core.presentation
 
 import androidx.annotation.DrawableRes
 import androidx.compose.runtime.Composable

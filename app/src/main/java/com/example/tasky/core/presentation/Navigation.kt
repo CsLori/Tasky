@@ -1,7 +1,5 @@
-package com.example.tasky.util
+package com.example.tasky.core.presentation
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,8 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.example.tasky.Constants.DESCRIPTION
-import com.example.tasky.Constants.TITLE
+import com.example.tasky.R
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaItemEditScreen
@@ -28,10 +25,12 @@ import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 fun Navigation() {
     val navController = rememberNavController()
+    val description = UiText.StringResource(R.string.description).asString()
+    val title = UiText.StringResource(R.string.title).asString()
+
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
             NavHost(
@@ -74,7 +73,7 @@ fun Navigation() {
                     val agendaDetailViewModel = hiltViewModel<AgendaDetailViewModel>()
                     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
 
-                    savedStateHandle?.get<String>(TITLE)?.let { newTitle ->
+                    savedStateHandle?.get<String>(title)?.let { newTitle ->
                         agendaDetailViewModel.updateState(
                             AgendaDetailStateUpdate.UpdateTitle(
                                 newTitle
@@ -82,7 +81,7 @@ fun Navigation() {
                         )
                     }
 
-                    savedStateHandle?.get<String>(DESCRIPTION)?.let { newDescription ->
+                    savedStateHandle?.get<String>(description)?.let { newDescription ->
                         agendaDetailViewModel.updateState(
                             AgendaDetailStateUpdate.UpdateDescription(
                                 newDescription
@@ -118,11 +117,11 @@ fun Navigation() {
                         onBackPressed = { navController.navigateUp() },
                         onSavePressed = {
                             navController.previousBackStackEntry?.savedStateHandle?.set(
-                                TITLE,
+                                title,
                                 agendaItemEditViewModel.state.value.title
                             )
                             navController.previousBackStackEntry?.savedStateHandle?.set(
-                                DESCRIPTION,
+                                description,
                                 agendaItemEditViewModel.state.value.description
                             )
                             navController.navigateUp()

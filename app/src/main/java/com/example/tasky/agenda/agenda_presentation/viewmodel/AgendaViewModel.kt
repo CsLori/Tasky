@@ -4,14 +4,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
-import com.example.tasky.agenda.agenda_domain.model.Task
-import com.example.tasky.agenda.agenda_domain.model.toEntity
+import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
-import com.example.tasky.util.Result.Error
-import com.example.tasky.util.Result.Success
+import com.example.tasky.core.domain.Result.Error
+import com.example.tasky.core.domain.Result.Success
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,15 +53,15 @@ class AgendaViewModel @Inject constructor(
 
     fun deleteTask(taskId: String) {
         viewModelScope.launch {
-            var task: Task? = null
-            _state.update { it.copy(isLoading = true) }
-            state.value.agendaItems.forEach {
-                if (it is TaskEntity && it.id == taskId) {
-                    task = it.toEntity()
-                    localDatabaseRepository.deleteTask(it)
-                }
+            val task = state.value.agendaItems
+                .filterIsInstance<AgendaItem.Task>()
+                .find { it.id == taskId }
+
+            // Delete task from local database and repository if found
+            task?.let {
+                localDatabaseRepository.deleteTask(it.toTaskEntity())
+                agendaRepository.deleteTask(it)
             }
-            task?.let { agendaRepository.deleteTask(it) }
             _state.update { it.copy(isLoading = false) }
         }
     }

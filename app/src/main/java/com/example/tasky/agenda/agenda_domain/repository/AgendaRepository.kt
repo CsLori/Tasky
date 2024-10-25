@@ -1,13 +1,13 @@
 package com.example.tasky.agenda.agenda_domain.repository
 
-import com.example.tasky.agenda.agenda_domain.model.Task
-import com.example.tasky.util.Result
-import com.example.tasky.util.TaskyError
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.core.domain.Result
+import com.example.tasky.core.domain.TaskyError
 
 interface AgendaRepository {
-    suspend fun addTask(task: Task): Result<Unit, TaskyError>
+    suspend fun addTask(task: AgendaItem.Task): Result<Unit, TaskyError>
 
-    suspend fun deleteTask(task: Task): Result<Unit, TaskyError>
+    suspend fun deleteTask(task: AgendaItem.Task): Result<Unit, TaskyError>
 
     suspend fun logout(): Result<Unit, TaskyError>
 }

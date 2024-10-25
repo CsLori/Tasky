@@ -2,6 +2,8 @@ package com.example.tasky.util
 
 import android.util.Patterns
 import com.example.tasky.R
+import com.example.tasky.core.presentation.ErrorStatus
+import com.example.tasky.core.presentation.UiText
 
 const val MIN_NAME_LENGTH = 4
 const val MAX_NAME_LENGTH = 50

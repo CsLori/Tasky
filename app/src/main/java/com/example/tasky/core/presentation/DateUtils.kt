@@ -1,9 +1,8 @@
-package com.example.tasky.util
+package com.example.tasky.core.presentation
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -37,9 +36,10 @@ object DateUtils {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    fun longToLocalDate(date: Long) =
-        LocalDate.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault())
+    fun longToLocalDate(date: Long) = LocalDateTime.ofEpochSecond(date / 1000, 0, ZoneOffset.UTC)
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate()
+//        LocalDate.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault())
 
     fun convertMillisToLocalDate(millis: Long): ZonedDateTime {
         // Interpret the milliseconds as the start of the day in UTC, then convert to Los Angeles time

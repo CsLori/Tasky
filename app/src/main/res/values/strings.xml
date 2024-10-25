@@ -26,4 +26,11 @@
     <string name="delete_task">DELETE TASK</string>
     <string name="cancel">Cancel</string>
     <string name="select_time">Select Time</string>
+    <string name="title">title</string>
+    <string name="description">description</string>
+    <string name="ten_minutes_before">"10 minutes before"</string>
+    <string name="thirty_minutes_before">"30 minutes before"</string>
+    <string name="one_hour_before">"1 hour before"</string>
+    <string name="six_hours_before">"6 hours before"</string>
+    <string name="one_day_before">"1 day before"</string>
 </resources>

@@ -1,8 +1,8 @@
-package com.example.tasky.util
+package com.example.tasky.core.domain
 
 sealed interface Result<out D, out E: Error> {
     data class Success<out D>(val data: D): Result<D, Nothing>
-    data class Error<out E: com.example.tasky.util.Error>(val error: E): Result<Nothing, E>
+    data class Error<out E: com.example.tasky.core.domain.Error>(val error: E): Result<Nothing, E>
 }
 
 fun <E : Error> Exception.asResult(mapToError: (Exception) -> E): Result.Error<E> {

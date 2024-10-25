@@ -1,7 +1,7 @@
 package com.example.tasky.core.data.remote
 
 import com.example.tasky.agenda.agenda_data.remote.dto.AgendaResponse
-import com.example.tasky.agenda.agenda_domain.model.Task
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.onboarding.onboarding_data.remote.LoginRequest
 import com.example.tasky.onboarding.onboarding_data.remote.RegisterRequest
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginResponse
@@ -26,7 +26,7 @@ interface TaskyApi {
     suspend fun addEvent()
 
     @POST("/task")
-    suspend fun addTask(@Body taskBody: Task)
+    suspend fun addTask(@Body taskBody: AgendaItem.Task)
 
     @DELETE("/task")
     suspend fun deleteTaskById(@Query("taskId") taskId: String)

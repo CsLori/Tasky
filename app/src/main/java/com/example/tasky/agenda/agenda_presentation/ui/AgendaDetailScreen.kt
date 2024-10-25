@@ -2,8 +2,6 @@
 
 package com.example.tasky.agenda.agenda_presentation.ui
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,20 +53,19 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetai
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.defaultReminderSelection
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.toReminderLabel
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.RemindBeforeDuration
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.ReminderDropdown
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import com.example.tasky.util.DateUtils
-import com.example.tasky.util.DateUtils.toHourMinuteFormat
+import com.example.tasky.core.presentation.DateUtils
+import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
 import java.time.ZoneOffset
+import kotlin.time.Duration.Companion.milliseconds
 
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 internal fun AgendaDetailScreen(
     agendaDetailViewModel: AgendaDetailViewModel,
@@ -94,7 +91,6 @@ internal fun AgendaDetailScreen(
         })
 }
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 private fun AgendaDetailContent(
     state: AgendaDetailState,
@@ -157,7 +153,6 @@ private fun AgendaDetailContent(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 fun MainContent(
     state: AgendaDetailState,
@@ -230,7 +225,7 @@ fun MainContent(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = state.task.description,
+            text = state.task.description ?: "",
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
 
@@ -403,7 +398,14 @@ fun MainContent(
             Spacer(Modifier.width(dimensions.small8dp))
 
             Text(
-                text = (state.selectedReminder.toReminderLabel() ?: defaultReminderSelection()),
+                text = when ((state.selectedReminder.milliseconds)) {
+                    RemindBeforeDuration.TEN_MINUTES.duration -> stringResource(R.string.ten_minutes_before)
+                    RemindBeforeDuration.THIRTY_MINUTES.duration -> stringResource(R.string.thirty_minutes_before)
+                    RemindBeforeDuration.ONE_HOUR.duration -> stringResource(R.string.one_hour_before)
+                    RemindBeforeDuration.SIX_HOURS.duration -> stringResource(R.string.six_hours_before)
+                    RemindBeforeDuration.ONE_DAY.duration -> stringResource(R.string.one_day_before)
+                    else -> stringResource(R.string.thirty_minutes_before)
+                },
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
         }
@@ -532,7 +534,6 @@ private fun Header(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Preview(name = "Pixel 3", device = Devices.PIXEL_3)
 @Preview(name = "Pixel 6", device = Devices.PIXEL_6)
 @Preview(name = "Pixel 7 PRO", device = Devices.PIXEL_7_PRO)

@@ -6,6 +6,8 @@ import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
 import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaItemsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -53,16 +55,16 @@ class LocalDatabaseRepository @Inject constructor(
         return reminderDao.deleteReminder(reminderEntity)
     }
 
-    override fun getAllAgendaItems(): Flow<List<Any>> {
+    override fun getAllAgendaItems(): Flow<List<AgendaItem>> {
         return combine(
             taskDao.getAllTasks(),
             reminderDao.getAllReminders(),
             eventDao.getAllEvents()
         ) { tasks, reminders, events ->
-            val combinedList = mutableListOf<Any>()
-            combinedList.addAll(tasks)
-            combinedList.addAll(reminders)
-            combinedList.addAll(events)
+            val combinedList = mutableListOf<AgendaItem>()
+            combinedList.addAll(tasks.map { it.toAgendaItem() })
+            combinedList.addAll(reminders.map { it.toAgendaItem() })
+            combinedList.addAll(events.map { it.toAgendaItem() })
             combinedList
         }
     }

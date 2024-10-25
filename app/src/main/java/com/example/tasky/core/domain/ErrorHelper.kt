@@ -1,4 +1,4 @@
-package com.example.tasky.util
+package com.example.tasky.core.domain
 
 import retrofit2.HttpException
 import java.io.IOException

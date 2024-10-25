@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.tasky.ui.theme.AppTheme
-import com.example.tasky.util.UiText
+import com.example.tasky.core.presentation.UiText
 
 @ExperimentalComposeUiApi
 @Composable

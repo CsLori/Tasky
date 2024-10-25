@@ -4,42 +4,50 @@ package com.example.tasky.agenda.agenda_presentation.viewmodel.state
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TimePickerState
-import com.example.tasky.agenda.agenda_domain.model.Event
-import com.example.tasky.agenda.agenda_domain.model.Reminder
-import com.example.tasky.agenda.agenda_domain.model.Task
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.ReminderType
 import com.example.tasky.agenda.agenda_presentation.components.reminderOptions
-import com.example.tasky.util.DateUtils
-import com.example.tasky.util.DateUtils.localDateToStringMMMdyyyyFormat
-import java.time.Instant
+import com.example.tasky.core.presentation.DateUtils
+import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZonedDateTime
 import java.util.UUID
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 data class AgendaDetailState(
-    val task: Task = Task(
-        id = UUID.randomUUID().toString(),
-        title = "Task",
-        description = "Task description",
-        time = Instant.now().toEpochMilli(),
-        remindAt = Instant.now().toEpochMilli(),
+    val task: AgendaItem.Task = AgendaItem.Task(
+        taskId = UUID.randomUUID().toString(),
+        taskTitle = "Task",
+        taskDescription = "Task description",
+        time = ZonedDateTime.now().toInstant().toEpochMilli(),
+        remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
         isDone = false,
+        taskReminderType = ReminderType.TASK
     ),
-    val event: Event = Event(
-        id = UUID.randomUUID().toString(),
-        title = "Task",
-        description = "Task description",
+    val event: AgendaItem.Event = AgendaItem.Event(
+        eventId = UUID.randomUUID().toString(),
+        eventTitle = "Event",
+        eventDescription = "Event description",
         from = 1232,
         to = 3434,
-        remindAt = Instant.now().toEpochMilli(),
-        attendeeIds = emptyList()
+        remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
+        isUserEventCreator = false,
+        attendees = emptyList(),
+        photos = emptyList(),
+        host = null,
+        eventReminderType = ReminderType.EVENT
     ),
-    val reminder: Reminder = Reminder(
-        id = UUID.randomUUID().toString(),
-        title = "Task",
-        description = "Task description",
-        time = Instant.now().toEpochMilli(),
-        remindAt = Instant.now().toEpochMilli(),
+    val reminder: AgendaItem.Reminder = AgendaItem.Reminder(
+        reminderId = UUID.randomUUID().toString(),
+        reminderTitle = "Reminder",
+        reminderDescription = "Reminder description",
+        time = ZonedDateTime.now().toInstant().toEpochMilli(),
+        remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
+        reminderReminderType = ReminderType.REMINDER
     ),
     val isLoading: Boolean = false,
     val shouldShowDatePicker: Boolean = false,
@@ -58,21 +66,13 @@ data class AgendaDetailState(
     val selectedReminder: Long = reminderOptions[1].timeBeforeInMillis
 )
 
-fun Long.toReminderLabel(): String {
-    return when (this) {
-        TimeUnit.MINUTES.toMillis(10) -> "10 minutes before"
-        TimeUnit.MINUTES.toMillis(30) -> "30 minutes before"
-        TimeUnit.HOURS.toMillis(1) -> "1 hour before"
-        TimeUnit.HOURS.toMillis(6) -> "6 hours before"
-        TimeUnit.DAYS.toMillis(1) -> "1 day before"
-        else -> {
-            "Nothing has been selected"
-        }
-    }
+enum class RemindBeforeDuration(val duration: Duration) {
+    TEN_MINUTES(10.minutes),
+    THIRTY_MINUTES(30.minutes),
+    ONE_HOUR(1.hours),
+    SIX_HOURS(6.hours),
+    ONE_DAY(1.days)
 }
-
-fun defaultReminderSelection() = reminderOptions[1].label
-
 
 enum class EditType {
     TITLE, DESCRIPTION

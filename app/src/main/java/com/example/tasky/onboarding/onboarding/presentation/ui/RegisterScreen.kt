@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -42,9 +41,9 @@ import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.presentation.components.ErrorDialog
 import com.example.tasky.core.presentation.components.MainButton
 import com.example.tasky.core.presentation.components.TaskyLoader
-import com.example.tasky.util.ErrorStatus
-import com.example.tasky.util.FieldInput
-import com.example.tasky.util.UiText
+import com.example.tasky.core.presentation.ErrorStatus
+import com.example.tasky.core.presentation.FieldInput
+import com.example.tasky.core.presentation.UiText
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors

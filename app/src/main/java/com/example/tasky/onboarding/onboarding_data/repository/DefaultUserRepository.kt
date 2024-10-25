@@ -5,10 +5,10 @@ import com.example.tasky.onboarding.onboarding_data.remote.LoginRequest
 import com.example.tasky.onboarding.onboarding_data.remote.RegisterRequest
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginResponse
 import com.example.tasky.onboarding.onboarding_domain.UserRepository
-import com.example.tasky.util.Result
-import com.example.tasky.util.TaskyError
-import com.example.tasky.util.asResult
-import com.example.tasky.util.mapToTaskyError
+import com.example.tasky.core.domain.Result
+import com.example.tasky.core.domain.TaskyError
+import com.example.tasky.core.domain.asResult
+import com.example.tasky.core.domain.mapToTaskyError
 import java.util.concurrent.CancellationException
 
 class DefaultUserRepository(

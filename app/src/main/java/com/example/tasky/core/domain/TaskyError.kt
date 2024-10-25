@@ -1,4 +1,4 @@
-package com.example.tasky.util
+package com.example.tasky.core.domain
 
 sealed interface TaskyError : Error {
     enum class LoginError : TaskyError {

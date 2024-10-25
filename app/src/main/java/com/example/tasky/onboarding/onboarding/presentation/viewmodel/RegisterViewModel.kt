@@ -6,11 +6,11 @@ import com.example.tasky.R
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import com.example.tasky.util.CredentialsValidator
-import com.example.tasky.util.ErrorStatus
-import com.example.tasky.util.FieldInput
-import com.example.tasky.util.Result
-import com.example.tasky.util.TaskyError
-import com.example.tasky.util.UiText
+import com.example.tasky.core.presentation.ErrorStatus
+import com.example.tasky.core.presentation.FieldInput
+import com.example.tasky.core.domain.Result
+import com.example.tasky.core.domain.TaskyError
+import com.example.tasky.core.presentation.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

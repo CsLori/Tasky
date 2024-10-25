@@ -9,7 +9,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowInsetsControllerCompat
-import com.example.tasky.util.Navigation
+import com.example.tasky.core.presentation.Navigation
 import com.example.tasky.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
