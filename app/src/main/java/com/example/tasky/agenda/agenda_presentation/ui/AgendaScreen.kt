@@ -55,6 +55,10 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
+import com.example.tasky.core.presentation.DateUtils
+import com.example.tasky.core.presentation.DateUtils.getDaysWithDates
+import com.example.tasky.core.presentation.DateUtils.localDateToStringddMMMMyyyyFormat
+import com.example.tasky.core.presentation.DateUtils.toMMMdHHmmFormat
 import com.example.tasky.core.presentation.components.AgendaDetailDropdown
 import com.example.tasky.core.presentation.components.AgendaDropdown
 import com.example.tasky.core.presentation.components.LogoutDropdown
@@ -63,10 +67,6 @@ import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import com.example.tasky.core.presentation.DateUtils
-import com.example.tasky.core.presentation.DateUtils.getDaysWithDates
-import com.example.tasky.core.presentation.DateUtils.localDateToStringddMMMMyyyyFormat
-import com.example.tasky.core.presentation.DateUtils.toMMMdHHmmFormat
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -75,8 +75,10 @@ const val NUMBER_OF_DAYS_TO_SHOW = 5
 @Composable
 internal fun AgendaScreen(
     agendaViewModel: AgendaViewModel,
-    onAgendaDetailPressed: () -> Unit,
-    onLogoutNavigateToLogin: () -> Unit
+    onEditPressed: (String) -> Unit,
+    onLogoutNavigateToLogin: () -> Unit,
+    onFabItemPressed: () -> Unit,
+    onOpenPressed: (String) -> Unit
 ) {
     val state = agendaViewModel.state.collectAsState().value
     val uiState = agendaViewModel.uiState.collectAsState().value
@@ -84,7 +86,7 @@ internal fun AgendaScreen(
     AgendaContent(
         state = state,
         uiState = uiState,
-        onAgendaDetailPressed = { onAgendaDetailPressed() },
+        onEditPressed = { action -> onEditPressed(action) },
         onUpdateState = { action -> agendaViewModel.updateState(action) },
         onAction = { action ->
             when (action) {
@@ -92,6 +94,11 @@ internal fun AgendaScreen(
                 AgendaAction.OnLogout -> {
                     agendaViewModel.logout()
                     onLogoutNavigateToLogin()
+                }
+
+                AgendaAction.OnFabItemPressed -> onFabItemPressed()
+                is AgendaAction.OnOpenPressed -> {
+                    onOpenPressed(action.agendaItemId)
                 }
             }
         },
@@ -102,7 +109,7 @@ internal fun AgendaScreen(
 private fun AgendaContent(
     state: AgendaState,
     uiState: AgendaViewModel.AgendaUiState,
-    onAgendaDetailPressed: () -> Unit,
+    onEditPressed: (String) -> Unit,
     onUpdateState: (AgendaUpdateState) -> Unit,
     onAction: (AgendaAction) -> Unit
 ) {
@@ -128,7 +135,7 @@ private fun AgendaContent(
                             listItems = AgendaOption.entries,
                             onItemSelected = { agendaItem ->
                                 onUpdateState(AgendaUpdateState.UpdateItemSelected(agendaItem))
-                                onAgendaDetailPressed()
+                                onAction(AgendaAction.OnFabItemPressed)
                                 when (agendaItem) {
                                     AgendaOption.TASK -> {}
                                     AgendaOption.EVENT -> {}
@@ -273,12 +280,30 @@ private fun AgendaContent(
                                     key = { it.id }) { agendaItem ->
                                     when (agendaItem) {
                                         is AgendaItem.Task -> {
-                                            AgendaItem(agendaItem = agendaItem,
+                                            AgendaItem(
+                                                agendaItem = agendaItem,
                                                 backgroundColor = colors.green,
-                                                onDelete = { taskId ->
+                                                onDelete = { agendaItemId ->
                                                     onAction(
-                                                        AgendaAction.OnDeleteAgendaItem(taskId)
+                                                        AgendaAction.OnDeleteAgendaItem(agendaItemId)
                                                     )
+                                                },
+                                                onEditPressed = {
+                                                    onEditPressed(
+                                                        agendaItem.taskId
+                                                    )
+                                                },
+                                                onOpenPressed = {
+                                                    onAction(
+                                                        AgendaAction.OnOpenPressed(
+                                                            it
+                                                        )
+                                                    )
+//                                                    onUpdateState(
+//                                                        AgendaUpdateState.UpdateIsAgendaItemReadOnly(
+//                                                            true
+//                                                        )
+//                                                    )
                                                 }
                                             )
                                         }
@@ -287,7 +312,13 @@ private fun AgendaContent(
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.lightGreen,
-                                                onDelete = {}
+                                                onDelete = {},
+                                                onEditPressed = {
+                                                    onEditPressed(
+                                                        agendaItem.eventId
+                                                    )
+                                                },
+                                                onOpenPressed = { AgendaAction.OnOpenPressed(it) }
                                             )
                                         }
 
@@ -295,7 +326,14 @@ private fun AgendaContent(
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.light2,
-                                                onDelete = {})
+                                                onDelete = {},
+                                                onEditPressed = {
+                                                    onEditPressed(
+                                                        agendaItem.reminderId
+                                                    )
+                                                },
+                                                onOpenPressed = { AgendaAction.OnOpenPressed(it) }
+                                            )
                                         }
                                     }
                                 }
@@ -315,7 +353,9 @@ private fun AgendaContent(
 fun AgendaItem(
     agendaItem: AgendaItem,
     backgroundColor: Color,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    onEditPressed: () -> Unit,
+    onOpenPressed: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -376,8 +416,18 @@ fun AgendaItem(
                     AgendaDetailDropdown(
                         options = AgendaDetailOption.entries,
                         onItemSelected = {
-                            if (it.option == AgendaDetailOption.DELETE.option) {
-                                onDelete(agendaItem.id)
+                            when (it.option) {
+                                AgendaDetailOption.DELETE.option -> {
+                                    onDelete(agendaItem.id)
+                                }
+
+                                AgendaDetailOption.EDIT.option -> {
+                                    onEditPressed()
+                                }
+
+                                AgendaDetailOption.OPEN.option -> {
+                                    onOpenPressed(agendaItem.id)
+                                }
                             }
                         },
                         visible = visible,
@@ -535,7 +585,7 @@ fun AgendaContentPreview() {
                     ),
                 ),
             ),
-            onAgendaDetailPressed = {},
+            onEditPressed = {},
             onUpdateState = {},
             onAction = { },
             uiState = AgendaViewModel.AgendaUiState.None

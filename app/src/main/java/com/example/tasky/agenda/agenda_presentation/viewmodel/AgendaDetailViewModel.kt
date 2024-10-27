@@ -2,18 +2,21 @@
 
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
+import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
+import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
-import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
-import com.example.tasky.core.presentation.DateUtils.toMillis
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
+import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
+import com.example.tasky.core.presentation.DateUtils.toMillis
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -69,6 +72,7 @@ class AgendaDetailViewModel @Inject constructor(
 
                 is AgendaDetailStateUpdate.UpdateDescription -> it.copy(task = it.task.copy(taskDescription = action.description))
                 is AgendaDetailStateUpdate.UpdateTitle -> it.copy(task = it.task.copy(taskTitle = action.title))
+                is AgendaDetailStateUpdate.UpdateIsReadOnly -> it.copy(isReadOnly = action.isReadOnly)
             }
         }
     }
@@ -104,6 +108,54 @@ class AgendaDetailViewModel @Inject constructor(
                 }
             }
             _state.update { it.copy(isLoading = false) }
+        }
+    }
+
+    fun updateTask(task: TaskEntity) {
+        _state.update { it.copy(isLoading = true) }
+
+        viewModelScope.launch {
+            try {
+                localDatabaseRepository.updateTask(task)
+            } catch (e: Exception) {
+                e.printStackTrace()
+
+                _state.update {
+                    it.copy(isLoading = false)
+                }
+            }
+            _state.update { it.copy(isLoading = false) }
+        }
+    }
+
+    private suspend fun getTaskById(taskId: String): TaskEntity? {
+        return try {
+            localDatabaseRepository.getTaskById(taskId)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun loadTask(taskId: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+
+            val taskEntity = getTaskById(taskId)
+            Log.d("DDD - getTaskById", "$taskEntity")
+
+            if (taskEntity != null) {
+
+                _state.update { currentState ->
+                    currentState.copy(
+                        task = taskEntity.toAgendaItem(),
+                        isLoading = false
+                    )
+                }
+                Log.d("DDD - state.task", "${state.value.task}")
+            } else {
+                _state.update { it.copy(isLoading = false) }
+            }
         }
     }
 

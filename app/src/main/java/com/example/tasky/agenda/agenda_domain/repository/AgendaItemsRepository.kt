@@ -10,7 +10,11 @@ interface AgendaItemsRepository {
 
     fun getAllTasks(): Flow<List<TaskEntity>>
 
+    suspend fun getTaskById(taskId: String): TaskEntity
+
     suspend fun insertTask(taskEntity: TaskEntity)
+
+    suspend fun updateTask(taskEntity: TaskEntity)
 
     suspend fun deleteTask(taskEntity: TaskEntity)
 

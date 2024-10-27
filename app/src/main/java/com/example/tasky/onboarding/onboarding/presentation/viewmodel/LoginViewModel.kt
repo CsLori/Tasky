@@ -4,15 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
+import com.example.tasky.core.domain.Result
+import com.example.tasky.core.domain.TaskyError
+import com.example.tasky.core.presentation.ErrorStatus
+import com.example.tasky.core.presentation.FieldInput
+import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginResponse
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import com.example.tasky.util.CredentialsValidator
-import com.example.tasky.core.presentation.ErrorStatus
-import com.example.tasky.core.presentation.FieldInput
-import com.example.tasky.core.domain.Result
-import com.example.tasky.core.domain.TaskyError
-import com.example.tasky.core.presentation.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,9 +39,9 @@ class LoginViewModel @Inject constructor(
     private val _sessionState = MutableStateFlow<SessionState?>(null)
     val sessionState: StateFlow<SessionState?> = _sessionState.asStateFlow()
 
-//    init {
-//        login(FieldInput("lori123@boohoo.com"),FieldInput("Orlando123") )
-//    }
+    init {
+        login(FieldInput("lori123@boohoo.com"),FieldInput("Orlando123") )
+    }
 
     fun login(email: FieldInput, password: FieldInput) {
         val emailErrorStatus = CredentialsValidator.validateEmail(email.value)

@@ -4,5 +4,6 @@ sealed interface AgendaDetailAction {
     data object OnClosePressed : AgendaDetailAction
     data object OnSavePressed : AgendaDetailAction
     data object OnCreateSuccess : AgendaDetailAction
-    data object OnEditField : AgendaDetailAction
+    data object OnEnableEditPressed : AgendaDetailAction
+    data object OnEditRowPressed : AgendaDetailAction
 }

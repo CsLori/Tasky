@@ -2,6 +2,8 @@ package com.example.tasky.agenda.agenda_data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.example.tasky.agenda.agenda_data.local.converters.Converters
 import com.example.tasky.agenda.agenda_data.local.dao.EventDao
 import com.example.tasky.agenda.agenda_data.local.dao.ReminderDao
 import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
@@ -11,10 +13,10 @@ import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 
 @Database(
     entities = [TaskEntity::class, ReminderEntity::class, EventEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
-//@TypeConverters(Converters::class)
+@TypeConverters(Converters::class)
 
 abstract class AgendaDatabase: RoomDatabase() {
 

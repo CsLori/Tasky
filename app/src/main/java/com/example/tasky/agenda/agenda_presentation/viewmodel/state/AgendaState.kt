@@ -14,5 +14,6 @@ data class AgendaState(
     val isDateSelectedFromDatePicker: Boolean = false,
     val selectedIndex: Int = 0,
     val isLoading: Boolean = false,
-    val agendaItems: List<AgendaItem> = emptyList()
+    val agendaItems: List<AgendaItem> = emptyList(),
+    val isAgendaItemReadOnly: Boolean = false
 )

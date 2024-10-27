@@ -15,12 +15,15 @@ object Screen {
     object Agenda
 
     @Serializable
-    object AgendaDetail
+    data class AgendaDetail(
+        val agendaItemId: String? = null,
+        val isAgendaItemReadOnly: Boolean
+    )
 
     @Serializable
     data class AgendaItemEdit(
         val title: String,
-        val description: String?,
+        val description: String? = null,
         val editType: EditType
     )
 }
