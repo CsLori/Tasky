@@ -32,6 +32,23 @@ class AgendaRepositoryImpl(
         }
     }
 
+    override suspend fun updateTask(task: AgendaItem.Task): Result<Unit, TaskyError> {
+        return try {
+            api.updateTask(task)
+            Result.Success(Unit)
+
+        }  catch (e: Exception) {
+            if (e is CancellationException) {
+                throw e
+            }
+            e.printStackTrace()
+
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
+    }
+
+
     override suspend fun deleteTask(task: AgendaItem.Task): Result<Unit, TaskyError> {
         return try {
             api.deleteTaskById(task.id)

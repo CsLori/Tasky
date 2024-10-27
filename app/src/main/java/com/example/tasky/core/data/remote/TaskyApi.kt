@@ -9,6 +9,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Query
 
 interface TaskyApi {
@@ -27,6 +28,9 @@ interface TaskyApi {
 
     @POST("/task")
     suspend fun addTask(@Body taskBody: AgendaItem.Task)
+
+    @PUT("/task")
+    suspend fun updateTask(@Body taskBody: AgendaItem.Task)
 
     @DELETE("/task")
     suspend fun deleteTaskById(@Query("taskId") taskId: String)

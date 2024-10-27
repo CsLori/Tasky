@@ -45,7 +45,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tasky.R
-import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.components.TimePickerDialog
@@ -107,7 +106,7 @@ internal fun AgendaDetailScreen(
                     if (agendaItemId == null) {
                         agendaDetailViewModel.createTask()
                     } else {
-                        agendaDetailViewModel.updateTask(state.task.toTaskEntity())
+                        agendaDetailViewModel.updateTask(state.task)
                     }
                     onNavigateToAgendaScreen()
                 }

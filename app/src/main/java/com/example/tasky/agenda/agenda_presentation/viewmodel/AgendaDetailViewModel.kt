@@ -10,6 +10,7 @@ import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
@@ -111,12 +112,13 @@ class AgendaDetailViewModel @Inject constructor(
         }
     }
 
-    fun updateTask(task: TaskEntity) {
+    fun updateTask(task: AgendaItem.Task) {
         _state.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
             try {
-                localDatabaseRepository.updateTask(task)
+                localDatabaseRepository.updateTask(task.toTaskEntity())
+                agendaRepository.updateTask(task)
             } catch (e: Exception) {
                 e.printStackTrace()
 
