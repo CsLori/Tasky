@@ -34,4 +34,7 @@ interface TaskyApi {
     @GET("/logout")
     suspend fun logout()
 
+    @GET("/authenticate")
+    suspend fun authenticateUser()
+
 }

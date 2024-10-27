@@ -78,4 +78,20 @@ object DateUtils {
     fun LocalTime.toMillis(): Long {
         return this.toSecondOfDay() * 1000L
     }
+
+    // Output Jul 15, 2024
+    fun Long.toLocalizedDateFormat(): String {
+        val localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
+        val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
+
+        return localDateTime.format(formatter)
+    }
+
+    // Output Mar 15, 10:00
+    fun Long.toMMMdHHmmFormat(): String {
+        val formatter = DateTimeFormatter.ofPattern("MMM d, HH:mm")
+        return Instant.ofEpochMilli(this)
+            .atZone(ZoneId.systemDefault())
+            .format(formatter)
+    }
 }

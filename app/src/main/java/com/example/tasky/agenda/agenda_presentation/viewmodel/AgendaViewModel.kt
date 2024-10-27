@@ -1,16 +1,16 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
+import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
+import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AgendaViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
+    private val defaultUserRepository: DefaultUserRepository,
     private val localDatabaseRepository: LocalDatabaseRepository
 ) : ViewModel() {
 
@@ -40,7 +41,6 @@ class AgendaViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true) }
             localDatabaseRepository.getAllAgendaItems()
                 .collect { items ->
-                    Log.d("DDD items", "$items")
                     _state.update {
                         it.copy(
                             agendaItems = items,
@@ -89,7 +89,7 @@ class AgendaViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            when (val result = agendaRepository.logout()) {
+            when (val result = defaultUserRepository.logout()) {
                 is Success -> _uiState.update { AgendaViewModel.AgendaUiState.Success }
                 is Error -> _uiState.update { AgendaViewModel.AgendaUiState.None }
             }

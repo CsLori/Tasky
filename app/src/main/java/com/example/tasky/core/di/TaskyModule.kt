@@ -98,14 +98,20 @@ object TaskyModule {
 
     @Provides
     @Singleton
-    fun provideUserRepo(api: TaskyApi): DefaultUserRepository {
-        return DefaultUserRepository(api)
+    fun provideUserRepo(
+        api: TaskyApi,
+        protoUserPrefsRepository: ProtoUserPrefsRepository
+    ): DefaultUserRepository {
+        return DefaultUserRepository(api, protoUserPrefsRepository)
     }
 
 
     @Provides
     @Singleton
-    fun provideAgendaRepository(api: TaskyApi, userPrefsRepository: ProtoUserPrefsRepository): AgendaRepository {
+    fun provideAgendaRepository(
+        api: TaskyApi,
+        userPrefsRepository: ProtoUserPrefsRepository
+    ): AgendaRepository {
         return AgendaRepositoryImpl(api, userPrefsRepository)
     }
 }
