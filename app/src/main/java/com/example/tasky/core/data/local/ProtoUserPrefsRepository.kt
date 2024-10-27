@@ -67,6 +67,6 @@ class ProtoUserPrefsRepository(context: Context) : UserPrefsRepository {
 
     override suspend fun getAccessTokenExpirationTimestamp(): Long {
         val timestampString = userPrefsStore.data.first().accessTokenExpirationTimestamp
-        return timestampString.toLongOrNull() ?: 0L
+        return timestampString.toLong()
     }
 }
