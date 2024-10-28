@@ -34,7 +34,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -44,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
@@ -73,26 +73,18 @@ internal fun AgendaDetailScreen(
     onNavigateToAgendaScreen: () -> Unit,
     onClose: () -> Boolean,
     onEditPressed: () -> Unit,
-    agendaItemId: String? = null,
-    isReadOnly: Boolean
+    agendaItemId: String? = null
 ) {
 
-//    Log.d("DDD - isReadOnly from navigation:", "${isReadOnly}")
-    val state = agendaDetailViewModel.state.collectAsState().value
-    val uiState = agendaDetailViewModel.uiState.collectAsState().value
-
-    LaunchedEffect(isReadOnly) {
-        agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdateIsReadOnly(isReadOnly))
-    }
-
-//    Log.d("DDD - isReadOnly:", "${state.isReadOnly}")
-
+    val state = agendaDetailViewModel.state.collectAsStateWithLifecycle().value
+    val uiState = agendaDetailViewModel.uiState.collectAsStateWithLifecycle().value
 
     LaunchedEffect(agendaItemId) {
         agendaItemId?.let { safeAgendaItemId ->
             agendaDetailViewModel.loadTask(safeAgendaItemId)
         }
     }
+
     AgendaDetailContent(
         state = state,
         uiState = uiState,
@@ -177,7 +169,6 @@ private fun AgendaDetailContent(
                             state = state,
                             onUpdateState = onUpdateState,
                             onAction = onAction,
-                            isReadOnly = state.isReadOnly
                         )
                     }
                 }
@@ -190,10 +181,10 @@ private fun AgendaDetailContent(
 @Composable
 fun MainContent(
     state: AgendaDetailState,
-    isReadOnly: Boolean,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
 ) {
+
     Row(
         modifier = Modifier.padding(bottom = dimensions.default16dp),
         verticalAlignment = Alignment.CenterVertically
@@ -221,7 +212,7 @@ fun MainContent(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = dimensions.default16dp)
-            .then(if (isReadOnly) {
+            .then(if (state.isReadOnly) {
                 Modifier
             } else {
                 Modifier.clickable {
@@ -230,7 +221,7 @@ fun MainContent(
                 }
             }),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
+        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -245,7 +236,7 @@ fun MainContent(
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
-        if (!isReadOnly) {
+        if (!state.isReadOnly) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"
@@ -259,7 +250,7 @@ fun MainContent(
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
             .then(
-                if (isReadOnly) {
+                if (state.isReadOnly) {
                     Modifier
                 } else {
                     Modifier.clickable {
@@ -269,13 +260,13 @@ fun MainContent(
                 }
             ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
+        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Text(
             text = state.task.description ?: "",
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
-        if (!isReadOnly) {
+        if (!state.isReadOnly) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"
@@ -304,7 +295,7 @@ fun MainContent(
 
             Text(
                 modifier = Modifier.then(
-                    if (isReadOnly) {
+                    if (state.isReadOnly) {
                         Modifier
                     } else {
                         Modifier.clickable {
@@ -373,7 +364,7 @@ fun MainContent(
             modifier = Modifier
                 .padding(end = dimensions.extraLarge64dp)
                 .then(
-                    if (isReadOnly) {
+                    if (state.isReadOnly) {
                         Modifier
                     } else {
                         Modifier.clickable {
@@ -433,7 +424,7 @@ fun MainContent(
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
             .then(
-                if (isReadOnly) {
+                if (state.isReadOnly) {
                     Modifier
                 } else {
                     Modifier.clickable {
@@ -442,7 +433,7 @@ fun MainContent(
                 }
             ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
+        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -476,7 +467,7 @@ fun MainContent(
             )
         }
 
-        if (!isReadOnly) {
+        if (!state.isReadOnly) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"

@@ -27,12 +27,8 @@ class LocalDatabaseRepository @Inject constructor(
         return taskDao.getTaskById(taskId)
     }
 
-    override suspend fun insertTask(taskEntity: TaskEntity) {
-        return taskDao.insertTask(taskEntity)
-    }
-
-    override suspend fun updateTask(taskEntity: TaskEntity) {
-        return taskDao.updateTask(taskEntity)
+    override suspend fun upsertTask(taskEntity: TaskEntity) {
+        return taskDao.upsertTask(taskEntity)
     }
 
     override suspend fun deleteTask(taskEntity: TaskEntity) {

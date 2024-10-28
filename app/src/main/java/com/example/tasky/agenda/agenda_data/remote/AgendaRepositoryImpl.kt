@@ -1,5 +1,7 @@
 package com.example.tasky.agenda.agenda_data.remote
 
+import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
+import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
@@ -12,12 +14,14 @@ import java.util.concurrent.CancellationException
 
 class AgendaRepositoryImpl(
     private val api: TaskyApi,
-    private val userPrefsRepository: ProtoUserPrefsRepository
+    private val userPrefsRepository: ProtoUserPrefsRepository,
+    private val localDatabaseRepository: LocalDatabaseRepository
 ) : AgendaRepository {
     override suspend fun addTask(
         task: AgendaItem.Task
     ): Result<Unit, TaskyError> {
         return try {
+            localDatabaseRepository.upsertTask(task.toTaskEntity())
             api.addTask(task)
             Result.Success(Unit)
 
@@ -34,6 +38,7 @@ class AgendaRepositoryImpl(
 
     override suspend fun updateTask(task: AgendaItem.Task): Result<Unit, TaskyError> {
         return try {
+            localDatabaseRepository.upsertTask(task.toTaskEntity())
             api.updateTask(task)
             Result.Success(Unit)
 
@@ -51,6 +56,7 @@ class AgendaRepositoryImpl(
 
     override suspend fun deleteTask(task: AgendaItem.Task): Result<Unit, TaskyError> {
         return try {
+            localDatabaseRepository.deleteTask(task.toTaskEntity())
             api.deleteTaskById(task.id)
             Result.Success(Unit)
         } catch (e: Exception) {

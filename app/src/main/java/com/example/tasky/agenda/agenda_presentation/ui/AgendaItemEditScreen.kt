@@ -51,14 +51,17 @@ internal fun AgendaItemEditScreen(
     description: String,
     editType: EditType,
     onBackPressed: () -> Unit,
-    onSavePressed: () -> Unit
+    onSavePressed: (String, String) -> Unit
 ) {
-    LaunchedEffect(Unit) {
+    LaunchedEffect(description) {
         agendaItemEditViewModel.updateState(
             AgendaItemEditUpdate.UpdateDescription(
                 description
             )
         )
+    }
+
+    LaunchedEffect(title) {
         agendaItemEditViewModel.updateState(
             AgendaItemEditUpdate.UpdateTitle(
                 title
@@ -74,7 +77,7 @@ internal fun AgendaItemEditScreen(
         onAction = { action ->
             when (action) {
                 AgendaItemEditAction.OnBackPressed -> onBackPressed()
-                AgendaItemEditAction.OnSavePressed -> onSavePressed()
+                AgendaItemEditAction.OnSavePressed -> onSavePressed(state.title, state.description)
             }
         }
     )

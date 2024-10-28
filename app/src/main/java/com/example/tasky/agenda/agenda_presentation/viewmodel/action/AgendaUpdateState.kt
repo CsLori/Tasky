@@ -13,5 +13,5 @@ sealed interface AgendaUpdateState {
         AgendaUpdateState
     data class UpdateSelectedIndex(val selectedIndex: Int) :
         AgendaUpdateState
-    data class UpdateIsAgendaItemReadOnly(val isAgendaItemReadOnly: Boolean) : AgendaUpdateState
+//    data class UpdateIsAgendaItemReadOnly(val isAgendaItemReadOnly: Boolean) : AgendaUpdateState
 }

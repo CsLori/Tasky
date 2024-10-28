@@ -153,8 +153,7 @@ fun Navigation() {
                                 )
                             )
                         },
-                        agendaItemId = args.agendaItemId,
-                        isReadOnly = args.isAgendaItemReadOnly
+                        agendaItemId = args.agendaItemId
                     )
                 }
                 composable<Screen.AgendaItemEdit> {
@@ -166,14 +165,14 @@ fun Navigation() {
                         description = args.description ?: "",
                         editType = args.editType,
                         onBackPressed = { navController.navigateUp() },
-                        onSavePressed = {
+                        onSavePressed = { newTitle, newDescription ->
                             navController.previousBackStackEntry?.savedStateHandle?.set(
                                 title,
-                                agendaItemEditViewModel.state.value.title
+                                newTitle
                             )
                             navController.previousBackStackEntry?.savedStateHandle?.set(
                                 description,
-                                agendaItemEditViewModel.state.value.description
+                                newDescription
                             )
                             navController.navigateUp()
                         }
