@@ -29,7 +29,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_presentation.components.AddPhotosSection
@@ -67,26 +67,18 @@ internal fun AgendaDetailScreen(
     onClose: () -> Boolean,
     onEditPressed: () -> Unit,
     agendaItemId: String? = null,
-    selectedItem: AgendaItem,
-    isReadOnly: Boolean
+    selectedItem: AgendaItem
 ) {
 
-//    Log.d("DDD - isReadOnly from navigation:", "${isReadOnly}")
-    val state = agendaDetailViewModel.state.collectAsState().value
-    val uiState = agendaDetailViewModel.uiState.collectAsState().value
-
-    LaunchedEffect(isReadOnly) {
-        agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdateIsReadOnly(isReadOnly))
-    }
-
-//    Log.d("DDD - isReadOnly:", "${state.isReadOnly}")
-
+    val state = agendaDetailViewModel.state.collectAsStateWithLifecycle().value
+    val uiState = agendaDetailViewModel.uiState.collectAsStateWithLifecycle().value
 
     LaunchedEffect(agendaItemId) {
         agendaItemId?.let { safeAgendaItemId ->
             agendaDetailViewModel.loadTask(safeAgendaItemId)
         }
     }
+
     AgendaDetailContent(
         state = state,
         uiState = uiState,
@@ -175,7 +167,6 @@ private fun AgendaDetailContent(
 //                            selectedItem = selectedItem,
                             onUpdateState = onUpdateState,
                             onAction = onAction,
-                            isReadOnly = state.isReadOnly
                         )
                     }
                 }
@@ -189,23 +180,22 @@ private fun AgendaDetailContent(
 fun MainContent(
     state: AgendaDetailState,
 //    selectedItem: AgendaItem,
-    isReadOnly: Boolean,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
 ) {
     AgendaItemMainHeader(AgendaOption.TASK.displayName, colors.green)
 
-    AgendaItemTitle(isReadOnly, onUpdateState, onAction, state)
+    AgendaItemTitle(state.isReadOnly, onUpdateState, onAction, state)
 
-    AgendaItemDescription(isReadOnly, onUpdateState, onAction, state)
+    AgendaItemDescription(state.isReadOnly, onUpdateState, onAction, state)
 
-    TimeAndDateRow(isReadOnly, onUpdateState, state)
-    TimeAndDateRow(isReadOnly, onUpdateState, state)
+    TimeAndDateRow(state.isReadOnly, onUpdateState, state)
+    TimeAndDateRow(state.isReadOnly, onUpdateState, state)
     AddPhotosSection({})
 
     DefaultHorizontalDivider()
 
-    SetReminderRow(isReadOnly, onUpdateState, state)
+    SetReminderRow(state.isReadOnly, onUpdateState, state)
 
     VisitorsSection(listOf("Lori", "Gyuri", " Henrik"), {})
     Box(
@@ -327,7 +317,6 @@ fun EventContent(
                 onUpdateState = onUpdateState,
                 onAction = onAction,
 //                selectedItem = selectedItem,
-                isReadOnly = state.isReadOnly
             )
         }
     }

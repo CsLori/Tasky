@@ -12,9 +12,7 @@ interface AgendaItemsRepository {
 
     suspend fun getTaskById(taskId: String): TaskEntity
 
-    suspend fun insertTask(taskEntity: TaskEntity)
-
-    suspend fun updateTask(taskEntity: TaskEntity)
+    suspend fun upsertTask(taskEntity: TaskEntity)
 
     suspend fun deleteTask(taskEntity: TaskEntity)
 

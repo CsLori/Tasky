@@ -2,14 +2,11 @@
 
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
-import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
-import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
@@ -71,7 +68,12 @@ class AgendaDetailViewModel @Inject constructor(
                     selectedReminder = action.selectedReminder
                 )
 
-                is AgendaDetailStateUpdate.UpdateDescription -> it.copy(task = it.task.copy(taskDescription = action.description))
+                is AgendaDetailStateUpdate.UpdateDescription -> it.copy(
+                    task = it.task.copy(
+                        taskDescription = action.description
+                    )
+                )
+
                 is AgendaDetailStateUpdate.UpdateTitle -> it.copy(task = it.task.copy(taskTitle = action.title))
                 is AgendaDetailStateUpdate.UpdateIsReadOnly -> it.copy(isReadOnly = action.isReadOnly)
             }
@@ -83,17 +85,6 @@ class AgendaDetailViewModel @Inject constructor(
             it.copy(isLoading = true)
         }
         viewModelScope.launch {
-            try {
-                val task = state.value.task
-                localDatabaseRepository.insertTask(task.toTaskEntity())
-            } catch (e: Exception) {
-                e.printStackTrace()
-
-                _state.update {
-                    it.copy(isLoading = false)
-                }
-            }
-
             val result = agendaRepository.addTask(
                 task = state.value.task
             )
@@ -116,47 +107,34 @@ class AgendaDetailViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
-            try {
-                localDatabaseRepository.updateTask(task.toTaskEntity())
-                agendaRepository.updateTask(task)
-            } catch (e: Exception) {
-                e.printStackTrace()
+            val result = agendaRepository.updateTask(task)
 
-                _state.update {
-                    it.copy(isLoading = false)
+            when (result) {
+                is Success -> {
+                    _uiState.update { AgendaDetailUiState.Success }
+                    Success(Unit)
+                }
+
+                is Error -> {
+                    _uiState.update { AgendaDetailUiState.None }
+                    Error(result.error)
                 }
             }
             _state.update { it.copy(isLoading = false) }
         }
     }
 
-    private suspend fun getTaskById(taskId: String): TaskEntity? {
-        return try {
-            localDatabaseRepository.getTaskById(taskId)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
     fun loadTask(taskId: String) {
+        _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
 
-            val taskEntity = getTaskById(taskId)
-            Log.d("DDD - getTaskById", "$taskEntity")
+            val taskEntity = localDatabaseRepository.getTaskById(taskId)
 
-            if (taskEntity != null) {
-
-                _state.update { currentState ->
-                    currentState.copy(
-                        task = taskEntity.toAgendaItem(),
-                        isLoading = false
-                    )
-                }
-                Log.d("DDD - state.task", "${state.value.task}")
-            } else {
-                _state.update { it.copy(isLoading = false) }
+            _state.update { currentState ->
+                currentState.copy(
+                    task = taskEntity.toAgendaItem(),
+                    isLoading = false
+                )
             }
         }
     }
