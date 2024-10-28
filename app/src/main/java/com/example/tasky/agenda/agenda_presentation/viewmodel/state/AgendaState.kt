@@ -15,5 +15,6 @@ data class AgendaState(
     val selectedIndex: Int = 0,
     val isLoading: Boolean = false,
     val agendaItems: List<AgendaItem> = emptyList(),
-    val isAgendaItemReadOnly: Boolean = false
+    val isAgendaItemReadOnly: Boolean = false,
+//    val selectedItem: AgendaItem? = null
 )

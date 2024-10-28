@@ -1,7 +1,8 @@
 package com.example.tasky.agenda.agenda_domain.model
 
-import java.io.Serializable
+import kotlinx.serialization.Serializable
 
+@Serializable
 sealed class AgendaItem(
     @JvmField val id: String,
     @JvmField val title: String,
@@ -9,7 +10,7 @@ sealed class AgendaItem(
     @JvmField val sortDate: Long,
     @JvmField val remindAt: Long,
     @JvmField val reminderType: ReminderType
-): Serializable {
+) {
 
     data class Event(
         val eventId: String,

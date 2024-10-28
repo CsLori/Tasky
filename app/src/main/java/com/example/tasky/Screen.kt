@@ -1,5 +1,6 @@
 package com.example.tasky
 
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
 import kotlinx.serialization.Serializable
 
@@ -17,6 +18,7 @@ object Screen {
     @Serializable
     data class AgendaDetail(
         val agendaItemId: String? = null,
+        val selectedAgendaItem: AgendaItem? = null,
         val isAgendaItemReadOnly: Boolean
     )
 

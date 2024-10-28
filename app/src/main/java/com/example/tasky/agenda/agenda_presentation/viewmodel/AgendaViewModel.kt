@@ -83,6 +83,7 @@ class AgendaViewModel @Inject constructor(
                     isDateSelectedFromDatePicker = false
                 )
                 is AgendaUpdateState.UpdateIsAgendaItemReadOnly -> it.copy(isAgendaItemReadOnly = action.isAgendaItemReadOnly)
+//                is AgendaUpdateState.UpdateSelectedItem -> it.copy(selectedItem = action.agendaItem)
 
             }
         }

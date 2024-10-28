@@ -304,7 +304,14 @@ private fun AgendaContent(
 //                                                            true
 //                                                        )
 //                                                    )
-                                                }
+                                                },
+//                                                onItemSelected = {
+//                                                    onUpdateState(
+//                                                        AgendaUpdateState.UpdateSelectedItem(
+//                                                            agendaItem
+//                                                        )
+//                                                    )
+//                                                }
                                             )
                                         }
 
@@ -318,7 +325,14 @@ private fun AgendaContent(
                                                         agendaItem.eventId
                                                     )
                                                 },
-                                                onOpenPressed = { AgendaAction.OnOpenPressed(it) }
+                                                onOpenPressed = { AgendaAction.OnOpenPressed(it) },
+//                                                onItemSelected = {
+//                                                    onUpdateState(
+//                                                        AgendaUpdateState.UpdateSelectedItem(
+//                                                            agendaItem
+//                                                        )
+//                                                    )
+//                                                }
                                             )
                                         }
 
@@ -332,7 +346,14 @@ private fun AgendaContent(
                                                         agendaItem.reminderId
                                                     )
                                                 },
-                                                onOpenPressed = { AgendaAction.OnOpenPressed(it) }
+                                                onOpenPressed = { AgendaAction.OnOpenPressed(it) },
+//                                                onItemSelected = {
+//                                                    onUpdateState(
+//                                                        AgendaUpdateState.UpdateSelectedItem(
+//                                                            agendaItem
+//                                                        )
+//                                                    )
+//                                                }
                                             )
                                         }
                                     }
@@ -352,6 +373,7 @@ private fun AgendaContent(
 @Composable
 fun AgendaItem(
     agendaItem: AgendaItem,
+//    onItemSelected: (AgendaItem) -> Unit,
     backgroundColor: Color,
     onDelete: (String) -> Unit,
     onEditPressed: () -> Unit,
@@ -423,10 +445,12 @@ fun AgendaItem(
 
                                 AgendaDetailOption.EDIT.option -> {
                                     onEditPressed()
+//                                    onItemSelected(agendaItem)
                                 }
 
                                 AgendaDetailOption.OPEN.option -> {
                                     onOpenPressed(agendaItem.id)
+//                                    onItemSelected(agendaItem)
                                 }
                             }
                         },
@@ -588,7 +612,7 @@ fun AgendaContentPreview() {
             onEditPressed = {},
             onUpdateState = {},
             onAction = { },
-            uiState = AgendaViewModel.AgendaUiState.None
+            uiState = AgendaViewModel.AgendaUiState.None,
         )
     }
 }
