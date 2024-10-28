@@ -33,7 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -43,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
@@ -54,14 +55,14 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetail
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.RemindBeforeDuration
+import com.example.tasky.core.presentation.DateUtils
+import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.ReminderDropdown
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import com.example.tasky.core.presentation.DateUtils
-import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
 import java.time.ZoneOffset
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -71,11 +72,18 @@ internal fun AgendaDetailScreen(
     agendaDetailViewModel: AgendaDetailViewModel,
     onNavigateToAgendaScreen: () -> Unit,
     onClose: () -> Boolean,
-    onEditPressed: () -> Unit
+    onEditPressed: () -> Unit,
+    agendaItemId: String? = null
 ) {
 
-    val state = agendaDetailViewModel.state.collectAsState().value
-    val uiState = agendaDetailViewModel.uiState.collectAsState().value
+    val state = agendaDetailViewModel.state.collectAsStateWithLifecycle().value
+    val uiState = agendaDetailViewModel.uiState.collectAsStateWithLifecycle().value
+
+    LaunchedEffect(agendaItemId) {
+        agendaItemId?.let { safeAgendaItemId ->
+            agendaDetailViewModel.loadTask(safeAgendaItemId)
+        }
+    }
 
     AgendaDetailContent(
         state = state,
@@ -85,10 +93,22 @@ internal fun AgendaDetailScreen(
             when (action) {
                 AgendaDetailAction.OnClosePressed -> onNavigateToAgendaScreen()
                 AgendaDetailAction.OnCreateSuccess -> onNavigateToAgendaScreen()
-                AgendaDetailAction.OnEditField -> onEditPressed()
-                AgendaDetailAction.OnSavePressed -> agendaDetailViewModel.createTask()
+                AgendaDetailAction.OnEditRowPressed -> onEditPressed()
+                AgendaDetailAction.OnSavePressed -> {
+                    if (agendaItemId == null) {
+                        agendaDetailViewModel.createTask()
+                    } else {
+                        agendaDetailViewModel.updateTask(state.task)
+                    }
+                    onNavigateToAgendaScreen()
+                }
+                AgendaDetailAction.OnEnableEditPressed -> agendaDetailViewModel.updateState(
+                    AgendaDetailStateUpdate.UpdateIsReadOnly(false)
+                )
             }
-        })
+        },
+        agendaItemId = agendaItemId
+    )
 }
 
 @Composable
@@ -96,7 +116,8 @@ private fun AgendaDetailContent(
     state: AgendaDetailState,
     uiState: AgendaDetailViewModel.AgendaDetailUiState,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
-    onAction: (AgendaDetailAction) -> Unit
+    onAction: (AgendaDetailAction) -> Unit,
+    agendaItemId: String?,
 ) {
     if (state.isLoading) {
         Box(
@@ -119,7 +140,11 @@ private fun AgendaDetailContent(
                 ) {
                     Header(
                         onSavePressed = { onAction(AgendaDetailAction.OnSavePressed) },
-                        onClosePressed = { onAction(AgendaDetailAction.OnClosePressed) })
+                        onClosePressed = { onAction(AgendaDetailAction.OnClosePressed) },
+                        onEnableEditPressed = { onAction(AgendaDetailAction.OnEnableEditPressed) },
+                        agendaItemId = agendaItemId,
+                        isReadOnly = state.isReadOnly
+                    )
                 }
 
                 Surface(
@@ -143,7 +168,7 @@ private fun AgendaDetailContent(
                         MainContent(
                             state = state,
                             onUpdateState = onUpdateState,
-                            onAction = onAction
+                            onAction = onAction,
                         )
                     }
                 }
@@ -157,8 +182,9 @@ private fun AgendaDetailContent(
 fun MainContent(
     state: AgendaDetailState,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
-    onAction: (AgendaDetailAction) -> Unit
+    onAction: (AgendaDetailAction) -> Unit,
 ) {
+
     Row(
         modifier = Modifier.padding(bottom = dimensions.default16dp),
         verticalAlignment = Alignment.CenterVertically
@@ -186,12 +212,16 @@ fun MainContent(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = dimensions.default16dp)
-            .clickable {
-                onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.TITLE))
-                onAction(AgendaDetailAction.OnEditField)
-            },
+            .then(if (state.isReadOnly) {
+                Modifier
+            } else {
+                Modifier.clickable {
+                    onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.TITLE))
+                    onAction(AgendaDetailAction.OnEditRowPressed)
+                }
+            }),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -206,10 +236,12 @@ fun MainContent(
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-            contentDescription = "Navigate next"
-        )
+        if (!state.isReadOnly) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                contentDescription = "Navigate next"
+            )
+        }
     }
     DefaultHorizontalDivider()
 
@@ -217,22 +249,29 @@ fun MainContent(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
-            .clickable {
-                onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.DESCRIPTION))
-                onAction(AgendaDetailAction.OnEditField)
-            },
+            .then(
+                if (state.isReadOnly) {
+                    Modifier
+                } else {
+                    Modifier.clickable {
+                        onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.DESCRIPTION))
+                        onAction(AgendaDetailAction.OnEditRowPressed)
+                    }
+                }
+            ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Text(
             text = state.task.description ?: "",
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
-
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-            contentDescription = "Navigate next"
-        )
+        if (!state.isReadOnly) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                contentDescription = "Navigate next"
+            )
+        }
     }
     DefaultHorizontalDivider()
 
@@ -255,13 +294,19 @@ fun MainContent(
             Spacer(Modifier.width(dimensions.large32dp))
 
             Text(
-                modifier = Modifier.clickable {
-                    onUpdateState(
-                        AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                            !state.shouldShowTimePicker
-                        )
-                    )
-                },
+                modifier = Modifier.then(
+                    if (state.isReadOnly) {
+                        Modifier
+                    } else {
+                        Modifier.clickable {
+                            onUpdateState(
+                                AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
+                                    !state.shouldShowTimePicker
+                                )
+                            )
+                        }
+                    }
+                ),
                 text = state.task.time.toHourMinuteFormat(),
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
@@ -318,13 +363,19 @@ fun MainContent(
         Text(
             modifier = Modifier
                 .padding(end = dimensions.extraLarge64dp)
-                .clickable {
-                    onUpdateState(
-                        AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
-                            !state.shouldShowDatePicker
-                        )
-                    )
-                },
+                .then(
+                    if (state.isReadOnly) {
+                        Modifier
+                    } else {
+                        Modifier.clickable {
+                            onUpdateState(
+                                AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
+                                    !state.shouldShowDatePicker
+                                )
+                            )
+                        }
+                    }
+                ),
             text = state.date,
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
@@ -372,11 +423,17 @@ fun MainContent(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
-            .clickable {
-                onUpdateState(AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(true))
-            },
+            .then(
+                if (state.isReadOnly) {
+                    Modifier
+                } else {
+                    Modifier.clickable {
+                        onUpdateState(AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(true))
+                    }
+                }
+            ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -410,10 +467,12 @@ fun MainContent(
             )
         }
 
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-            contentDescription = "Navigate next"
-        )
+        if (!state.isReadOnly) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                contentDescription = "Navigate next"
+            )
+        }
     }
     if (state.shouldShowReminderDropdown) {
         ReminderDropdown(
@@ -471,7 +530,10 @@ fun ReminderContent() {
 @Composable
 private fun Header(
     onSavePressed: () -> Unit,
-    onClosePressed: () -> Unit
+    onClosePressed: () -> Unit,
+    onEnableEditPressed: () -> Unit,
+    agendaItemId: String?,
+    isReadOnly: Boolean
 ) {
     Box(
         modifier = Modifier
@@ -509,26 +571,20 @@ private fun Header(
                 textAlign = TextAlign.Center,
                 color = colors.white,
             )
-
-            if (true) { // This will need changing
-                Text(modifier = Modifier.clickable {
-                    onSavePressed()
-                }, text = "Save", color = colors.white)
+            if (agendaItemId.isNullOrEmpty() || !isReadOnly) {
+                Text(modifier = Modifier.clickable { onSavePressed() },
+                    text = "Save", color = colors.white)
             } else {
                 IconButton(
                     modifier = Modifier.size(24.dp),
-                    onClick = { },
+                    onClick = { onEnableEditPressed() },
                 ) {
                     Icon(
-                        modifier = Modifier.clickable {
-                            onSavePressed()
-                        },
                         imageVector = Icons.Filled.Edit,
                         contentDescription = "Edit",
                         tint = colors.white
                     )
                 }
-
             }
         }
     }
@@ -538,13 +594,30 @@ private fun Header(
 @Preview(name = "Pixel 6", device = Devices.PIXEL_6)
 @Preview(name = "Pixel 7 PRO", device = Devices.PIXEL_7_PRO)
 @Composable
-fun AgendaDetailPreview() {
+fun AgendaDetailReadOnlyPreview() {
     AppTheme {
         AgendaDetailContent(
             state = AgendaDetailState(),
             uiState = AgendaDetailViewModel.AgendaDetailUiState.None,
             onAction = {},
-            onUpdateState = {}
+            onUpdateState = {},
+            agendaItemId = "12345"
+        )
+    }
+}
+
+@Preview(name = "Pixel 3", device = Devices.PIXEL_3)
+@Preview(name = "Pixel 6", device = Devices.PIXEL_6)
+@Preview(name = "Pixel 7 PRO", device = Devices.PIXEL_7_PRO)
+@Composable
+fun AgendaDetailEditablePreview() {
+    AppTheme {
+        AgendaDetailContent(
+            state = AgendaDetailState(isReadOnly = false),
+            uiState = AgendaDetailViewModel.AgendaDetailUiState.None,
+            onAction = {},
+            onUpdateState = {},
+            agendaItemId = "12345"
         )
     }
 }

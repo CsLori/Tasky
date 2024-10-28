@@ -12,8 +12,11 @@ interface TaskDao {
     @Query("SELECT * FROM tasks")
     fun getAllTasks(): Flow<List<TaskEntity>>
 
+    @Query("SELECT * FROM tasks WHERE id = :taskId LIMIT 1")
+    suspend fun getTaskById(taskId: String): TaskEntity
+
     @Upsert
-    suspend fun insertTask(task: TaskEntity)
+    suspend fun upsertTask(task: TaskEntity)
 
     @Delete
     suspend fun deleteTask(task: TaskEntity)

@@ -1,5 +1,6 @@
 package com.example.tasky.agenda.agenda_data.local
 
+import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.local.dao.EventDao
 import com.example.tasky.agenda.agenda_data.local.dao.ReminderDao
 import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
@@ -7,7 +8,6 @@ import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
-import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaItemsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -23,8 +23,12 @@ class LocalDatabaseRepository @Inject constructor(
         return taskDao.getAllTasks()
     }
 
-    override suspend fun insertTask(taskEntity: TaskEntity) {
-        return taskDao.insertTask(taskEntity)
+    override suspend fun getTaskById(taskId: String): TaskEntity {
+        return taskDao.getTaskById(taskId)
+    }
+
+    override suspend fun upsertTask(taskEntity: TaskEntity) {
+        return taskDao.upsertTask(taskEntity)
     }
 
     override suspend fun deleteTask(taskEntity: TaskEntity) {

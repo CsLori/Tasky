@@ -30,5 +30,10 @@ fun AgendaItem.Event.toEventEntity(): EventEntity {
         from = from,
         to = to,
         remindAt = remindAt,
+        reminderType = ReminderType.EVENT,
+        attendeeIds = attendees,
+        photos = photos,
+        isUserEventCreator = isUserEventCreator,
+        host = host,
     )
 }
