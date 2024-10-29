@@ -24,12 +24,12 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tasky.R
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
@@ -46,10 +46,7 @@ import java.time.ZoneOffset
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-fun AgendaItemMainHeader(
-    displayName: String,
-    iconColor: Color
-) {
+fun AgendaItemMainHeader(agendaItem: AgendaItem?) {
     Row(
         modifier = Modifier.padding(bottom = dimensions.default16dp),
         verticalAlignment = Alignment.CenterVertically
@@ -59,14 +56,24 @@ fun AgendaItemMainHeader(
             modifier = Modifier
                 .size(24.dp),
             imageVector = Icons.Rounded.Square,
-            tint = iconColor,
+            tint = when (agendaItem) {
+                is AgendaItem.Task -> colors.green
+                is AgendaItem.Event -> colors.lightGreen
+                is AgendaItem.Reminder -> colors.gray
+                null -> colors.green
+            },
             contentDescription = "Icon checked"
         )
 
         Spacer(Modifier.width(dimensions.small8dp))
 
         Text(
-            text = displayName,
+            text = when (agendaItem) {
+                is AgendaItem.Task -> AgendaOption.TASK.displayName
+                is AgendaItem.Event -> AgendaOption.EVENT.displayName
+                is AgendaItem.Reminder -> AgendaOption.REMINDER.displayName
+                null -> AgendaOption.TASK.displayName
+            },
             style = typography.bodyLarge.copy(lineHeight = 20.sp)
         )
     }
@@ -74,7 +81,7 @@ fun AgendaItemMainHeader(
 
 @Composable
 fun AgendaItemTitle(
-    isReadOnly: Boolean,
+    agendaItem: AgendaItem?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
     state: AgendaDetailState
@@ -83,7 +90,7 @@ fun AgendaItemTitle(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = dimensions.default16dp)
-            .then(if (isReadOnly) {
+            .then(if (state.isReadOnly) {
                 Modifier
             } else {
                 Modifier.clickable {
@@ -92,7 +99,7 @@ fun AgendaItemTitle(
                 }
             }),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
+        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -103,11 +110,16 @@ fun AgendaItemTitle(
             Spacer(Modifier.width(dimensions.small8dp))
 
             Text(
-                text = state.task.title,
+                text = when (agendaItem) {
+                    is AgendaItem.Task -> state.task.title
+                    is AgendaItem.Event -> state.event.title
+                    is AgendaItem.Reminder -> state.reminder.title
+                    null -> state.task.title
+                },
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
-        if (!isReadOnly) {
+        if (!state.isReadOnly) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"
@@ -119,7 +131,7 @@ fun AgendaItemTitle(
 
 @Composable
 fun AgendaItemDescription(
-    isReadOnly: Boolean,
+    agendaItem: AgendaItem?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
     state: AgendaDetailState
@@ -129,7 +141,7 @@ fun AgendaItemDescription(
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
             .then(
-                if (isReadOnly) {
+                if (state.isReadOnly) {
                     Modifier
                 } else {
                     Modifier.clickable {
@@ -139,13 +151,18 @@ fun AgendaItemDescription(
                 }
             ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
+        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Text(
-            text = state.task.description ?: "",
+            text = when (agendaItem) {
+                is AgendaItem.Task -> state.task.description ?: ""
+                is AgendaItem.Event -> state.event.description ?: ""
+                is AgendaItem.Reminder -> state.reminder.description ?: ""
+                null -> ""
+            },
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
-        if (!isReadOnly) {
+        if (!state.isReadOnly) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"
@@ -158,7 +175,6 @@ fun AgendaItemDescription(
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun TimeAndDateRow(
-    isReadOnly: Boolean,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     state: AgendaDetailState
 ) {
@@ -182,7 +198,7 @@ fun TimeAndDateRow(
 
             Text(
                 modifier = Modifier.then(
-                    if (isReadOnly) {
+                    if (state.isReadOnly) {
                         Modifier
                     } else {
                         Modifier.clickable {
@@ -251,7 +267,7 @@ fun TimeAndDateRow(
             modifier = Modifier
                 .padding(end = dimensions.extraLarge64dp)
                 .then(
-                    if (isReadOnly) {
+                    if (state.isReadOnly) {
                         Modifier
                     } else {
                         Modifier.clickable {
@@ -337,7 +353,6 @@ fun AddPhotosSection(
 
 @Composable
 fun SetReminderRow(
-    isReadOnly: Boolean,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     state: AgendaDetailState
 ) {
@@ -346,7 +361,7 @@ fun SetReminderRow(
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
             .then(
-                if (isReadOnly) {
+                if (state.isReadOnly) {
                     Modifier
                 } else {
                     Modifier.clickable {
@@ -355,7 +370,7 @@ fun SetReminderRow(
                 }
             ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
+        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -377,7 +392,7 @@ fun SetReminderRow(
             Spacer(Modifier.width(dimensions.small8dp))
 
             Text(
-                text = when ((state.selectedReminder.milliseconds)) {
+                text = when (state.selectedReminder.milliseconds) {
                     RemindBeforeDuration.TEN_MINUTES.duration -> stringResource(R.string.ten_minutes_before)
                     RemindBeforeDuration.THIRTY_MINUTES.duration -> stringResource(R.string.thirty_minutes_before)
                     RemindBeforeDuration.ONE_HOUR.duration -> stringResource(R.string.one_hour_before)
@@ -389,7 +404,7 @@ fun SetReminderRow(
             )
         }
 
-        if (!isReadOnly) {
+        if (!state.isReadOnly) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"

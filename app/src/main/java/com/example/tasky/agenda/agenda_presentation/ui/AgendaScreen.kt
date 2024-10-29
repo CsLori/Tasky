@@ -75,10 +75,10 @@ const val NUMBER_OF_DAYS_TO_SHOW = 5
 @Composable
 internal fun AgendaScreen(
     agendaViewModel: AgendaViewModel,
-    onEditPressed: (String) -> Unit,
+    onEditPressed: (AgendaItem) -> Unit,
     onLogoutNavigateToLogin: () -> Unit,
     onFabItemPressed: () -> Unit,
-    onOpenPressed: (String) -> Unit
+    onOpenPressed: (AgendaItem) -> Unit
 ) {
     val state = agendaViewModel.state.collectAsState().value
     val uiState = agendaViewModel.uiState.collectAsState().value
@@ -96,9 +96,11 @@ internal fun AgendaScreen(
                     onLogoutNavigateToLogin()
                 }
 
-                AgendaAction.OnFabItemPressed -> onFabItemPressed()
+                is AgendaAction.OnFabItemPressed -> {
+                     onFabItemPressed()
+                }
                 is AgendaAction.OnOpenPressed -> {
-                    onOpenPressed(action.agendaItemId)
+                    onOpenPressed(action.agendaItem)
                 }
             }
         },
@@ -109,7 +111,7 @@ internal fun AgendaScreen(
 private fun AgendaContent(
     state: AgendaState,
     uiState: AgendaViewModel.AgendaUiState,
-    onEditPressed: (String) -> Unit,
+    onEditPressed: (AgendaItem) -> Unit,
     onUpdateState: (AgendaUpdateState) -> Unit,
     onAction: (AgendaAction) -> Unit
 ) {
@@ -133,14 +135,9 @@ private fun AgendaContent(
                         )
                         AgendaDropdown(
                             listItems = AgendaOption.entries,
-                            onItemSelected = { agendaItem ->
-                                onUpdateState(AgendaUpdateState.UpdateItemSelected(agendaItem))
+                            onItemSelected = { agendaOption ->
+                                onUpdateState(AgendaUpdateState.UpdateSelectedOption(agendaOption))
                                 onAction(AgendaAction.OnFabItemPressed)
-                                when (agendaItem) {
-                                    AgendaOption.TASK -> {}
-                                    AgendaOption.EVENT -> {}
-                                    AgendaOption.REMINDER -> {}
-                                }
                             },
                             visible = state.isVisible
                         )
@@ -284,34 +281,10 @@ private fun AgendaContent(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.green,
                                                 onDelete = { agendaItemId ->
-                                                    onAction(
-                                                        AgendaAction.OnDeleteAgendaItem(agendaItemId)
-                                                    )
+                                                    onAction(AgendaAction.OnDeleteAgendaItem(agendaItemId))
                                                 },
-                                                onEditPressed = {
-                                                    onEditPressed(
-                                                        agendaItem.taskId
-                                                    )
-                                                },
-                                                onOpenPressed = {
-                                                    onAction(
-                                                        AgendaAction.OnOpenPressed(
-                                                            it
-                                                        )
-                                                    )
-//                                                    onUpdateState(
-//                                                        AgendaUpdateState.UpdateIsAgendaItemReadOnly(
-//                                                            true
-//                                                        )
-//                                                    )
-                                                },
-//                                                onItemSelected = {
-//                                                    onUpdateState(
-//                                                        AgendaUpdateState.UpdateSelectedItem(
-//                                                            agendaItem
-//                                                        )
-//                                                    )
-//                                                }
+                                                onEditPressed = { onEditPressed(agendaItem) },
+                                                onOpenPressed = { onAction(AgendaAction.OnOpenPressed(it)) },
                                             )
                                         }
 
@@ -320,19 +293,8 @@ private fun AgendaContent(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.lightGreen,
                                                 onDelete = {},
-                                                onEditPressed = {
-                                                    onEditPressed(
-                                                        agendaItem.eventId
-                                                    )
-                                                },
+                                                onEditPressed = { onEditPressed(agendaItem) },
                                                 onOpenPressed = { AgendaAction.OnOpenPressed(it) },
-//                                                onItemSelected = {
-//                                                    onUpdateState(
-//                                                        AgendaUpdateState.UpdateSelectedItem(
-//                                                            agendaItem
-//                                                        )
-//                                                    )
-//                                                }
                                             )
                                         }
 
@@ -341,19 +303,8 @@ private fun AgendaContent(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.light2,
                                                 onDelete = {},
-                                                onEditPressed = {
-                                                    onEditPressed(
-                                                        agendaItem.reminderId
-                                                    )
-                                                },
+                                                onEditPressed = { onEditPressed(agendaItem) },
                                                 onOpenPressed = { AgendaAction.OnOpenPressed(it) },
-//                                                onItemSelected = {
-//                                                    onUpdateState(
-//                                                        AgendaUpdateState.UpdateSelectedItem(
-//                                                            agendaItem
-//                                                        )
-//                                                    )
-//                                                }
                                             )
                                         }
                                     }
@@ -377,7 +328,7 @@ fun AgendaItem(
     backgroundColor: Color,
     onDelete: (String) -> Unit,
     onEditPressed: () -> Unit,
-    onOpenPressed: (String) -> Unit,
+    onOpenPressed: (AgendaItem) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -449,7 +400,7 @@ fun AgendaItem(
                                 }
 
                                 AgendaDetailOption.OPEN.option -> {
-                                    onOpenPressed(agendaItem.id)
+                                    onOpenPressed(agendaItem)
 //                                    onItemSelected(agendaItem)
                                 }
                             }

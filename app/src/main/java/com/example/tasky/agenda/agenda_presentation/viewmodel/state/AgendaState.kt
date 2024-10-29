@@ -7,7 +7,7 @@ import java.time.LocalDate
 
 data class AgendaState(
     val selectedDate: LocalDate = DateUtils.getCurrentDate(),
-    val itemSelected: AgendaOption? = null,
+    val agendaOption: AgendaOption? = null,
     val isVisible: Boolean = false,
     val shouldShowDatePicker: Boolean = false,
     val month: String = DateUtils.getCurrentMonth(),
@@ -16,5 +16,5 @@ data class AgendaState(
     val isLoading: Boolean = false,
     val agendaItems: List<AgendaItem> = emptyList(),
     val isAgendaItemReadOnly: Boolean = false,
-//    val selectedItem: AgendaItem? = null
+    val selectedItem: AgendaItem? = null
 )

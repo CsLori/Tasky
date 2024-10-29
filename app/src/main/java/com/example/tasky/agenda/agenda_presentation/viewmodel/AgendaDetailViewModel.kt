@@ -3,12 +3,14 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
+import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.Result.Error
@@ -27,7 +29,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AgendaDetailViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
-    private val localDatabaseRepository: LocalDatabaseRepository
+    private val localDatabaseRepository: LocalDatabaseRepository,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaDetailState())
@@ -35,6 +38,8 @@ class AgendaDetailViewModel @Inject constructor(
 
     private var _uiState = MutableStateFlow<AgendaDetailUiState>(AgendaDetailUiState.None)
     val uiState: StateFlow<AgendaDetailUiState> = _uiState.asStateFlow()
+
+    val agendaOption = savedStateHandle.get<AgendaOption>("agendaOption") ?: AgendaOption.EVENT
 
     @OptIn(ExperimentalMaterial3Api::class)
     fun updateState(action: AgendaDetailStateUpdate) {
@@ -76,6 +81,7 @@ class AgendaDetailViewModel @Inject constructor(
 
                 is AgendaDetailStateUpdate.UpdateTitle -> it.copy(task = it.task.copy(taskTitle = action.title))
                 is AgendaDetailStateUpdate.UpdateIsReadOnly -> it.copy(isReadOnly = action.isReadOnly)
+                is AgendaDetailStateUpdate.UpdateSelectedAgendaItem -> it.copy(selectedAgendaItem = action.selectedAgendaItem)
             }
         }
     }
@@ -124,7 +130,7 @@ class AgendaDetailViewModel @Inject constructor(
         }
     }
 
-    fun loadTask(taskId: String) {
+    fun loadTask(taskId: String): AgendaItem {
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
 
@@ -137,6 +143,7 @@ class AgendaDetailViewModel @Inject constructor(
                 )
             }
         }
+        return state.value.task
     }
 
     sealed class AgendaDetailUiState {

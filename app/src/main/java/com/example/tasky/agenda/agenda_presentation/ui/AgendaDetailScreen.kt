@@ -14,15 +14,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -42,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.ReminderType
 import com.example.tasky.agenda.agenda_presentation.components.AddPhotosSection
 import com.example.tasky.agenda.agenda_presentation.components.AgendaItemDescription
 import com.example.tasky.agenda.agenda_presentation.components.AgendaItemMainHeader
@@ -67,15 +71,27 @@ internal fun AgendaDetailScreen(
     onClose: () -> Boolean,
     onEditPressed: () -> Unit,
     agendaItemId: String? = null,
-    selectedItem: AgendaItem
 ) {
-
     val state = agendaDetailViewModel.state.collectAsStateWithLifecycle().value
     val uiState = agendaDetailViewModel.uiState.collectAsStateWithLifecycle().value
 
     LaunchedEffect(agendaItemId) {
-        agendaItemId?.let { safeAgendaItemId ->
-            agendaDetailViewModel.loadTask(safeAgendaItemId)
+        if (agendaItemId == null) {
+            agendaDetailViewModel.updateState(
+                AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
+                    when (agendaDetailViewModel.agendaOption) {
+                        AgendaOption.TASK -> state.task
+                        AgendaOption.EVENT -> state.event
+                        AgendaOption.REMINDER -> state.reminder
+                    }
+                )
+            )
+        } else {
+            agendaDetailViewModel.updateState(
+                AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
+                    agendaDetailViewModel.loadTask(agendaItemId)
+                )
+            )
         }
     }
 
@@ -103,7 +119,7 @@ internal fun AgendaDetailScreen(
             }
         },
         agendaItemId = agendaItemId,
-//        selectedItem = selectedItem
+        agendaItem = state.selectedAgendaItem
     )
 }
 
@@ -114,7 +130,7 @@ private fun AgendaDetailContent(
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
     agendaItemId: String?,
-//    selectedItem: AgendaItem
+    agendaItem: AgendaItem?
 ) {
     if (state.isLoading) {
         Box(
@@ -164,7 +180,7 @@ private fun AgendaDetailContent(
                     ) {
                         MainContent(
                             state = state,
-//                            selectedItem = selectedItem,
+                            agendaItem = agendaItem,
                             onUpdateState = onUpdateState,
                             onAction = onAction,
                         )
@@ -179,25 +195,29 @@ private fun AgendaDetailContent(
 @Composable
 fun MainContent(
     state: AgendaDetailState,
-//    selectedItem: AgendaItem,
+    agendaItem: AgendaItem?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
 ) {
-    AgendaItemMainHeader(AgendaOption.TASK.displayName, colors.green)
+    AgendaItemMainHeader(agendaItem)
 
-    AgendaItemTitle(state.isReadOnly, onUpdateState, onAction, state)
+    AgendaItemTitle(agendaItem, onUpdateState, onAction, state)
 
-    AgendaItemDescription(state.isReadOnly, onUpdateState, onAction, state)
+    AgendaItemDescription(agendaItem, onUpdateState, onAction, state)
 
-    TimeAndDateRow(state.isReadOnly, onUpdateState, state)
-    TimeAndDateRow(state.isReadOnly, onUpdateState, state)
-    AddPhotosSection({})
+    TimeAndDateRow(onUpdateState, state)
+    TimeAndDateRow(onUpdateState, state)
+    if (agendaItem is AgendaItem.Event) {
+        AddPhotosSection({})
+    }
 
     DefaultHorizontalDivider()
 
-    SetReminderRow(state.isReadOnly, onUpdateState, state)
+    SetReminderRow(onUpdateState, state)
 
-    VisitorsSection(listOf("Lori", "Gyuri", " Henrik"), {})
+    if (agendaItem is AgendaItem.Event) {
+        VisitorsSection(listOf("Lori", "Gyuri", " Henrik"), {})
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -232,33 +252,62 @@ private fun VisitorsSection(
         Text("Visitors")
 
         Row(
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            FilterChip(
+            Button(
                 modifier = Modifier
-                    .weight(1f)
-                    .clip(shape = RoundedCornerShape(100.dp)),
-                selected = true,
+                    .requiredWidth(100.dp)
+                    .requiredHeight(35.dp)
+                    .clip(RoundedCornerShape(100.dp)),
+                colors = ButtonDefaults.buttonColors().copy(containerColor = colors.black),
                 onClick = { },
-                label = { Text("All", textAlign = TextAlign.Center) }
+                content = {
+                    Text(
+                        "All",
+                        style = typography.bodySmall.copy(
+                            fontWeight = FontWeight.W500,
+                            lineHeight = 15.sp
+                        ),
+                        textAlign = TextAlign.Center,
+                        color = colors.white
+                    )
+                }
             )
-            FilterChip(
+            Button(
                 modifier = Modifier
-                    .weight(1f)
-                    .clip(shape = RoundedCornerShape(100.dp))
-                    .padding(horizontal = dimensions.default16dp),
-                selected = false,
+                    .requiredWidth(110.dp)
+                    .requiredHeight(35.dp)
+                    .clip(RoundedCornerShape(100.dp)),
+                colors = ButtonDefaults.buttonColors().copy(containerColor = colors.light2),
                 onClick = { },
-                label = { Text("Going", textAlign = TextAlign.Center) }
+                content = {
+                    Text(
+                        "Going", style = typography.bodySmall.copy(
+                            fontWeight = FontWeight.W500,
+                            lineHeight = 15.sp
+                        ), textAlign = TextAlign.Center,
+                        color = colors.black
+                    )
+                }
             )
-            FilterChip(
+            Button(
                 modifier = Modifier
-                    .weight(1f)
-                    .clip(shape = RoundedCornerShape(100.dp)),
-                selected = false,
+                    .requiredWidth(110.dp)
+                    .requiredHeight(35.dp)
+                    .clip(RoundedCornerShape(100.dp)),
+                colors = ButtonDefaults.buttonColors().copy(containerColor = colors.light2),
                 onClick = { },
-                label = { Text("Not going", textAlign = TextAlign.Center) }
+                content = {
+                    Text(
+                        "Not going", style = typography.bodySmall.copy(
+                            fontWeight = FontWeight.W500,
+                            lineHeight = 15.sp
+                        ), textAlign = TextAlign.Center,
+                        color = colors.black
+                    )
+                }
             )
         }
 
@@ -271,60 +320,6 @@ private fun VisitorsSection(
             }
         }
     }
-}
-
-@Composable
-fun EventContent(
-    state: AgendaDetailState,
-    selectedItem: AgendaItem,
-    agendaItemId: String?,
-    onAction: (AgendaDetailAction) -> Unit,
-    onUpdateState: (AgendaDetailStateUpdate) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        Header(
-            onSavePressed = { onAction(AgendaDetailAction.OnSavePressed) },
-            onClosePressed = { onAction(AgendaDetailAction.OnClosePressed) },
-            onEnableEditPressed = { onAction(AgendaDetailAction.OnEnableEditPressed) },
-            agendaItemId = agendaItemId,
-            isReadOnly = state.isReadOnly
-        )
-    }
-
-    Surface(
-        shape = RoundedCornerShape(
-            topStart = dimensions.cornerRadius30dp,
-            topEnd = dimensions.cornerRadius30dp
-        ),
-        color = colors.white,
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .padding(top = 70.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .padding(top = 40.dp)
-                .padding(horizontal = dimensions.default16dp)
-        ) {
-            MainContent(
-                state = state,
-                onUpdateState = onUpdateState,
-                onAction = onAction,
-//                selectedItem = selectedItem,
-            )
-        }
-    }
-}
-
-@Composable
-fun ReminderContent() {
-    Text(AgendaOption.REMINDER.displayName)
 }
 
 @Composable
@@ -404,15 +399,15 @@ fun AgendaDetailReadOnlyPreview() {
             onAction = {},
             onUpdateState = {},
             agendaItemId = "12345",
-//            selectedItem = AgendaItem.Task(
-//                taskId = "persius",
-//                taskTitle = "mauris",
-//                taskDescription = null,
-//                time = 7622,
-//                isDone = false,
-//                remindAtTime = 2214,
-//                taskReminderType = ReminderType.TASK
-//            )
+            agendaItem = AgendaItem.Task(
+                taskId = "persius",
+                taskTitle = "mauris",
+                taskDescription = null,
+                time = 7622,
+                isDone = false,
+                remindAtTime = 2214,
+                taskReminderType = ReminderType.TASK
+            )
         )
     }
 }
@@ -429,15 +424,15 @@ fun AgendaDetailEditablePreview() {
             onAction = {},
             onUpdateState = {},
             agendaItemId = "12345",
-//            selectedItem = AgendaItem.Task(
-//                taskId = "persius",
-//                taskTitle = "mauris",
-//                taskDescription = null,
-//                time = 7622,
-//                isDone = false,
-//                remindAtTime = 2214,
-//                taskReminderType = ReminderType.TASK
-//            )
+            agendaItem = AgendaItem.Task(
+                taskId = "persius",
+                taskTitle = "mauris",
+                taskDescription = null,
+                time = 7622,
+                isDone = false,
+                remindAtTime = 2214,
+                taskReminderType = ReminderType.TASK
+            )
         )
     }
 }

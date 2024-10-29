@@ -1,6 +1,5 @@
 package com.example.tasky.core.presentation
 
-import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,7 +16,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.tasky.R
 import com.example.tasky.Screen
-import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaItemEditScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
@@ -29,7 +27,6 @@ import com.example.tasky.onboarding.onboarding.presentation.ui.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
-import kotlinx.serialization.json.Json
 
 @Composable
 fun Navigation() {
@@ -89,13 +86,14 @@ fun Navigation() {
                 }
                 composable<Screen.Agenda> {
                     val agendaViewModel = hiltViewModel<AgendaViewModel>()
+                    val state = agendaViewModel.state.collectAsStateWithLifecycle().value
 
                     AgendaScreen(
                         agendaViewModel = agendaViewModel,
-                        onEditPressed = { agendaItemId ->
+                        onEditPressed = { agendaItem ->
                             navController.navigate(
                                 Screen.AgendaDetail(
-                                    agendaItemId = agendaItemId,
+                                    agendaItemId = agendaItem.id,
                                     isAgendaItemReadOnly = false
                                 )
                             )
@@ -111,14 +109,15 @@ fun Navigation() {
                             navController.navigate(
                                 Screen.AgendaDetail(
                                     agendaItemId = null,
+                                    agendaOption = state.agendaOption,
                                     isAgendaItemReadOnly = false
                                 )
                             )
                         },
-                        onOpenPressed = { agendaItemId ->
+                        onOpenPressed = { agendaItem ->
                             navController.navigate(
                                 Screen.AgendaDetail(
-                                    agendaItemId = agendaItemId,
+                                    agendaItemId = agendaItem.id,
                                     isAgendaItemReadOnly = true
                                 )
                             )
@@ -129,8 +128,7 @@ fun Navigation() {
                     val agendaDetailViewModel = hiltViewModel<AgendaDetailViewModel>()
                     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
                     val args = it.toRoute<Screen.AgendaDetail>()
-                    val agendaItemJson = it.arguments?.getString("selectedItem")
-                    val agendaItem = agendaItemJson?.let { Json.decodeFromString<AgendaItem>(it) }
+
 
                     savedStateHandle?.get<String>(title)?.let { newTitle ->
                         agendaDetailViewModel.updateState(
@@ -148,7 +146,6 @@ fun Navigation() {
                         )
                     }
 
-                    Log.d("DDD - agendaItem", "$agendaItem")
                     AgendaDetailScreen(
                         agendaDetailViewModel = agendaDetailViewModel,
                         onNavigateToAgendaScreen = {
@@ -165,7 +162,6 @@ fun Navigation() {
                             )
                         },
                         agendaItemId = args.agendaItemId,
-                            selectedItem = agendaItem,
                     )
                 }
                 composable<Screen.AgendaItemEdit> {
