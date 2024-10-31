@@ -86,7 +86,6 @@ fun Navigation() {
                 }
                 composable<Screen.Agenda> {
                     val agendaViewModel = hiltViewModel<AgendaViewModel>()
-                    val state = agendaViewModel.state.collectAsStateWithLifecycle().value
 
                     AgendaScreen(
                         agendaViewModel = agendaViewModel,
@@ -109,7 +108,7 @@ fun Navigation() {
                             navController.navigate(
                                 Screen.AgendaDetail(
                                     agendaItemId = null,
-                                    agendaOption = state.agendaOption,
+                                    agendaOption = agendaViewModel.state.value.agendaOption,
                                     isAgendaItemReadOnly = false
                                 )
                             )

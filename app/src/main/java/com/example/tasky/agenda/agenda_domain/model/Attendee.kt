@@ -1,13 +1,13 @@
 package com.example.tasky.agenda.agenda_domain.model
 
-import kotlinx.serialization.Serializable
+import java.time.LocalDateTime
 
-@Serializable
 data class Attendee(
-    val email: String = "",
-    val fullName: String,
+    val email: String,
+    val name: String,
     val userId: String,
     val eventId: String,
     val isGoing: Boolean,
-    val remindAt: Long
+    val remindAt: LocalDateTime,
+    val isCreator: Boolean
 )

@@ -5,6 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AgendaResponse(
     val events: List<EventResponse>,
-    val tasks: List<TaskResponse>,
-    val reminders: List<ReminderResponse>
+    val tasks: List<TaskSerialized>,
+    val reminders: List<ReminderSerialized>
 )

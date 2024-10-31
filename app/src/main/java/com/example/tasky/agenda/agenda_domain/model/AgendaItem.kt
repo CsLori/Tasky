@@ -1,15 +1,12 @@
 package com.example.tasky.agenda.agenda_domain.model
 
-import kotlinx.serialization.Serializable
-
-@Serializable
 sealed class AgendaItem(
-    @JvmField val id: String,
-    @JvmField val title: String,
-    @JvmField val description: String?,
-    @JvmField val sortDate: Long,
-    @JvmField val remindAt: Long,
-    @JvmField val reminderType: ReminderType
+    val id: String,
+    val title: String,
+    val description: String?,
+    val sortDate: Long,
+    val remindAt: Long,
+    val reminderType: ReminderType
 ) {
 
     data class Event(

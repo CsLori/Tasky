@@ -6,6 +6,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
+import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
@@ -40,6 +42,11 @@ class AgendaDetailViewModel @Inject constructor(
     val uiState: StateFlow<AgendaDetailUiState> = _uiState.asStateFlow()
 
     val agendaOption = savedStateHandle.get<AgendaOption>("agendaOption") ?: AgendaOption.EVENT
+    private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
+
+    init {
+        updateState(AgendaDetailStateUpdate.UpdateIsReadOnly(isReadOnly))
+    }
 
     @OptIn(ExperimentalMaterial3Api::class)
     fun updateState(action: AgendaDetailStateUpdate) {

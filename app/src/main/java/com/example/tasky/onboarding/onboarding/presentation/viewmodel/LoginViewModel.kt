@@ -10,8 +10,8 @@ import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
-import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginResponse
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
+import com.example.tasky.onboarding.onboarding_domain.model.LoginUser
 import com.example.tasky.util.CredentialsValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,16 +93,13 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    private suspend fun updateTokens(result: Result.Success<LoginResponse>) {
+    private suspend fun updateTokens(result: Result.Success<LoginUser>) {
         result.data.apply {
-            refreshToken?.let { userPrefsRepository.updateRefreshToken(it) }
-            accessToken?.let { userPrefsRepository.updateAccessToken(it) }
-            userId?.let { userPrefsRepository.updateUserId(it) }
-            accessTokenExpirationTimestamp?.let {
-                userPrefsRepository.updateAccessTokenExpirationTimestamp(
-                    it
-                )
-            }
+            userPrefsRepository.updateRefreshToken(refreshToken)
+            userPrefsRepository.updateAccessToken(accessToken)
+            userPrefsRepository.updateUserId(userId)
+            userPrefsRepository.updateAccessTokenExpirationTimestamp(accessTokenExpirationTimestamp)
+
         }
     }
 

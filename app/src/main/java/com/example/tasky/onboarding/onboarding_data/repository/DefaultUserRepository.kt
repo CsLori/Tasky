@@ -6,10 +6,11 @@ import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.core.domain.asResult
 import com.example.tasky.core.domain.mapToTaskyError
-import com.example.tasky.onboarding.onboarding_data.remote.LoginRequest
-import com.example.tasky.onboarding.onboarding_data.remote.RegisterRequest
-import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginResponse
+import com.example.tasky.onboarding.onboarding_data.dto_mappers.toLoginUser
+import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginRequest
+import com.example.tasky.onboarding.onboarding_data.remote.dto.RegisterRequest
 import com.example.tasky.onboarding.onboarding_domain.UserRepository
+import com.example.tasky.onboarding.onboarding_domain.model.LoginUser
 import java.util.concurrent.CancellationException
 
 class DefaultUserRepository(
@@ -45,10 +46,10 @@ class DefaultUserRepository(
     override suspend fun login(
         email: String,
         password: String
-    ): Result<LoginResponse, TaskyError> {
+    ): Result<LoginUser, TaskyError> {
         return try {
             val result = api.login(LoginRequest(email, password))
-            Result.Success(result)
+            Result.Success(result.toLoginUser())
         } catch (e: Exception) {
             if (e is CancellationException) {
                 throw e

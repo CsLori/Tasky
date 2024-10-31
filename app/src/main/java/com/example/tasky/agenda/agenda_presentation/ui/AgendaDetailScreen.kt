@@ -22,10 +22,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -34,7 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -119,7 +118,7 @@ internal fun AgendaDetailScreen(
             }
         },
         agendaItemId = agendaItemId,
-        agendaItem = state.selectedAgendaItem
+        agendaItem = state.selectedAgendaItem,
     )
 }
 
@@ -256,58 +255,86 @@ private fun VisitorsSection(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Button(
+            FilterChip(
+                selected = true,
+                onClick = {},
+                label = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "All",
+                            style = typography.bodySmall.copy(
+                                fontWeight = FontWeight.W500,
+                                lineHeight = 15.sp
+                            ),
+                            textAlign = TextAlign.Center,
+                            color = colors.white,
+                        )
+                    }
+                },
                 modifier = Modifier
                     .requiredWidth(100.dp)
-                    .requiredHeight(35.dp)
-                    .clip(RoundedCornerShape(100.dp)),
-                colors = ButtonDefaults.buttonColors().copy(containerColor = colors.black),
-                onClick = { },
-                content = {
-                    Text(
-                        "All",
-                        style = typography.bodySmall.copy(
-                            fontWeight = FontWeight.W500,
-                            lineHeight = 15.sp
-                        ),
-                        textAlign = TextAlign.Center,
-                        color = colors.white
-                    )
-                }
+                    .requiredHeight(35.dp),
+                shape = RoundedCornerShape(100.dp),
+                colors = FilterChipDefaults.filterChipColors().copy(containerColor = colors.black),
             )
-            Button(
+
+            FilterChip(
                 modifier = Modifier
-                    .requiredWidth(110.dp)
-                    .requiredHeight(35.dp)
-                    .clip(RoundedCornerShape(100.dp)),
-                colors = ButtonDefaults.buttonColors().copy(containerColor = colors.light2),
-                onClick = { },
-                content = {
-                    Text(
-                        "Going", style = typography.bodySmall.copy(
-                            fontWeight = FontWeight.W500,
-                            lineHeight = 15.sp
-                        ), textAlign = TextAlign.Center,
-                        color = colors.black
-                    )
-                }
+                    .requiredWidth(100.dp)
+                    .requiredHeight(35.dp),
+
+                selected = true,
+                onClick = {},
+                label = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Going",
+                            style = typography.bodySmall.copy(
+                                fontWeight = FontWeight.W500,
+                                lineHeight = 15.sp
+                            ),
+                            textAlign = TextAlign.Center,
+                            color = colors.white,
+                        )
+                    }
+                },
+                shape = RoundedCornerShape(100.dp),
+                colors = FilterChipDefaults.filterChipColors().copy(containerColor = colors.black),
             )
-            Button(
+
+            FilterChip(
                 modifier = Modifier
-                    .requiredWidth(110.dp)
-                    .requiredHeight(35.dp)
-                    .clip(RoundedCornerShape(100.dp)),
-                colors = ButtonDefaults.buttonColors().copy(containerColor = colors.light2),
-                onClick = { },
-                content = {
-                    Text(
-                        "Not going", style = typography.bodySmall.copy(
-                            fontWeight = FontWeight.W500,
-                            lineHeight = 15.sp
-                        ), textAlign = TextAlign.Center,
-                        color = colors.black
-                    )
-                }
+                    .requiredWidth(100.dp)
+                    .requiredHeight(35.dp),
+                selected = true,
+                onClick = {},
+                label = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Not going",
+                            style = typography.bodySmall.copy(
+                                fontWeight = FontWeight.W500,
+                                lineHeight = 15.sp
+                            ),
+                            textAlign = TextAlign.Center,
+                            color = colors.white,
+                        )
+                    }
+                },
+                shape = RoundedCornerShape(100.dp),
+                colors = FilterChipDefaults.filterChipColors().copy(containerColor = colors.black),
             )
         }
 
@@ -399,14 +426,19 @@ fun AgendaDetailReadOnlyPreview() {
             onAction = {},
             onUpdateState = {},
             agendaItemId = "12345",
-            agendaItem = AgendaItem.Task(
-                taskId = "persius",
-                taskTitle = "mauris",
-                taskDescription = null,
-                time = 7622,
-                isDone = false,
-                remindAtTime = 2214,
-                taskReminderType = ReminderType.TASK
+            agendaItem = AgendaItem.Event(
+                eventId = "12345",
+                eventTitle = "ridens",
+                eventDescription = null,
+                from = 1221,
+                to = 4855,
+                photos = listOf(),
+                attendees = listOf(),
+                isUserEventCreator = false,
+                host = null,
+                remindAtTime = 4626,
+                eventReminderType = ReminderType.TASK
+
             )
         )
     }

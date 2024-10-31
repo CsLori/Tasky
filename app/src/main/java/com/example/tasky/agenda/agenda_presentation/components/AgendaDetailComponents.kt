@@ -1,5 +1,6 @@
 package com.example.tasky.agenda.agenda_presentation.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -84,8 +85,9 @@ fun AgendaItemTitle(
     agendaItem: AgendaItem?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
-    state: AgendaDetailState
+    state: AgendaDetailState,
 ) {
+    Log.d("DDD - isReadOnly", "${state.isReadOnly}")
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -134,7 +136,7 @@ fun AgendaItemDescription(
     agendaItem: AgendaItem?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
-    state: AgendaDetailState
+    state: AgendaDetailState,
 ) {
     Row(
         modifier = Modifier
@@ -176,7 +178,7 @@ fun AgendaItemDescription(
 @OptIn(ExperimentalMaterial3Api::class)
 fun TimeAndDateRow(
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
-    state: AgendaDetailState
+    state: AgendaDetailState,
 ) {
     Row(
         modifier = Modifier
@@ -354,7 +356,7 @@ fun AddPhotosSection(
 @Composable
 fun SetReminderRow(
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
-    state: AgendaDetailState
+    state: AgendaDetailState,
 ) {
     Row(
         modifier = Modifier
