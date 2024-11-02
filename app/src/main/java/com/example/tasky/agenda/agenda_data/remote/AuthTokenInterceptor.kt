@@ -2,7 +2,7 @@ package com.example.tasky.agenda.agenda_data.remote
 
 import com.example.tasky.BuildConfig.API_KEY
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
-import com.example.tasky.onboarding.onboarding_data.remote.RefreshTokenBody
+import com.example.tasky.onboarding.onboarding_data.remote.dto.RefreshTokenBody
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response

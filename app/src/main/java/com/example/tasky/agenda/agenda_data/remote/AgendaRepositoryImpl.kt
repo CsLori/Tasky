@@ -1,5 +1,6 @@
 package com.example.tasky.agenda.agenda_data.remote
 
+import com.example.tasky.agenda.agenda_data.dto_mappers.toSerializedTask
 import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
@@ -22,7 +23,7 @@ class AgendaRepositoryImpl(
     ): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertTask(task.toTaskEntity())
-            api.addTask(task)
+            api.addTask(task.toSerializedTask())
             Result.Success(Unit)
 
         } catch (e: Exception) {
@@ -39,7 +40,7 @@ class AgendaRepositoryImpl(
     override suspend fun updateTask(task: AgendaItem.Task): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertTask(task.toTaskEntity())
-            api.updateTask(task)
+            api.updateTask(task.toSerializedTask())
             Result.Success(Unit)
 
         }  catch (e: Exception) {

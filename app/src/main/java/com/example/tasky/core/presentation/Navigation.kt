@@ -86,12 +86,13 @@ fun Navigation() {
                 }
                 composable<Screen.Agenda> {
                     val agendaViewModel = hiltViewModel<AgendaViewModel>()
+
                     AgendaScreen(
                         agendaViewModel = agendaViewModel,
-                        onEditPressed = { agendaItemId ->
+                        onEditPressed = { agendaItem ->
                             navController.navigate(
                                 Screen.AgendaDetail(
-                                    agendaItemId = agendaItemId,
+                                    agendaItemId = agendaItem.id,
                                     isAgendaItemReadOnly = false
                                 )
                             )
@@ -104,16 +105,21 @@ fun Navigation() {
                             }
                         },
                         onFabItemPressed = {
-                            navController.navigate(Screen.AgendaDetail(
-                                agendaItemId = null,
-                                isAgendaItemReadOnly = false
-                            ))
+                            navController.navigate(
+                                Screen.AgendaDetail(
+                                    agendaItemId = null,
+                                    agendaOption = agendaViewModel.state.value.agendaOption,
+                                    isAgendaItemReadOnly = false
+                                )
+                            )
                         },
-                        onOpenPressed = { agdendaItemId ->
-                            navController.navigate(Screen.AgendaDetail(
-                                agendaItemId = agdendaItemId,
-                                isAgendaItemReadOnly = true
-                            ))
+                        onOpenPressed = { agendaItem ->
+                            navController.navigate(
+                                Screen.AgendaDetail(
+                                    agendaItemId = agendaItem.id,
+                                    isAgendaItemReadOnly = true
+                                )
+                            )
                         }
                     )
                 }
@@ -121,6 +127,7 @@ fun Navigation() {
                     val agendaDetailViewModel = hiltViewModel<AgendaDetailViewModel>()
                     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
                     val args = it.toRoute<Screen.AgendaDetail>()
+
 
                     savedStateHandle?.get<String>(title)?.let { newTitle ->
                         agendaDetailViewModel.updateState(
@@ -153,7 +160,7 @@ fun Navigation() {
                                 )
                             )
                         },
-                        agendaItemId = args.agendaItemId
+                        agendaItemId = args.agendaItemId,
                     )
                 }
                 composable<Screen.AgendaItemEdit> {

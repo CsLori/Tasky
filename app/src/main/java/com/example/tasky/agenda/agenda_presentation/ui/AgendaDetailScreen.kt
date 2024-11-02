@@ -14,24 +14,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.outlined.Circle
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.rounded.Square
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -45,26 +43,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.ReminderType
+import com.example.tasky.agenda.agenda_presentation.components.AddPhotosSection
+import com.example.tasky.agenda.agenda_presentation.components.AgendaItemDescription
+import com.example.tasky.agenda.agenda_presentation.components.AgendaItemMainHeader
+import com.example.tasky.agenda.agenda_presentation.components.AgendaItemTitle
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
-import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
-import com.example.tasky.agenda.agenda_presentation.components.TimePickerDialog
-import com.example.tasky.agenda.agenda_presentation.components.reminderOptions
+import com.example.tasky.agenda.agenda_presentation.components.SetReminderRow
+import com.example.tasky.agenda.agenda_presentation.components.TimeAndDateRow
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.RemindBeforeDuration
-import com.example.tasky.core.presentation.DateUtils
-import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
-import com.example.tasky.core.presentation.components.ReminderDropdown
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import java.time.ZoneOffset
-import kotlin.time.Duration.Companion.milliseconds
 
 
 @Composable
@@ -73,15 +69,28 @@ internal fun AgendaDetailScreen(
     onNavigateToAgendaScreen: () -> Unit,
     onClose: () -> Boolean,
     onEditPressed: () -> Unit,
-    agendaItemId: String? = null
+    agendaItemId: String? = null,
 ) {
-
     val state = agendaDetailViewModel.state.collectAsStateWithLifecycle().value
     val uiState = agendaDetailViewModel.uiState.collectAsStateWithLifecycle().value
 
     LaunchedEffect(agendaItemId) {
-        agendaItemId?.let { safeAgendaItemId ->
-            agendaDetailViewModel.loadTask(safeAgendaItemId)
+        if (agendaItemId == null) {
+            agendaDetailViewModel.updateState(
+                AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
+                    when (agendaDetailViewModel.agendaOption) {
+                        AgendaOption.TASK -> state.task
+                        AgendaOption.EVENT -> state.event
+                        AgendaOption.REMINDER -> state.reminder
+                    }
+                )
+            )
+        } else {
+            agendaDetailViewModel.updateState(
+                AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
+                    agendaDetailViewModel.loadTask(agendaItemId)
+                )
+            )
         }
     }
 
@@ -102,12 +111,14 @@ internal fun AgendaDetailScreen(
                     }
                     onNavigateToAgendaScreen()
                 }
+
                 AgendaDetailAction.OnEnableEditPressed -> agendaDetailViewModel.updateState(
                     AgendaDetailStateUpdate.UpdateIsReadOnly(false)
                 )
             }
         },
-        agendaItemId = agendaItemId
+        agendaItemId = agendaItemId,
+        agendaItem = state.selectedAgendaItem,
     )
 }
 
@@ -118,6 +129,7 @@ private fun AgendaDetailContent(
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
     agendaItemId: String?,
+    agendaItem: AgendaItem?
 ) {
     if (state.isLoading) {
         Box(
@@ -167,6 +179,7 @@ private fun AgendaDetailContent(
                     ) {
                         MainContent(
                             state = state,
+                            agendaItem = agendaItem,
                             onUpdateState = onUpdateState,
                             onAction = onAction,
                         )
@@ -181,317 +194,29 @@ private fun AgendaDetailContent(
 @Composable
 fun MainContent(
     state: AgendaDetailState,
+    agendaItem: AgendaItem?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
 ) {
+    AgendaItemMainHeader(agendaItem)
 
-    Row(
-        modifier = Modifier.padding(bottom = dimensions.default16dp),
-        verticalAlignment = Alignment.CenterVertically
+    AgendaItemTitle(agendaItem, onUpdateState, onAction, state)
 
-    ) {
-        Icon(
-            modifier = Modifier
-                .size(24.dp),
-            imageVector = Icons.Rounded.Square,
-            tint = colors.green,
-            contentDescription = "Icon checked"
-        )
+    AgendaItemDescription(agendaItem, onUpdateState, onAction, state)
 
-        Spacer(Modifier.width(dimensions.small8dp))
-
-        Text(
-            text = AgendaOption.TASK.displayName,
-            style = typography.bodyLarge.copy(lineHeight = 20.sp)
-        )
-    }
-
-
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = dimensions.default16dp)
-            .then(if (state.isReadOnly) {
-                Modifier
-            } else {
-                Modifier.clickable {
-                    onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.TITLE))
-                    onAction(AgendaDetailAction.OnEditRowPressed)
-                }
-            }),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Outlined.Circle,
-                contentDescription = "Icon checked"
-            )
-
-            Spacer(Modifier.width(dimensions.small8dp))
-
-            Text(
-                text = state.task.title,
-                style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
-            )
-        }
-        if (!state.isReadOnly) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                contentDescription = "Navigate next"
-            )
-        }
-    }
-    DefaultHorizontalDivider()
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = dimensions.default16dp)
-            .then(
-                if (state.isReadOnly) {
-                    Modifier
-                } else {
-                    Modifier.clickable {
-                        onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.DESCRIPTION))
-                        onAction(AgendaDetailAction.OnEditRowPressed)
-                    }
-                }
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = state.task.description ?: "",
-            style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
-        )
-        if (!state.isReadOnly) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                contentDescription = "Navigate next"
-            )
-        }
-    }
-    DefaultHorizontalDivider()
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = dimensions.default16dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "At",
-                style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
-            )
-            Spacer(Modifier.width(dimensions.large32dp))
-
-            Text(
-                modifier = Modifier.then(
-                    if (state.isReadOnly) {
-                        Modifier
-                    } else {
-                        Modifier.clickable {
-                            onUpdateState(
-                                AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                    !state.shouldShowTimePicker
-                                )
-                            )
-                        }
-                    }
-                ),
-                text = state.task.time.toHourMinuteFormat(),
-                style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
-            )
-
-            if (state.shouldShowTimePicker)
-                TimePickerDialog(
-                    onDismissRequest = {
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                false
-                            )
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                val selectedHour = state.time.hour
-                                val selectedMinute = state.time.minute
-
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                        shouldShowTimePicker = false
-                                    )
-                                )
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateTime(
-                                        hour = selectedHour,
-                                        minute = selectedMinute
-                                    )
-                                )
-                            }
-                        ) { Text(stringResource(R.string.OK)) }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                        false
-                                    )
-                                )
-                            }
-                        ) { Text(stringResource(R.string.cancel)) }
-                    },
-                    content = {
-                        TimePicker(
-                            state = state.time
-                        )
-
-                    }
-                )
-        }
-
-        Text(
-            modifier = Modifier
-                .padding(end = dimensions.extraLarge64dp)
-                .then(
-                    if (state.isReadOnly) {
-                        Modifier
-                    } else {
-                        Modifier.clickable {
-                            onUpdateState(
-                                AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
-                                    !state.shouldShowDatePicker
-                                )
-                            )
-                        }
-                    }
-                ),
-            text = state.date,
-            style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
-        )
-
-        if (state.shouldShowDatePicker) {
-            DatePickerModal(
-                onDateSelected = { date ->
-                    date?.let { safeDate ->
-                        val result = DateUtils.convertMillisToLocalDate(safeDate)
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateMonth(
-                                result.month.name
-                            )
-                        )
-
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateDate(
-                                DateUtils.longToLocalDate(safeDate)
-                            )
-                        )
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
-                                true
-                            )
-                        )
-                    }
-                },
-                onDismiss = {
-                    onUpdateState(
-                        AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
-                            false
-                        )
-                    )
-                },
-                initialDate = state.selectedDate.atStartOfDay(ZoneOffset.UTC)
-                    .toInstant()
-                    .toEpochMilli()
-            )
-        }
+    TimeAndDateRow(onUpdateState, state)
+    TimeAndDateRow(onUpdateState, state)
+    if (agendaItem is AgendaItem.Event) {
+        AddPhotosSection({})
     }
 
     DefaultHorizontalDivider()
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = dimensions.default16dp)
-            .then(
-                if (state.isReadOnly) {
-                    Modifier
-                } else {
-                    Modifier.clickable {
-                        onUpdateState(AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(true))
-                    }
-                }
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier.size(30.dp), contentAlignment = Alignment.CenterStart
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Square,
-                    tint = colors.light2,
-                    contentDescription = "Rounded Square"
-                )
-                Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    tint = colors.gray,
-                    contentDescription = "Notifications Icon"
-                )
+    SetReminderRow(onUpdateState, state)
 
-            }
-
-            Spacer(Modifier.width(dimensions.small8dp))
-
-            Text(
-                text = when ((state.selectedReminder.milliseconds)) {
-                    RemindBeforeDuration.TEN_MINUTES.duration -> stringResource(R.string.ten_minutes_before)
-                    RemindBeforeDuration.THIRTY_MINUTES.duration -> stringResource(R.string.thirty_minutes_before)
-                    RemindBeforeDuration.ONE_HOUR.duration -> stringResource(R.string.one_hour_before)
-                    RemindBeforeDuration.SIX_HOURS.duration -> stringResource(R.string.six_hours_before)
-                    RemindBeforeDuration.ONE_DAY.duration -> stringResource(R.string.one_day_before)
-                    else -> stringResource(R.string.thirty_minutes_before)
-                },
-                style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
-            )
-        }
-
-        if (!state.isReadOnly) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                contentDescription = "Navigate next"
-            )
-        }
+    if (agendaItem is AgendaItem.Event) {
+        VisitorsSection(listOf("Lori", "Gyuri", " Henrik"), {})
     }
-    if (state.shouldShowReminderDropdown) {
-        ReminderDropdown(
-            options = reminderOptions,
-            onItemSelected = {
-                onUpdateState(AgendaDetailStateUpdate.UpdateSelectedReminder(it.timeBeforeInMillis))
-                onUpdateState(AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(false))
-            },
-            visible = state.shouldShowReminderDropdown,
-            onDismiss = {
-                onUpdateState(
-                    AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(
-                        false
-                    )
-                )
-            }
-        )
-    }
-    DefaultHorizontalDivider()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -514,17 +239,114 @@ fun MainContent(
             )
         }
     }
-}
 
-
-@Composable
-fun EventContent() {
-    Text(AgendaOption.EVENT.displayName)
 }
 
 @Composable
-fun ReminderContent() {
-    Text(AgendaOption.REMINDER.displayName)
+private fun VisitorsSection(
+    visitors: List<String>,
+    onVisitorStatusChanged: () -> Unit
+) {
+    Column {
+        Text("Visitors")
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            FilterChip(
+                selected = true,
+                onClick = {},
+                label = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "All",
+                            style = typography.bodySmall.copy(
+                                fontWeight = FontWeight.W500,
+                                lineHeight = 15.sp
+                            ),
+                            textAlign = TextAlign.Center,
+                            color = colors.white,
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .requiredWidth(100.dp)
+                    .requiredHeight(35.dp),
+                shape = RoundedCornerShape(100.dp),
+                colors = FilterChipDefaults.filterChipColors().copy(containerColor = colors.black),
+            )
+
+            FilterChip(
+                modifier = Modifier
+                    .requiredWidth(100.dp)
+                    .requiredHeight(35.dp),
+
+                selected = true,
+                onClick = {},
+                label = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Going",
+                            style = typography.bodySmall.copy(
+                                fontWeight = FontWeight.W500,
+                                lineHeight = 15.sp
+                            ),
+                            textAlign = TextAlign.Center,
+                            color = colors.white,
+                        )
+                    }
+                },
+                shape = RoundedCornerShape(100.dp),
+                colors = FilterChipDefaults.filterChipColors().copy(containerColor = colors.black),
+            )
+
+            FilterChip(
+                modifier = Modifier
+                    .requiredWidth(100.dp)
+                    .requiredHeight(35.dp),
+                selected = true,
+                onClick = {},
+                label = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Not going",
+                            style = typography.bodySmall.copy(
+                                fontWeight = FontWeight.W500,
+                                lineHeight = 15.sp
+                            ),
+                            textAlign = TextAlign.Center,
+                            color = colors.white,
+                        )
+                    }
+                },
+                shape = RoundedCornerShape(100.dp),
+                colors = FilterChipDefaults.filterChipColors().copy(containerColor = colors.black),
+            )
+        }
+
+        LazyColumn {
+            items(visitors.size) { visitor ->
+//                VisitorItem(
+//                    visitor = visitor,
+//                    onStatusChanged = onVisitorStatusChanged
+//                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -572,8 +394,10 @@ private fun Header(
                 color = colors.white,
             )
             if (agendaItemId.isNullOrEmpty() || !isReadOnly) {
-                Text(modifier = Modifier.clickable { onSavePressed() },
-                    text = "Save", color = colors.white)
+                Text(
+                    modifier = Modifier.clickable { onSavePressed() },
+                    text = "Save", color = colors.white
+                )
             } else {
                 IconButton(
                     modifier = Modifier.size(24.dp),
@@ -601,7 +425,21 @@ fun AgendaDetailReadOnlyPreview() {
             uiState = AgendaDetailViewModel.AgendaDetailUiState.None,
             onAction = {},
             onUpdateState = {},
-            agendaItemId = "12345"
+            agendaItemId = "12345",
+            agendaItem = AgendaItem.Event(
+                eventId = "12345",
+                eventTitle = "ridens",
+                eventDescription = null,
+                from = 1221,
+                to = 4855,
+                photos = listOf(),
+                attendees = listOf(),
+                isUserEventCreator = false,
+                host = null,
+                remindAtTime = 4626,
+                eventReminderType = ReminderType.TASK
+
+            )
         )
     }
 }
@@ -617,7 +455,16 @@ fun AgendaDetailEditablePreview() {
             uiState = AgendaDetailViewModel.AgendaDetailUiState.None,
             onAction = {},
             onUpdateState = {},
-            agendaItemId = "12345"
+            agendaItemId = "12345",
+            agendaItem = AgendaItem.Task(
+                taskId = "persius",
+                taskTitle = "mauris",
+                taskDescription = null,
+                time = 7622,
+                isDone = false,
+                remindAtTime = 2214,
+                taskReminderType = ReminderType.TASK
+            )
         )
     }
 }

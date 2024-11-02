@@ -70,7 +70,7 @@ class AgendaViewModel @Inject constructor(
         _state.update {
             when (action) {
                 is AgendaUpdateState.UpdateSelectedDate -> it.copy(selectedDate = action.newDate)
-                is AgendaUpdateState.UpdateItemSelected -> it.copy(itemSelected = action.item)
+                is AgendaUpdateState.UpdateSelectedOption -> it.copy(agendaOption = action.item)
                 is AgendaUpdateState.UpdateVisibility -> it.copy(isVisible = action.visible)
                 is AgendaUpdateState.UpdateIsDateSelectedFromDatePicker -> it.copy(
                     isDateSelectedFromDatePicker = action.isDateSelectedFromDatePicker
@@ -82,6 +82,8 @@ class AgendaViewModel @Inject constructor(
                     selectedIndex = action.selectedIndex,
                     isDateSelectedFromDatePicker = false
                 )
+
+                is AgendaUpdateState.UpdateSelectedItem -> it.copy(selectedItem = action.agendaItem)
             }
         }
     }
@@ -89,9 +91,9 @@ class AgendaViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            when (val result = defaultUserRepository.logout()) {
-                is Success -> _uiState.update { AgendaViewModel.AgendaUiState.Success }
-                is Error -> _uiState.update { AgendaViewModel.AgendaUiState.None }
+            when (defaultUserRepository.logout()) {
+                is Success -> _uiState.update { AgendaUiState.Success }
+                is Error -> _uiState.update { AgendaUiState.None }
             }
             _state.update { it.copy(isLoading = false) }
         }

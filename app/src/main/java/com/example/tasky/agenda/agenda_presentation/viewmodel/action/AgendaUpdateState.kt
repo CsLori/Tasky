@@ -1,11 +1,12 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel.action
 
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import java.time.LocalDate
 
 sealed interface AgendaUpdateState {
     data class UpdateSelectedDate(val newDate: LocalDate) : AgendaUpdateState
-    data class UpdateItemSelected(val item: AgendaOption?) : AgendaUpdateState
+    data class UpdateSelectedOption(val item: AgendaOption?) : AgendaUpdateState
     data class UpdateVisibility(val visible: Boolean) : AgendaUpdateState
     data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaUpdateState
     data class UpdateMonth(val month: String) : AgendaUpdateState
@@ -13,5 +14,5 @@ sealed interface AgendaUpdateState {
         AgendaUpdateState
     data class UpdateSelectedIndex(val selectedIndex: Int) :
         AgendaUpdateState
-//    data class UpdateIsAgendaItemReadOnly(val isAgendaItemReadOnly: Boolean) : AgendaUpdateState
+    data class UpdateSelectedItem(val agendaItem: AgendaItem) : AgendaUpdateState
 }

@@ -35,6 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
+import com.example.tasky.core.presentation.ErrorStatus
+import com.example.tasky.core.presentation.FieldInput
+import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.CredentialsTextField
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.presentation.components.ErrorDialog
@@ -45,9 +48,6 @@ import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import com.example.tasky.core.presentation.ErrorStatus
-import com.example.tasky.core.presentation.FieldInput
-import com.example.tasky.core.presentation.UiText
 
 @Composable
 internal fun LoginScreen(

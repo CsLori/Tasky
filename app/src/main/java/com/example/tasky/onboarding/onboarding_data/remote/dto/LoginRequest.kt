@@ -1,4 +1,4 @@
-package com.example.tasky.onboarding.onboarding_data.remote
+package com.example.tasky.onboarding.onboarding_data.remote.dto
 
 import kotlinx.serialization.Serializable
 

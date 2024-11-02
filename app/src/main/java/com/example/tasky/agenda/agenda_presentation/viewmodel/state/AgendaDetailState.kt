@@ -64,7 +64,8 @@ data class AgendaDetailState(
     val editType: EditType = EditType.TITLE,
     val shouldShowReminderDropdown: Boolean = false,
     val selectedReminder: Long = reminderOptions[1].timeBeforeInMillis,
-    val isReadOnly: Boolean = false
+    val isReadOnly: Boolean = false,
+    val selectedAgendaItem: AgendaItem? = null,
 )
 
 enum class RemindBeforeDuration(val duration: Duration) {
@@ -93,4 +94,5 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateTitle(val title: String) : AgendaDetailStateUpdate
     data class UpdateDescription(val description: String) : AgendaDetailStateUpdate
     data class UpdateIsReadOnly(val isReadOnly: Boolean) : AgendaDetailStateUpdate
+    data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem) : AgendaDetailStateUpdate
 }

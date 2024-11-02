@@ -1,4 +1,4 @@
-package com.example.tasky.agenda.agenda_data.remote.dto_mappers
+package com.example.tasky.agenda.agenda_data.dto_mappers
 
 import com.example.tasky.agenda.agenda_data.remote.dto.EventRequest
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse

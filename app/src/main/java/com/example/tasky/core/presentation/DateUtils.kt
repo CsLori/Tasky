@@ -39,7 +39,6 @@ object DateUtils {
     fun longToLocalDate(date: Long) = LocalDateTime.ofEpochSecond(date / 1000, 0, ZoneOffset.UTC)
         .atZone(ZoneId.systemDefault())
         .toLocalDate()
-//        LocalDate.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault())
 
     fun convertMillisToLocalDate(millis: Long): ZonedDateTime {
         // Interpret the milliseconds as the start of the day in UTC, then convert to Los Angeles time
@@ -93,5 +92,13 @@ object DateUtils {
         return Instant.ofEpochMilli(this)
             .atZone(ZoneId.systemDefault())
             .format(formatter)
+    }
+
+    fun Long.toLocalDateTime(): LocalDateTime {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
+    }
+
+    fun LocalDateTime.toLong(): Long {
+        return this.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
     }
 }
