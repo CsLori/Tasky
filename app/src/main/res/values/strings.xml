@@ -33,4 +33,12 @@
     <string name="one_hour_before">"1 hour before"</string>
     <string name="six_hours_before">"6 hours before"</string>
     <string name="one_day_before">"1 day before"</string>
+    <string name="from">From</string>
+    <string name="to">To</string>
+    <string name="at">At</string>
+    <string name="visitors">Visitors</string>
+    <string name="add_visitor">Add visitor</string>
+    <string name="going">Going</string>
+    <string name="not_going">Not going</string>
+    <string name="add_photos">Add photos</string>
 </resources>

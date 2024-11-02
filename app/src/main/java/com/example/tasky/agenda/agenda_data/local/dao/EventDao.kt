@@ -13,7 +13,7 @@ interface EventDao {
     fun getAllEvents(): Flow<List<EventEntity>>
 
     @Upsert
-    suspend fun insertEvent(event: EventEntity)
+    suspend fun upsertEvent(event: EventEntity)
 
     @Delete
     suspend fun deleteEvent(event: EventEntity)

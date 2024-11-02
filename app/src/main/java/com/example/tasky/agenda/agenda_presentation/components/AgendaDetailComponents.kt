@@ -1,16 +1,21 @@
 package com.example.tasky.agenda.agenda_presentation.components
 
+import android.net.Uri
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.Add
@@ -25,12 +30,17 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
@@ -40,11 +50,14 @@ import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.ReminderDropdown
+import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 import java.time.ZoneOffset
 import kotlin.time.Duration.Companion.milliseconds
+
+const val thirtyMinutesInMillis = 1800000L // 30 * 60 * 1000
 
 @Composable
 fun AgendaItemMainHeader(agendaItem: AgendaItem?) {
@@ -87,7 +100,6 @@ fun AgendaItemTitle(
     onAction: (AgendaDetailAction) -> Unit,
     state: AgendaDetailState,
 ) {
-    Log.d("DDD - isReadOnly", "${state.isReadOnly}")
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -177,6 +189,8 @@ fun AgendaItemDescription(
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun TimeAndDateRow(
+    text: String,
+    isEventSecondRow: Boolean = false,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     state: AgendaDetailState,
 ) {
@@ -189,17 +203,10 @@ fun TimeAndDateRow(
 
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "At",
-                style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
-            )
-            Spacer(Modifier.width(dimensions.large32dp))
-
-            Text(
-                modifier = Modifier.then(
+            modifier = Modifier
+                .width(120.dp)
+                .weight(1f)
+                .then(
                     if (state.isReadOnly) {
                         Modifier
                     } else {
@@ -212,9 +219,40 @@ fun TimeAndDateRow(
                         }
                     }
                 ),
-                text = state.task.time.toHourMinuteFormat(),
-                style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                modifier = Modifier.weight(0.4f),
+                text = text,
+                style = typography.bodyLarge.copy(
+                    lineHeight = 15.sp,
+                    fontWeight = FontWeight.W400
+                )
             )
+
+            Row(
+                modifier = Modifier.weight(0.6f),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+
+                    text = if (isEventSecondRow) (state.task.time + thirtyMinutesInMillis).toHourMinuteFormat() else state.task.time.toHourMinuteFormat(),
+                    style = typography.bodyLarge.copy(
+                        lineHeight = 15.sp,
+                        fontWeight = FontWeight.W400
+                    )
+                )
+
+                if (!state.isReadOnly) {
+                    Icon(
+                        modifier = Modifier.padding(end = dimensions.default16dp),
+                        imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                        contentDescription = "Navigate next"
+                    )
+                }
+            }
 
             if (state.shouldShowTimePicker)
                 TimePickerDialog(
@@ -265,9 +303,9 @@ fun TimeAndDateRow(
                 )
         }
 
-        Text(
+        Row(
             modifier = Modifier
-                .padding(end = dimensions.extraLarge64dp)
+                .weight(1f)
                 .then(
                     if (state.isReadOnly) {
                         Modifier
@@ -281,9 +319,22 @@ fun TimeAndDateRow(
                         }
                     }
                 ),
-            text = state.date,
-            style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
-        )
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                modifier = Modifier
+                    .padding(start = dimensions.default16dp),
+                text = state.date,
+                style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
+            )
+            if (!state.isReadOnly) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                    contentDescription = "Navigate next"
+                )
+            }
+        }
 
         if (state.shouldShowDatePicker) {
             DatePickerModal(
@@ -325,30 +376,78 @@ fun TimeAndDateRow(
 
 @Composable
 fun AddPhotosSection(
-    onAddPhotos: () -> Unit
+    isReadOnly: Boolean,
+    photos: List<Photo>,
+    onAddPhotos: () -> Unit,
+    selectedImageUri: Uri?,
+    onUpdateState: (AgendaDetailStateUpdate) -> Unit
 ) {
+
+    selectedImageUri?.let { uri ->
+        val newPhoto = Photo(key = uri.toString(), url = uri.toString())
+        if (!photos.any { it.url == uri.toString() }) {
+            onUpdateState(AgendaDetailStateUpdate.UpdatePhotos(photos + newPhoto))
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(colors.light2)
-            .clickable(onClick = onAddPhotos)
-            .padding(vertical = dimensions.large32dp),
-        horizontalArrangement = Arrangement.Center,
+            .clickable(onClick = {
+                onAddPhotos()
+            })
+            .padding(vertical = dimensions.large32dp, horizontal = dimensions.default16dp),
+        horizontalArrangement = if (photos.isEmpty() && isReadOnly) Arrangement.Center else Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = Icons.Default.Add,
-            contentDescription = "Add photos",
-            tint = colors.gray
-        )
-
-        Spacer(modifier = Modifier.width(dimensions.default16dp))
-
-        Text(
-            "Add photos", style = typography.bodyLarge.copy(
-                lineHeight = 18.sp, letterSpacing = 0.sp, color = colors.gray
+        if (isReadOnly) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add photos",
+                tint = colors.gray
             )
-        )
+
+            Spacer(modifier = Modifier.width(dimensions.default16dp))
+
+            Text(
+                stringResource(R.string.add_photos), style = typography.bodyLarge.copy(
+                    lineHeight = 18.sp, letterSpacing = 0.sp, color = colors.gray
+                )
+            )
+        } else {
+            photos.forEach { photo ->
+                Log.d("DDD - url:", photo.url)
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter(photo.url),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(10.dp))
+                    )
+                }
+                Spacer(modifier = Modifier.width(dimensions.small8dp))
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add photos", tint = colors.lightBlue)
+            }
+
+        }
     }
     DefaultHorizontalDivider()
 }
@@ -431,4 +530,43 @@ fun SetReminderRow(
         )
     }
     DefaultHorizontalDivider()
+}
+
+@Preview
+@Composable
+fun AddPhotosSectionEditablePreview() {
+    AppTheme {
+        AddPhotosSection(
+            selectedImageUri = Uri.EMPTY,
+            onAddPhotos = {},
+            isReadOnly = false,
+            onUpdateState = {},
+            photos = emptyList()
+        )
+    }
+}
+
+@Preview
+@Composable
+fun AddPhotosSectionReadOnlyPreview() {
+    AppTheme {
+        AddPhotosSection(
+            selectedImageUri = Uri.EMPTY,
+            onAddPhotos = {},
+            isReadOnly = true,
+            onUpdateState = {},
+            photos = emptyList()
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+fun TimeAndDateRowPreview() {
+    AppTheme {
+        TimeAndDateRow(
+            text = "From", isEventSecondRow = false, onUpdateState = {}, state = AgendaDetailState()
+        )
+    }
 }

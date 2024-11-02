@@ -115,6 +115,9 @@ dependencies {
     implementation(libs.datastore)
     implementation(libs.protobuf.javalite)
     implementation(libs.datastore.core)
+
+    // Coil
+    implementation(libs.coil.compose)
 }
 
 protobuf {

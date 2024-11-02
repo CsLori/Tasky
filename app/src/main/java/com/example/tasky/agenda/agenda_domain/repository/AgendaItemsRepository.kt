@@ -18,7 +18,7 @@ interface AgendaItemsRepository {
 
     fun getAllEvents(): Flow<List<EventEntity>>
 
-    suspend fun insertEvent(eventEntity: EventEntity)
+    suspend fun upsertEvent(eventEntity: EventEntity)
 
     suspend fun deleteEvent(eventEntity: EventEntity)
 
