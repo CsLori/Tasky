@@ -2,30 +2,41 @@
 
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
+import android.net.Uri
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.tasky.Screen
+import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
 import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
+import com.example.tasky.core.domain.onError
+import com.example.tasky.core.domain.onSuccess
 import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
 import com.example.tasky.core.presentation.DateUtils.toMillis
+import com.example.tasky.core.presentation.FieldInput
+import com.example.tasky.core.presentation.components.DialogState
+import com.example.tasky.util.CredentialsValidator
+import com.example.tasky.util.PhotoCompressor
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalTime
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -33,7 +44,7 @@ class AgendaDetailViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
     private val localDatabaseRepository: LocalDatabaseRepository,
     private val savedStateHandle: SavedStateHandle,
-//    private val photoUploadManager: PhotoUploadManager
+    private val photoCompressor: PhotoCompressor
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaDetailState())
@@ -42,11 +53,17 @@ class AgendaDetailViewModel @Inject constructor(
     private var _uiState = MutableStateFlow<AgendaDetailUiState>(AgendaDetailUiState.None)
     val uiState: StateFlow<AgendaDetailUiState> = _uiState.asStateFlow()
 
+    private var _dialogState = MutableStateFlow<DialogState>(DialogState.Hide)
+    val dialogState: StateFlow<DialogState> = _dialogState.asStateFlow()
+
     val agendaOption = savedStateHandle.get<AgendaOption>("agendaOption") ?: AgendaOption.EVENT
     private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
+    private val photoIdFromPhotoScreen = savedStateHandle.get<String>("photoId")
 
     init {
         updateState(AgendaDetailStateUpdate.UpdateIsReadOnly(isReadOnly))
+
+        photoIdFromPhotoScreen?.let { safeId -> deletePhoto(safeId) }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -90,26 +107,22 @@ class AgendaDetailViewModel @Inject constructor(
                 is AgendaDetailStateUpdate.UpdateTitle -> it.copy(task = it.task.copy(taskTitle = action.title))
                 is AgendaDetailStateUpdate.UpdateIsReadOnly -> it.copy(isReadOnly = action.isReadOnly)
                 is AgendaDetailStateUpdate.UpdateSelectedAgendaItem -> it.copy(selectedAgendaItem = action.selectedAgendaItem)
-                is AgendaDetailStateUpdate.UpdatePhotos -> { it.copy(event = it.event.copy(photos = action.photos)) }
+                is AgendaDetailStateUpdate.UpdatePhotos -> it.copy(event = it.event.copy(photos = action.photos))
+                is AgendaDetailStateUpdate.UpdateAttendees -> it.copy(
+                    event = it.event.copy(
+                        attendees = action.attendees
+                    )
+                )
 
-                is AgendaDetailStateUpdate.UpdateAttendees -> {
-
-                    // This will need to go to AgendaDetailScreen
-//                    val newAttendees = state.value.event.attendees.map { attendee ->
-//                        attendee.apply {
-//                            Attendee(
-//                                name = name,
-//                                email = email,
-//                                userId = userId,
-//                                eventId = eventId,
-//                                isGoing = isGoing,
-//                                isCreator = isCreator,
-//                                remindAt = remindAt
-//                            )
-//                        }
-//                    }
-                    it.copy(event = it.event.copy(attendees = action.attendees))
+                is AgendaDetailStateUpdate.UpdateAddVisitorEmail -> {
+                    val emailErrorStatus =
+                        CredentialsValidator.validateEmail(FieldInput(action.email.value).value)
+                    it.copy(
+                        addVisitorEmail = action.email,
+                        emailErrorStatus = emailErrorStatus
+                    )
                 }
+
             }
         }
     }
@@ -172,6 +185,59 @@ class AgendaDetailViewModel @Inject constructor(
             }
         }
         return state.value.task
+    }
+
+    fun getAttendee(email: String) {
+        _state.update { it.copy(isLoading = true) }
+        viewModelScope.launch {
+            agendaRepository.getAttendee(email)
+                .onSuccess { attendeeResponse ->
+                    if (attendeeResponse.doesUserExist) {
+                        _state.update { currentState ->
+                            currentState.copy(
+                                event = currentState.event.copy(
+                                    attendees = currentState.event.attendees + attendeeResponse.attendee.toAttendee()
+                                )
+                            )
+                        }
+                        _dialogState.update { DialogState.Hide }
+                    } else {
+                        _state.update { it.copy(isLoading = false) }
+                    }
+                }.onError {
+                    _state.update { it.copy(isLoading = false) }
+                }
+            _state.update { it.copy(isLoading = false) }
+        }
+    }
+
+    fun showAddVisitorDialog() {
+        _dialogState.value = DialogState.Show(
+            errorMessage = null
+        )
+    }
+
+    fun hideAddVisitorDialog() {
+        _dialogState.value = DialogState.Hide
+    }
+
+    fun handlePhotoCompression(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            photoCompressor.compressPhoto(uri)?.let { compressedData ->
+                val newPhoto = Photo(
+                    key = UUID.randomUUID().toString(),
+                    url = uri.toString()
+                )
+                updateState(AgendaDetailStateUpdate.UpdatePhotos(state.value.event.photos + newPhoto))
+            }
+        }
+    }
+
+    fun deletePhoto(photoKey: String) {
+        val updatedPhotos = _state.value.event.photos.filterNot { it.key == photoKey }
+        _state.update { currentState ->
+            currentState.copy(event = currentState.event.copy(photos = updatedPhotos))
+        }
     }
 
     sealed class AgendaDetailUiState {

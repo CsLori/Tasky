@@ -16,9 +16,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.tasky.R
 import com.example.tasky.Screen
+import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaItemEditScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
+import com.example.tasky.agenda.agenda_presentation.ui.PhotoScreen
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
@@ -127,6 +129,21 @@ fun Navigation() {
                     val agendaDetailViewModel = hiltViewModel<AgendaDetailViewModel>()
                     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
                     val args = it.toRoute<Screen.AgendaDetail>()
+                    val navigationTitle =
+                        when (agendaDetailViewModel.agendaOption) {
+                            AgendaOption.TASK -> agendaDetailViewModel.state.value.task.title
+                            AgendaOption.EVENT -> agendaDetailViewModel.state.value.event.title
+                            AgendaOption.REMINDER -> agendaDetailViewModel.state.value.reminder.title
+
+                        }
+
+                    val navigationDescription =
+                        when (agendaDetailViewModel.agendaOption) {
+                            AgendaOption.TASK -> agendaDetailViewModel.state.value.task.description
+                            AgendaOption.EVENT -> agendaDetailViewModel.state.value.event.description
+                            AgendaOption.REMINDER -> agendaDetailViewModel.state.value.reminder.description
+
+                        }
 
 
                     savedStateHandle?.get<String>(title)?.let { newTitle ->
@@ -154,13 +171,21 @@ fun Navigation() {
                         onEditPressed = {
                             navController.navigate(
                                 Screen.AgendaItemEdit(
-                                    title = agendaDetailViewModel.state.value.task.title,
-                                    description = agendaDetailViewModel.state.value.task.description,
+                                    title = navigationTitle,
+                                    description = navigationDescription,
                                     editType = agendaDetailViewModel.state.value.editType
                                 )
                             )
                         },
                         agendaItemId = args.agendaItemId,
+                        onNavigateToSelectedPhoto = { photoId ->
+                            val photoUrl = agendaDetailViewModel.state.value.event.photos
+                                .firstOrNull { photo -> photo.key == photoId }?.url
+
+                            if (photoUrl != null && photoId != null) {
+                                navController.navigate(Screen.Photo(photoId, photoUrl))
+                            }
+                        }
                     )
                 }
                 composable<Screen.AgendaItemEdit> {
@@ -182,6 +207,20 @@ fun Navigation() {
                                 newDescription
                             )
                             navController.navigateUp()
+                        }
+                    )
+                }
+
+                composable<Screen.Photo> {
+                    PhotoScreen(
+                        onNavigateBack = { navController.navigateUp() },
+                        onDeletePhoto = { photoId ->
+                            navController.navigate(
+                                Screen.AgendaDetail(
+                                    photoId = photoId,
+                                    isAgendaItemReadOnly = false
+                                )
+                            )
                         }
                     )
                 }

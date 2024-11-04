@@ -41,4 +41,9 @@
     <string name="going">Going</string>
     <string name="not_going">Not going</string>
     <string name="add_photos">Add photos</string>
+    <string name="user_does_not_exist">User does not exist</string>
+    <string name="max_number_of_photos">You can\'t add more than 9 photos, please delete one if you would like to select another one.</string>
+    <string name="visitor_cannot_be_added">User could not be added, please check the email address again!</string>
+    <string name="visitor_has_been_successfully_added">Visitor has been successfully added!</string>
+    <string name="photo">Photo</string>
 </resources>

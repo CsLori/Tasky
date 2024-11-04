@@ -11,6 +11,8 @@ import com.example.tasky.agenda.agenda_domain.model.ReminderType
 import com.example.tasky.agenda.agenda_presentation.components.reminderOptions
 import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
+import com.example.tasky.core.presentation.ErrorStatus
+import com.example.tasky.core.presentation.FieldInput
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
@@ -68,6 +70,8 @@ data class AgendaDetailState(
     val selectedReminder: Long = reminderOptions[1].timeBeforeInMillis,
     val isReadOnly: Boolean = false,
     val selectedAgendaItem: AgendaItem? = null,
+    val addVisitorEmail: FieldInput? = null,
+    val emailErrorStatus: ErrorStatus? = null
 )
 
 enum class RemindBeforeDuration(val duration: Duration) {
@@ -97,4 +101,5 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem) : AgendaDetailStateUpdate
     data class UpdatePhotos(val photos: List<Photo>) : AgendaDetailStateUpdate
     data class UpdateAttendees(val attendees: List<Attendee>) : AgendaDetailStateUpdate
+    data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate
 }

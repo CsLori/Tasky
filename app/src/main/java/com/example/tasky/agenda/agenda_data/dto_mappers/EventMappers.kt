@@ -13,7 +13,7 @@ fun AgendaItem.Event.toEventResponse(): EventResponse {
         from = from,
         to = to,
         remindAt = remindAt,
-        attendees = attendees.toSerializedAttendees(),
+        attendees = attendees.toAttendeeDtos(),
         photos = photos.toSerializedPhotos(),
         host = host ?: "",
         isUserEventCreator = isUserEventCreator

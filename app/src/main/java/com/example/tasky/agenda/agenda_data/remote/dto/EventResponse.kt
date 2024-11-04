@@ -12,6 +12,6 @@ data class EventResponse(
     val remindAt: Long,
     val host: String,
     val isUserEventCreator: Boolean,
-    val attendees: List<AttendeeSerialized>,
+    val attendees: List<AttendeeDto>,
     val photos: List<PhotoSerialized>
 )

@@ -6,6 +6,7 @@ import com.example.tasky.agenda.agenda_data.dto_mappers.toSerializedTask
 import com.example.tasky.agenda.agenda_data.entity_mappers.toEventEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
@@ -75,7 +76,10 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun addEvent(event: AgendaItem.Event, photos: List<ByteArray>): Result<EventResponse, TaskyError> {
+    override suspend fun addEvent(
+        event: AgendaItem.Event,
+        photos: List<ByteArray>
+    ): Result<EventResponse, TaskyError> {
         val eventPart = createMultipartEventRequest(event)
         val photosPart = photos.mapIndexed() { index, photo -> createPhotoPart(photo, index) }
 
@@ -92,6 +96,20 @@ class AgendaRepositoryImpl(
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
+    }
 
+    override suspend fun getAttendee(email: String): Result<AttendeeResponse, TaskyError> {
+        return try {
+            val attendee = api.getAttendee(email)
+            Result.Success(attendee)
+        } catch (e: Exception) {
+            if (e is CancellationException) {
+                throw e
+            }
+            e.printStackTrace()
+
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
     }
 }

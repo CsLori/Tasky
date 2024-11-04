@@ -1,7 +1,6 @@
 package com.example.tasky.agenda.agenda_presentation.components
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,9 +11,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
@@ -28,10 +30,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,6 +54,7 @@ import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.ReminderDropdown
+import com.example.tasky.core.presentation.components.showToast
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
@@ -58,6 +63,7 @@ import java.time.ZoneOffset
 import kotlin.time.Duration.Companion.milliseconds
 
 const val thirtyMinutesInMillis = 1800000L // 30 * 60 * 1000
+const val MAX_NUMBER_OF_PHOTOS = 9
 
 @Composable
 fun AgendaItemMainHeader(agendaItem: AgendaItem?) {
@@ -380,76 +386,93 @@ fun AddPhotosSection(
     photos: List<Photo>,
     onAddPhotos: () -> Unit,
     selectedImageUri: Uri?,
-    onUpdateState: (AgendaDetailStateUpdate) -> Unit
+    onUpdateState: (AgendaDetailStateUpdate) -> Unit,
+    onAction: (AgendaDetailAction) -> Unit
 ) {
 
+    val context = LocalContext.current
+
     selectedImageUri?.let { uri ->
-        val newPhoto = Photo(key = uri.toString(), url = uri.toString())
-        if (!photos.any { it.url == uri.toString() }) {
-            onUpdateState(AgendaDetailStateUpdate.UpdatePhotos(photos + newPhoto))
+        if (photos.none { it.url == uri.toString() }) {
+            onAction(AgendaDetailAction.OnPhotoCompress(uri))
         }
     }
 
-    Row(
+    LazyRow(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(max = 100.dp)
             .background(colors.light2)
-            .clickable(onClick = {
-                onAddPhotos()
-            })
-            .padding(vertical = dimensions.large32dp, horizontal = dimensions.default16dp),
-        horizontalArrangement = if (photos.isEmpty() && isReadOnly) Arrangement.Center else Arrangement.Start,
+            .padding(dimensions.default16dp),
+        horizontalArrangement = Arrangement.spacedBy(dimensions.small8dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (isReadOnly) {
+        items(photos.take(MAX_NUMBER_OF_PHOTOS)) { photo ->
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = rememberAsyncImagePainter(photo.url),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable {
+                            onAction(AgendaDetailAction.OnPhotoPressed(photo.key))
+                        }
+                )
+            }
+        }
+
+        if (!isReadOnly) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp))
+                        .clickable {
+                            if (photos.size < MAX_NUMBER_OF_PHOTOS) {
+                                onAddPhotos()
+                            } else {
+                                showToast(context, R.string.max_number_of_photos)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Add photos",
+                        tint = colors.lightBlue
+                    )
+                }
+            }
+        }
+    }
+
+    if (photos.isEmpty() && isReadOnly) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onAddPhotos() }
+                .padding(vertical = dimensions.default16dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Add photos",
                 tint = colors.gray
             )
-
-            Spacer(modifier = Modifier.width(dimensions.default16dp))
-
-            Text(
-                stringResource(R.string.add_photos), style = typography.bodyLarge.copy(
-                    lineHeight = 18.sp, letterSpacing = 0.sp, color = colors.gray
-                )
-            )
-        } else {
-            photos.forEach { photo ->
-                Log.d("DDD - url:", photo.url)
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = rememberAsyncImagePainter(photo.url),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(10.dp))
-                    )
-                }
-                Spacer(modifier = Modifier.width(dimensions.small8dp))
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add photos", tint = colors.lightBlue)
-            }
-
+            Spacer(modifier = Modifier.width(dimensions.small8dp))
+            Text("Add Photos", color = colors.gray)
         }
     }
-    DefaultHorizontalDivider()
 }
 
 @Composable
@@ -541,7 +564,8 @@ fun AddPhotosSectionEditablePreview() {
             onAddPhotos = {},
             isReadOnly = false,
             onUpdateState = {},
-            photos = emptyList()
+            photos = emptyList(),
+            onAction = {}
         )
     }
 }
@@ -555,7 +579,8 @@ fun AddPhotosSectionReadOnlyPreview() {
             onAddPhotos = {},
             isReadOnly = true,
             onUpdateState = {},
-            photos = emptyList()
+            photos = emptyList(),
+            onAction = {}
         )
     }
 }

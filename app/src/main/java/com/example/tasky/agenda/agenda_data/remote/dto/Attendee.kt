@@ -1,11 +1,13 @@
-package com.example.tasky.agenda.agenda_domain.model
+package com.example.tasky.agenda.agenda_data.remote.dto
 
-data class Attendee(
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class AttendeeDto(
     val email: String,
     val name: String,
     val userId: String,
     val eventId: String,
     val isGoing: Boolean,
     val remindAt: Long,
-    val isCreator: Boolean
 )

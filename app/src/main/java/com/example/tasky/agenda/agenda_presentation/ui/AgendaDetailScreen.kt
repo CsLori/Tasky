@@ -44,6 +44,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
@@ -56,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_domain.model.ReminderType
 import com.example.tasky.agenda.agenda_presentation.components.AddPhotosSection
@@ -69,11 +71,16 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewMo
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
+import com.example.tasky.core.presentation.ErrorStatus
+import com.example.tasky.core.presentation.FieldInput
+import com.example.tasky.core.presentation.components.AddVisitorDialog
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
+import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
+import com.example.tasky.util.getInitials
 
 
 @Composable
@@ -83,6 +90,7 @@ internal fun AgendaDetailScreen(
     onClose: () -> Boolean,
     onEditPressed: () -> Unit,
     agendaItemId: String? = null,
+    onNavigateToSelectedPhoto: (String?) -> Unit
 ) {
     val state = agendaDetailViewModel.state.collectAsStateWithLifecycle().value
     val uiState = agendaDetailViewModel.uiState.collectAsStateWithLifecycle().value
@@ -110,7 +118,7 @@ internal fun AgendaDetailScreen(
     AgendaDetailContent(
         state = state,
         uiState = uiState,
-        onUpdateState = { state -> agendaDetailViewModel.updateState(state) },
+        onUpdateState = { agendaDetailViewModel.updateState(it) },
         onAction = { action ->
             when (action) {
                 AgendaDetailAction.OnClosePressed -> onNavigateToAgendaScreen()
@@ -128,16 +136,30 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnEnableEditPressed -> agendaDetailViewModel.updateState(
                     AgendaDetailStateUpdate.UpdateIsReadOnly(false)
                 )
+
+                AgendaDetailAction.OnAddVisitorPressed -> {
+                    state.addVisitorEmail?.let { agendaDetailViewModel.getAttendee(it.value) }
+                }
+
+                is AgendaDetailAction.OnPhotoCompress -> {
+                    agendaDetailViewModel.handlePhotoCompression(action.uri)
+                }
+
+                is AgendaDetailAction.OnPhotoPressed -> onNavigateToSelectedPhoto(action.key)
             }
         },
         agendaItemId = agendaItemId,
         agendaItem = state.selectedAgendaItem,
         onUpdatePhotos = { photos ->
             agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdatePhotos(photos))
-        }
+        },
+        onShowDialog = { agendaDetailViewModel.showAddVisitorDialog() },
+        onDialogDismiss = { agendaDetailViewModel.hideAddVisitorDialog() },
+        dialogState = agendaDetailViewModel.dialogState.collectAsStateWithLifecycle().value,
     )
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun AgendaDetailContent(
     state: AgendaDetailState,
@@ -146,7 +168,10 @@ private fun AgendaDetailContent(
     onAction: (AgendaDetailAction) -> Unit,
     agendaItemId: String?,
     agendaItem: AgendaItem?,
-    onUpdatePhotos: (List<Photo>) -> Unit
+    onUpdatePhotos: (List<Photo>) -> Unit,
+    onShowDialog: () -> Unit,
+    onDialogDismiss: () -> Unit,
+    dialogState: DialogState,
 ) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val getContent =
@@ -193,24 +218,28 @@ private fun AgendaDetailContent(
                         .fillMaxHeight()
                         .padding(top = 70.dp)
                 ) {
-                    Column(
+                    LazyColumn(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
+                            .fillMaxSize()
                             .padding(top = 40.dp)
                     ) {
-                        MainContent(
-                            state = state,
-                            agendaItem = agendaItem,
-                            onUpdateState = onUpdateState,
-                            onAction = onAction,
-                            onAddPhotosPressed = {
-                                if (!state.isReadOnly) {
-                                    getContent.launch("image/*")
-                                }
-                            },
-                            selectedImageUri = selectedImageUri,
-                        )
+                        item {
+                            MainContent(
+                                state = state,
+                                agendaItem = agendaItem,
+                                onUpdateState = onUpdateState,
+                                onAction = onAction,
+                                onAddPhotosPressed = {
+                                    if (!state.isReadOnly) {
+                                        getContent.launch("image/*")
+                                    }
+                                },
+                                selectedImageUri = selectedImageUri,
+                                onShowDialog = onShowDialog,
+                                onDialogDismiss = onDialogDismiss,
+                                dialogState = dialogState,
+                            )
+                        }
                     }
                 }
             }
@@ -227,6 +256,9 @@ fun MainContent(
     onAction: (AgendaDetailAction) -> Unit,
     onAddPhotosPressed: () -> Unit,
     selectedImageUri: Uri?,
+    onShowDialog: () -> Unit,
+    onDialogDismiss: () -> Unit,
+    dialogState: DialogState,
 ) {
     val defaultHorizontalPadding = Modifier.padding(horizontal = dimensions.default16dp)
 
@@ -268,10 +300,13 @@ fun MainContent(
                 onAddPhotos = onAddPhotosPressed,
                 selectedImageUri = selectedImageUri,
                 onUpdateState = onUpdateState,
-                photos = state.event.photos
+                photos = state.event.photos,
+                onAction = onAction
             )
         }
     }
+
+    DefaultHorizontalDivider()
 
     Column(
         modifier = Modifier
@@ -284,7 +319,17 @@ fun MainContent(
         SetReminderRow(onUpdateState, state)
 
         if (agendaItem is AgendaItem.Event) {
-            VisitorsSection(listOf("Lori", "Gyuri", " Henrik"), {})
+            VisitorsSection(
+                visitors = state.event.attendees,
+                onVisitorStatusChanged = {},
+                onShowDialog = onShowDialog,
+                onDialogDismiss = onDialogDismiss,
+                dialogState = dialogState,
+                email = state.addVisitorEmail ?: FieldInput(""),
+                emailErrorStatus = state.emailErrorStatus ?: ErrorStatus(false),
+                onUpdateState = onUpdateState,
+                onAction = onAction,
+            )
         }
         Box(
             modifier = Modifier
@@ -314,8 +359,15 @@ fun MainContent(
 
 @Composable
 private fun VisitorsSection(
-    visitors: List<String>,
-    onVisitorStatusChanged: () -> Unit
+    visitors: List<Attendee>,
+    onVisitorStatusChanged: () -> Unit,
+    onShowDialog: () -> Unit,
+    onDialogDismiss: () -> Unit,
+    dialogState: DialogState,
+    email: FieldInput = FieldInput(),
+    emailErrorStatus: ErrorStatus,
+    onUpdateState: (AgendaDetailStateUpdate) -> Unit,
+    onAction: (AgendaDetailAction) -> Unit,
 ) {
     Column(modifier = Modifier.padding(top = dimensions.large32dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -335,7 +387,10 @@ private fun VisitorsSection(
                 Icon(
                     Icons.Outlined.Add,
                     contentDescription = stringResource(R.string.add_visitor),
-                    tint = colors.lightGray
+                    tint = colors.lightGray,
+                    modifier = Modifier.clickable {
+                        onShowDialog()
+                    }
                 )
             }
         }
@@ -438,14 +493,26 @@ private fun VisitorsSection(
 
         Spacer(modifier = Modifier.height(dimensions.default16dp))
 
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(visitors.size) { visitor ->
-                VisitorItem(
-                    visitor = visitor.toString(),
-                    onStatusChanged = {}
-                )
-                Spacer(modifier = Modifier.height(dimensions.small8dp))
-            }
+        visitors.forEach { visitor ->
+            VisitorItem(
+                visitor = visitor.name,
+                onStatusChanged = {}
+            )
+            Spacer(modifier = Modifier.height(dimensions.small8dp))
+
+        }
+
+        if (dialogState is DialogState.Show) {
+            AddVisitorDialog(
+                title = "Add visitor",
+                displayCloseIcon = true,
+                positiveButtonText = "ADD",
+                onPositiveClick = { onAction(AgendaDetailAction.OnAddVisitorPressed) },
+                onCancelClicked = { onDialogDismiss() },
+                email = email,
+                emailErrorStatus = emailErrorStatus,
+                onUpdateState = onUpdateState,
+            )
         }
     }
 }
@@ -455,6 +522,7 @@ private fun VisitorItem(
     visitor: String,
     onStatusChanged: () -> Unit
 ) {
+    val visitorInitials = getInitials(visitor)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -483,12 +551,15 @@ private fun VisitorItem(
                     contentAlignment = Alignment.Center
 
                 ) {
-                    Text("AA", style = typography.bodySmall.copy(color = colors.white))
+                    Text(
+                        text = visitorInitials,
+                        style = typography.bodySmall.copy(color = colors.white)
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(dimensions.small8dp))
 
-                Text("Ann Allen", style = typography.bodySmall.copy(color = colors.black))
+                Text(text = visitor, style = typography.bodySmall.copy(color = colors.black))
             }
             Icon(
                 Icons.Outlined.Delete,
@@ -591,7 +662,10 @@ fun AgendaDetailReadOnlyPreview() {
                 eventReminderType = ReminderType.TASK
 
             ),
-            onUpdatePhotos = {}
+            onUpdatePhotos = {},
+            onShowDialog = {},
+            onDialogDismiss = {},
+            dialogState = DialogState.Hide,
         )
     }
 }
@@ -617,7 +691,10 @@ fun AgendaDetailEditablePreview() {
                 remindAtTime = 2214,
                 taskReminderType = ReminderType.TASK
             ),
-            onUpdatePhotos = {}
+            onUpdatePhotos = {},
+            onShowDialog = {},
+            onDialogDismiss = {},
+            dialogState = DialogState.Show(null)
         )
     }
 }
