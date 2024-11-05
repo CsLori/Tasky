@@ -32,7 +32,8 @@ import javax.inject.Inject
 class AgendaDetailViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
     private val localDatabaseRepository: LocalDatabaseRepository,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+//    private val photoUploadManager: PhotoUploadManager
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaDetailState())
@@ -89,6 +90,26 @@ class AgendaDetailViewModel @Inject constructor(
                 is AgendaDetailStateUpdate.UpdateTitle -> it.copy(task = it.task.copy(taskTitle = action.title))
                 is AgendaDetailStateUpdate.UpdateIsReadOnly -> it.copy(isReadOnly = action.isReadOnly)
                 is AgendaDetailStateUpdate.UpdateSelectedAgendaItem -> it.copy(selectedAgendaItem = action.selectedAgendaItem)
+                is AgendaDetailStateUpdate.UpdatePhotos -> { it.copy(event = it.event.copy(photos = action.photos)) }
+
+                is AgendaDetailStateUpdate.UpdateAttendees -> {
+
+                    // This will need to go to AgendaDetailScreen
+//                    val newAttendees = state.value.event.attendees.map { attendee ->
+//                        attendee.apply {
+//                            Attendee(
+//                                name = name,
+//                                email = email,
+//                                userId = userId,
+//                                eventId = eventId,
+//                                isGoing = isGoing,
+//                                isCreator = isCreator,
+//                                remindAt = remindAt
+//                            )
+//                        }
+//                    }
+                    it.copy(event = it.event.copy(attendees = action.attendees))
+                }
             }
         }
     }

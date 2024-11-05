@@ -5,6 +5,8 @@ package com.example.tasky.agenda.agenda_presentation.viewmodel.state
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TimePickerState
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.Attendee
+import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_domain.model.ReminderType
 import com.example.tasky.agenda.agenda_presentation.components.reminderOptions
 import com.example.tasky.core.presentation.DateUtils
@@ -84,10 +86,8 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateDate(val newDate: LocalDate) : AgendaDetailStateUpdate
     data class UpdateMonth(val month: String) : AgendaDetailStateUpdate
     data class UpdateTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
-    data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) :
-        AgendaDetailStateUpdate
-    data class UpdateShouldShowTimePicker(val shouldShowTimePicker: Boolean) :
-        AgendaDetailStateUpdate
+    data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaDetailStateUpdate
+    data class UpdateShouldShowTimePicker(val shouldShowTimePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateEditType(val editType: EditType) : AgendaDetailStateUpdate
     data class UpdateShouldShowReminderDropdown(val shouldShowReminderDropdown: Boolean) : AgendaDetailStateUpdate
     data class UpdateSelectedReminder(val selectedReminder: Long) : AgendaDetailStateUpdate
@@ -95,4 +95,6 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateDescription(val description: String) : AgendaDetailStateUpdate
     data class UpdateIsReadOnly(val isReadOnly: Boolean) : AgendaDetailStateUpdate
     data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem) : AgendaDetailStateUpdate
+    data class UpdatePhotos(val photos: List<Photo>) : AgendaDetailStateUpdate
+    data class UpdateAttendees(val attendees: List<Attendee>) : AgendaDetailStateUpdate
 }
