@@ -14,7 +14,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.example.tasky.R
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
@@ -30,11 +29,13 @@ import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 
+const val DESCRIPTION = "description"
+const val TITLE = "title"
+const val PHOTO_ID = "photoId"
+
 @Composable
 fun Navigation() {
     val navController = rememberNavController()
-    val description = UiText.StringResource(R.string.description).asString()
-    val title = UiText.StringResource(R.string.title).asString()
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
@@ -129,6 +130,15 @@ fun Navigation() {
                     val agendaDetailViewModel = hiltViewModel<AgendaDetailViewModel>()
                     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
                     val args = it.toRoute<Screen.AgendaDetail>()
+
+
+
+                    LaunchedEffect(savedStateHandle?.get<String>(PHOTO_ID)) {
+                        savedStateHandle?.get<String>(PHOTO_ID)?.let { safePhotoId ->
+                            agendaDetailViewModel.deletePhoto(safePhotoId)
+                            savedStateHandle.remove<String>(PHOTO_ID)
+                        }
+                    }
                     val navigationTitle =
                         when (agendaDetailViewModel.agendaOption) {
                             AgendaOption.TASK -> agendaDetailViewModel.state.value.task.title
@@ -146,7 +156,7 @@ fun Navigation() {
                         }
 
 
-                    savedStateHandle?.get<String>(title)?.let { newTitle ->
+                    savedStateHandle?.get<String>(TITLE)?.let { newTitle ->
                         agendaDetailViewModel.updateState(
                             AgendaDetailStateUpdate.UpdateTitle(
                                 newTitle
@@ -154,7 +164,7 @@ fun Navigation() {
                         )
                     }
 
-                    savedStateHandle?.get<String>(description)?.let { newDescription ->
+                    savedStateHandle?.get<String>(DESCRIPTION)?.let { newDescription ->
                         agendaDetailViewModel.updateState(
                             AgendaDetailStateUpdate.UpdateDescription(
                                 newDescription
@@ -199,11 +209,11 @@ fun Navigation() {
                         onBackPressed = { navController.navigateUp() },
                         onSavePressed = { newTitle, newDescription ->
                             navController.previousBackStackEntry?.savedStateHandle?.set(
-                                title,
+                                TITLE,
                                 newTitle
                             )
                             navController.previousBackStackEntry?.savedStateHandle?.set(
-                                description,
+                                DESCRIPTION,
                                 newDescription
                             )
                             navController.navigateUp()
@@ -215,12 +225,11 @@ fun Navigation() {
                     PhotoScreen(
                         onNavigateBack = { navController.navigateUp() },
                         onDeletePhoto = { photoId ->
-                            navController.navigate(
-                                Screen.AgendaDetail(
-                                    photoId = photoId,
-                                    isAgendaItemReadOnly = false
-                                )
+                            navController.previousBackStackEntry?.savedStateHandle?.set(
+                                PHOTO_ID,
+                                photoId
                             )
+                            navController.navigateUp()
                         }
                     )
                 }

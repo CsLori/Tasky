@@ -6,7 +6,7 @@ import com.example.tasky.agenda.agenda_data.dto_mappers.toSerializedTask
 import com.example.tasky.agenda.agenda_data.entity_mappers.toEventEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeResponse
+import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
@@ -98,7 +98,7 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun getAttendee(email: String): Result<AttendeeResponse, TaskyError> {
+    override suspend fun getAttendee(email: String): Result<AttendeeExistDto, TaskyError> {
         return try {
             val attendee = api.getAttendee(email)
             Result.Success(attendee)

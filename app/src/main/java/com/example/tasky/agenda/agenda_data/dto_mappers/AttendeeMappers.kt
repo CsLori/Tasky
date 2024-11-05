@@ -1,30 +1,26 @@
 package com.example.tasky.agenda.agenda_data.dto_mappers
 
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeDto
-import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeSerialized
+import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeMinimalDto
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 
-fun Attendee.toSerializedAttendee(): AttendeeSerialized {
-    return AttendeeSerialized(
+fun Attendee.toAttendeeMinimalDto(): AttendeeMinimalDto {
+    return AttendeeMinimalDto(
         userId = userId,
         email = email,
         fullName = name,
     )
 }
 
-fun List<Attendee>.toSerializedAttendees(): List<AttendeeSerialized> {
-    return map { it.toSerializedAttendee() }
+fun List<Attendee>.toAttendeeMinimalDtos(): List<AttendeeMinimalDto> {
+    return map { it.toAttendeeMinimalDto() }
 }
 
-fun AttendeeSerialized.toAttendee(): Attendee {
-    return Attendee(
+fun AttendeeMinimalDto.toAttendee(): AttendeeMinimalDto {
+    return AttendeeMinimalDto(
         userId = userId,
         email = email,
-        name = fullName,
-        eventId = "",
-        isGoing = true,
-        remindAt = 0L,
-        isCreator = false,
+        fullName = fullName
     )
 }
 

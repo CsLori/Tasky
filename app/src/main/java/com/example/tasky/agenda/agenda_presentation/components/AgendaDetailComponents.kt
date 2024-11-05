@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -387,7 +386,7 @@ fun AddPhotosSection(
     onAddPhotos: () -> Unit,
     selectedImageUri: Uri?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
-    onAction: (AgendaDetailAction) -> Unit
+    onAction: (AgendaDetailAction) -> Unit,
 ) {
 
     val context = LocalContext.current
@@ -407,7 +406,7 @@ fun AddPhotosSection(
         horizontalArrangement = Arrangement.spacedBy(dimensions.small8dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        items(photos.take(MAX_NUMBER_OF_PHOTOS)) { photo ->
+        items(photos.take(MAX_NUMBER_OF_PHOTOS), key = { photo -> photo.key }) { photo ->
             Box(
                 modifier = Modifier
                     .size(80.dp)

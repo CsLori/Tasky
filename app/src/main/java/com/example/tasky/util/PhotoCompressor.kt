@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import kotlin.coroutines.cancellation.CancellationException
 
 class PhotoCompressor(
     private val context: Context
@@ -22,6 +23,9 @@ class PhotoCompressor(
                 compressBitmapToUnder1MB(bmp)
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+
             e.printStackTrace()
             return@withContext null
         }

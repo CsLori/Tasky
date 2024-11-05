@@ -22,8 +22,9 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
@@ -214,32 +215,31 @@ private fun AgendaDetailContent(
                     ),
                     color = colors.white,
                     modifier = Modifier
+                        .verticalScroll(rememberScrollState())
                         .fillMaxWidth()
                         .fillMaxHeight()
                         .padding(top = 70.dp)
                 ) {
-                    LazyColumn(
+                    Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(top = 40.dp)
                     ) {
-                        item {
-                            MainContent(
-                                state = state,
-                                agendaItem = agendaItem,
-                                onUpdateState = onUpdateState,
-                                onAction = onAction,
-                                onAddPhotosPressed = {
-                                    if (!state.isReadOnly) {
-                                        getContent.launch("image/*")
-                                    }
-                                },
-                                selectedImageUri = selectedImageUri,
-                                onShowDialog = onShowDialog,
-                                onDialogDismiss = onDialogDismiss,
-                                dialogState = dialogState,
-                            )
-                        }
+                        MainContent(
+                            state = state,
+                            agendaItem = agendaItem,
+                            onUpdateState = onUpdateState,
+                            onAction = onAction,
+                            onAddPhotosPressed = {
+                                if (!state.isReadOnly) {
+                                    getContent.launch("image/*")
+                                }
+                            },
+                            selectedImageUri = selectedImageUri,
+                            onShowDialog = onShowDialog,
+                            onDialogDismiss = onDialogDismiss,
+                            dialogState = dialogState,
+                        )
                     }
                 }
             }
@@ -264,7 +264,7 @@ fun MainContent(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(horizontal = dimensions.default16dp)
     ) {
         AgendaItemMainHeader(agendaItem)
@@ -312,8 +312,7 @@ fun MainContent(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = dimensions.default16dp)
-    )
-    {
+    ) {
         DefaultHorizontalDivider()
 
         SetReminderRow(onUpdateState, state)
@@ -334,14 +333,14 @@ fun MainContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = dimensions.large32dp),
+                .padding(bottom = dimensions.default16dp),
             contentAlignment = Alignment.BottomCenter
         ) {
             Column(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                DefaultHorizontalDivider(defaultHorizontalPadding)
+                DefaultHorizontalDivider()
                 Spacer(modifier = Modifier.height(dimensions.small8dp))
                 Text(
                     modifier = Modifier

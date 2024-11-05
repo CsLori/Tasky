@@ -1,7 +1,7 @@
 package com.example.tasky.core.data.remote
 
 import com.example.tasky.agenda.agenda_data.remote.dto.AgendaResponse
-import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeResponse
+import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.TaskSerialized
 import com.example.tasky.core.domain.Result
@@ -57,7 +57,7 @@ interface TaskyApi {
     suspend fun authenticateUser()
 
     @GET("/attendee")
-    suspend fun getAttendee(@Query("email") email: String): AttendeeResponse
+    suspend fun getAttendee(@Query("email") email: String): AttendeeExistDto
 
     @DELETE("/attendee")
     suspend fun deleteAttendee(@Query("eventId") eventId: String)

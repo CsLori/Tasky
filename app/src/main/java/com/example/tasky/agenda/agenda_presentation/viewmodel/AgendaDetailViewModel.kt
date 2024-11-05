@@ -28,6 +28,7 @@ import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.util.CredentialsValidator
 import com.example.tasky.util.PhotoCompressor
+import com.example.tasky.util.getInitials
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,12 +59,9 @@ class AgendaDetailViewModel @Inject constructor(
 
     val agendaOption = savedStateHandle.get<AgendaOption>("agendaOption") ?: AgendaOption.EVENT
     private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
-    private val photoIdFromPhotoScreen = savedStateHandle.get<String>("photoId")
 
     init {
         updateState(AgendaDetailStateUpdate.UpdateIsReadOnly(isReadOnly))
-
-        photoIdFromPhotoScreen?.let { safeId -> deletePhoto(safeId) }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)

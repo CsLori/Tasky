@@ -10,7 +10,7 @@ data class Event(
     val from: Long,
     val to: Long,
     val photos: List<PhotoSerialized>,
-    val attendees: List<AttendeeSerialized>,
+    val attendees: List<AttendeeMinimalDto>,
     val isUserEventCreator: Boolean,
     val host: String?,
     val remindAtTime: Long,
