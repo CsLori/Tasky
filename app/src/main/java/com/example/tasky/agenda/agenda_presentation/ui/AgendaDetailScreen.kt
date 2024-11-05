@@ -217,7 +217,6 @@ private fun AgendaDetailContent(
                     ),
                     color = colors.white,
                     modifier = Modifier
-                        .verticalScroll(rememberScrollState())
                         .fillMaxWidth()
                         .fillMaxHeight()
                         .padding(top = 70.dp)
@@ -226,6 +225,8 @@ private fun AgendaDetailContent(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(top = 40.dp)
+                            .verticalScroll(rememberScrollState())
+
                     ) {
                         MainContent(
                             state = state,
