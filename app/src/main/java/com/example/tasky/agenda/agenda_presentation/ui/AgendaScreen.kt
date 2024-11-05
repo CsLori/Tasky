@@ -47,7 +47,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
-import com.example.tasky.agenda.agenda_domain.model.ReminderType
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
@@ -547,7 +546,6 @@ fun AgendaContentPreview() {
                         time = 1701,
                         remindAtTime = 7947,
                         isDone = true,
-                        taskReminderType = ReminderType.TASK
                     ),
                     AgendaItem.Task(
                         taskId = "1234",
@@ -556,7 +554,6 @@ fun AgendaContentPreview() {
                         time = 1701,
                         remindAtTime = 7947,
                         isDone = false,
-                        taskReminderType = ReminderType.TASK
                     ),
                 ),
             ),

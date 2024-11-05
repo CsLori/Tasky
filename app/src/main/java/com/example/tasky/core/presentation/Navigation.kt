@@ -175,7 +175,7 @@ fun Navigation() {
                     AgendaDetailScreen(
                         agendaDetailViewModel = agendaDetailViewModel,
                         onNavigateToAgendaScreen = {
-                            navController.navigate(Screen.Agenda)
+                            navController.navigateUp()
                         },
                         onClose = { navController.navigateUp() },
                         onEditPressed = {

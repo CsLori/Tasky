@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,7 +61,6 @@ import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
-import com.example.tasky.agenda.agenda_domain.model.ReminderType
 import com.example.tasky.agenda.agenda_presentation.components.AddPhotosSection
 import com.example.tasky.agenda.agenda_presentation.components.AgendaItemDescription
 import com.example.tasky.agenda.agenda_presentation.components.AgendaItemMainHeader
@@ -77,6 +77,7 @@ import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.components.AddVisitorDialog
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.DialogState
+import com.example.tasky.core.presentation.components.showToast
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
@@ -88,7 +89,7 @@ import com.example.tasky.util.getInitials
 internal fun AgendaDetailScreen(
     agendaDetailViewModel: AgendaDetailViewModel,
     onNavigateToAgendaScreen: () -> Unit,
-    onClose: () -> Boolean,
+    onClose: () -> Unit,
     onEditPressed: () -> Unit,
     agendaItemId: String? = null,
     onNavigateToSelectedPhoto: (String?) -> Unit
@@ -179,6 +180,7 @@ private fun AgendaDetailContent(
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             selectedImageUri = uri
         }
+    val context = LocalContext.current
 
     if (state.isLoading) {
         Box(
@@ -242,6 +244,10 @@ private fun AgendaDetailContent(
                         )
                     }
                 }
+            }
+
+            is AgendaDetailViewModel.AgendaDetailUiState.Error -> {
+                showToast(context = context, message = uiState.message)
             }
         }
     }
@@ -346,7 +352,7 @@ fun MainContent(
                     modifier = Modifier
                         .padding(dimensions.small8dp)
                         .clickable { },
-                    text = stringResource(R.string.delete_task),
+                    text = stringResource(R.string.Delete_task),
                     style = typography.bodyLarge.copy(fontWeight = FontWeight.W600),
                     color = colors.lightGray
                 )
@@ -658,7 +664,6 @@ fun AgendaDetailReadOnlyPreview() {
                 isUserEventCreator = false,
                 host = null,
                 remindAtTime = 4626,
-                eventReminderType = ReminderType.TASK
 
             ),
             onUpdatePhotos = {},
@@ -688,7 +693,6 @@ fun AgendaDetailEditablePreview() {
                 time = 7622,
                 isDone = false,
                 remindAtTime = 2214,
-                taskReminderType = ReminderType.TASK
             ),
             onUpdatePhotos = {},
             onShowDialog = {},

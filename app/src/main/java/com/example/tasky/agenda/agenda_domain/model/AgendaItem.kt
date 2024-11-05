@@ -6,7 +6,6 @@ sealed class AgendaItem(
     val description: String?,
     val sortDate: Long,
     val remindAt: Long,
-    val reminderType: ReminderType
 ) {
 
     data class Event(
@@ -20,8 +19,7 @@ sealed class AgendaItem(
         val isUserEventCreator: Boolean,
         val host: String?,
         val remindAtTime: Long,
-        val eventReminderType: ReminderType
-    ) : AgendaItem(eventId, eventTitle, eventDescription, from, remindAtTime, eventReminderType)
+    ) : AgendaItem(eventId, eventTitle, eventDescription, from, remindAtTime)
 
     data class Task(
         val taskId: String,
@@ -30,8 +28,7 @@ sealed class AgendaItem(
         val time: Long,
         val isDone: Boolean,
         val remindAtTime: Long,
-        val taskReminderType: ReminderType
-    ) : AgendaItem(taskId, taskTitle, taskDescription, time, remindAtTime, taskReminderType)
+    ) : AgendaItem(taskId, taskTitle, taskDescription, time, remindAtTime)
 
     data class Reminder(
         val reminderId: String,
@@ -39,6 +36,5 @@ sealed class AgendaItem(
         val reminderDescription: String?,
         val time: Long,
         val remindAtTime: Long,
-        val reminderReminderType: ReminderType
-    ) : AgendaItem(reminderId, reminderTitle, reminderDescription, time, remindAtTime, reminderReminderType)
+    ) : AgendaItem(reminderId, reminderTitle, reminderDescription, time, remindAtTime)
 }

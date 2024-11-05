@@ -7,7 +7,6 @@ import androidx.compose.material3.TimePickerState
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
-import com.example.tasky.agenda.agenda_domain.model.ReminderType
 import com.example.tasky.agenda.agenda_presentation.components.reminderOptions
 import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
@@ -30,7 +29,6 @@ data class AgendaDetailState(
         time = ZonedDateTime.now().toInstant().toEpochMilli(),
         remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
         isDone = false,
-        taskReminderType = ReminderType.TASK
     ),
     val event: AgendaItem.Event = AgendaItem.Event(
         eventId = UUID.randomUUID().toString(),
@@ -43,7 +41,6 @@ data class AgendaDetailState(
         attendees = emptyList(),
         photos = emptyList(),
         host = null,
-        eventReminderType = ReminderType.EVENT
     ),
     val reminder: AgendaItem.Reminder = AgendaItem.Reminder(
         reminderId = UUID.randomUUID().toString(),
@@ -51,7 +48,6 @@ data class AgendaDetailState(
         reminderDescription = "Reminder description",
         time = ZonedDateTime.now().toInstant().toEpochMilli(),
         remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
-        reminderReminderType = ReminderType.REMINDER
     ),
     val isLoading: Boolean = false,
     val shouldShowDatePicker: Boolean = false,

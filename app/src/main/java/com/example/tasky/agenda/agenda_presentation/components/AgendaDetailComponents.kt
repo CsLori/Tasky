@@ -297,7 +297,7 @@ fun TimeAndDateRow(
                                     )
                                 )
                             }
-                        ) { Text(stringResource(R.string.cancel)) }
+                        ) { Text(stringResource(R.string.Cancel)) }
                     },
                     content = {
                         TimePicker(

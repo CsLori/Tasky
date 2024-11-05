@@ -8,6 +8,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.example.tasky.R
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
 import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
@@ -28,7 +29,6 @@ import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.util.CredentialsValidator
 import com.example.tasky.util.PhotoCompressor
-import com.example.tasky.util.getInitials
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -191,19 +191,25 @@ class AgendaDetailViewModel @Inject constructor(
             agendaRepository.getAttendee(email)
                 .onSuccess { attendeeResponse ->
                     if (attendeeResponse.doesUserExist) {
+                        val newAttendee = attendeeResponse.attendee
                         _state.update { currentState ->
                             currentState.copy(
                                 event = currentState.event.copy(
-                                    attendees = currentState.event.attendees + attendeeResponse.attendee.toAttendee()
+                                    attendees = currentState.event.attendees + newAttendee.toAttendee(
+                                        eventId = state.value.event.eventId,
+                                        remindAt = state.value.event.remindAtTime
+                                    )
                                 )
                             )
                         }
                         _dialogState.update { DialogState.Hide }
                     } else {
                         _state.update { it.copy(isLoading = false) }
+                        _uiState.update { AgendaDetailUiState.Error(R.string.user_does_not_exist) }
                     }
                 }.onError {
                     _state.update { it.copy(isLoading = false) }
+                    _uiState.update { AgendaDetailUiState.Error(R.string.Unknown_error) }
                 }
             _state.update { it.copy(isLoading = false) }
         }
@@ -241,5 +247,6 @@ class AgendaDetailViewModel @Inject constructor(
     sealed class AgendaDetailUiState {
         data object None : AgendaDetailUiState()
         data object Success : AgendaDetailUiState()
+        data class Error(val message: Int) : AgendaDetailUiState()
     }
 }

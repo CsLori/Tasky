@@ -2,7 +2,6 @@ package com.example.tasky.agenda.agenda_data.entity_mappers
 
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
-import com.example.tasky.agenda.agenda_domain.model.ReminderType
 
 fun TaskEntity.toAgendaItem(): AgendaItem.Task {
     return AgendaItem.Task(
@@ -12,7 +11,6 @@ fun TaskEntity.toAgendaItem(): AgendaItem.Task {
         time = time,
         remindAtTime = remindAt,
         isDone = isDone,
-        taskReminderType = ReminderType.TASK
     )
 }
 

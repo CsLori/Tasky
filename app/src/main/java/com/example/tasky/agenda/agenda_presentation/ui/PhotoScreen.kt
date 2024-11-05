@@ -112,7 +112,7 @@ fun Header(onAction: (PhotoAction) -> Unit, photoId: String?) {
         )
 
         Text(
-            text = stringResource(R.string.photo),
+            text = stringResource(R.string.Photo),
             style = AppTheme.typography.bodyLarge.copy(
                 lineHeight = 12.sp, fontWeight = FontWeight.W600
             ),

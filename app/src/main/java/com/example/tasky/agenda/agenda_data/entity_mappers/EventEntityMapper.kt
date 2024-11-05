@@ -4,7 +4,6 @@ import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
-import com.example.tasky.agenda.agenda_domain.model.ReminderType
 
 fun EventEntity.toAgendaItem(): AgendaItem.Event {
     return AgendaItem.Event(
@@ -14,7 +13,6 @@ fun EventEntity.toAgendaItem(): AgendaItem.Event {
         from = from,
         to = to,
         remindAtTime = remindAt,
-        eventReminderType = ReminderType.EVENT,
         photos = listOf<Photo>(),
         attendees = listOf<Attendee>(),
         isUserEventCreator = false,
@@ -30,7 +28,6 @@ fun AgendaItem.Event.toEventEntity(): EventEntity {
         from = from,
         to = to,
         remindAt = remindAt,
-        reminderType = ReminderType.EVENT,
         attendeeIds = attendees,
         photos = photos,
         isUserEventCreator = isUserEventCreator,
