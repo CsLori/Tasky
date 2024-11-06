@@ -1,5 +1,6 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -89,14 +90,14 @@ internal fun AgendaScreen(
         onUpdateState = { action -> agendaViewModel.updateState(action) },
         onAction = { action ->
             when (action) {
-                is AgendaAction.OnDeleteAgendaItem -> agendaViewModel.deleteTask(action.taskId)
+                is AgendaAction.OnDeleteAgendaItem -> agendaViewModel.deleteAgendaItem(action.agendaItem)
                 AgendaAction.OnLogout -> {
                     agendaViewModel.logout()
                     onLogoutNavigateToLogin()
                 }
 
                 is AgendaAction.OnFabItemPressed -> {
-                     onFabItemPressed()
+                    onFabItemPressed()
                 }
                 is AgendaAction.OnOpenPressed -> {
                     onOpenPressed(action.agendaItem)
@@ -279,11 +280,16 @@ private fun AgendaContent(
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.green,
-                                                onDelete = { agendaItemId ->
-                                                    onAction(AgendaAction.OnDeleteAgendaItem(agendaItemId))
+                                                onDelete = { onAction(AgendaAction.OnDeleteAgendaItem(agendaItem))
                                                 },
                                                 onEditPressed = { onEditPressed(agendaItem) },
-                                                onOpenPressed = { onAction(AgendaAction.OnOpenPressed(it)) },
+                                                onOpenPressed = {
+                                                    onAction(
+                                                        AgendaAction.OnOpenPressed(
+                                                            agendaItem
+                                                        )
+                                                    )
+                                                },
                                             )
                                         }
 
@@ -291,9 +297,19 @@ private fun AgendaContent(
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.lightGreen,
-                                                onDelete = {},
+                                                onDelete = { agendaItemId ->
+                                                    onAction(
+                                                        AgendaAction.OnDeleteAgendaItem(
+                                                            agendaItem
+                                                        )
+                                                    )
+                                                },
                                                 onEditPressed = { onEditPressed(agendaItem) },
-                                                onOpenPressed = { AgendaAction.OnOpenPressed(it) },
+                                                onOpenPressed = { agendaItemId ->
+                                                    AgendaAction.OnOpenPressed(
+                                                        agendaItemId
+                                                    )
+                                                },
                                             )
                                         }
 
@@ -301,9 +317,19 @@ private fun AgendaContent(
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.light2,
-                                                onDelete = {},
+                                                onDelete = {
+                                                    onAction(
+                                                        AgendaAction.OnDeleteAgendaItem(
+                                                            agendaItem
+                                                        )
+                                                    )
+                                                },
                                                 onEditPressed = { onEditPressed(agendaItem) },
-                                                onOpenPressed = { AgendaAction.OnOpenPressed(it) },
+                                                onOpenPressed = {
+                                                    AgendaAction.OnOpenPressed(
+                                                        agendaItem
+                                                    )
+                                                },
                                             )
                                         }
                                     }
@@ -323,7 +349,6 @@ private fun AgendaContent(
 @Composable
 fun AgendaItem(
     agendaItem: AgendaItem,
-//    onItemSelected: (AgendaItem) -> Unit,
     backgroundColor: Color,
     onDelete: (String) -> Unit,
     onEditPressed: () -> Unit,
@@ -337,6 +362,7 @@ fun AgendaItem(
             .background(backgroundColor)
     ) {
         var visible by remember { mutableStateOf(false) }
+        val textColor = if (agendaItem is AgendaItem.Task) colors.white else colors.black
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -353,7 +379,7 @@ fun AgendaItem(
                         else -> Icons.Outlined.Circle
                     },
                     contentDescription = "Icon checked",
-                    tint = if (agendaItem is AgendaItem.Task) colors.white else colors.black
+                    tint = textColor
                 )
 
                 Spacer(Modifier.width(dimensions.small8dp))
@@ -363,7 +389,7 @@ fun AgendaItem(
                     style = typography.title.copy(
                         lineHeight = 16.sp,
                         fontSize = 20.sp,
-                        color = colors.white
+                        color = textColor
                     ), textDecoration = when (agendaItem) {
                         is AgendaItem.Task -> if (agendaItem.isDone) TextDecoration.LineThrough else TextDecoration.None
                         else -> TextDecoration.None
@@ -382,7 +408,7 @@ fun AgendaItem(
                         .clickable {
                             visible = !visible
                         },
-                    tint = if (agendaItem is AgendaItem.Task) colors.white else colors.black
+                    tint = textColor
                 )
                 if (visible) {
                     AgendaDetailDropdown(
@@ -395,12 +421,10 @@ fun AgendaItem(
 
                                 AgendaDetailOption.EDIT.option -> {
                                     onEditPressed()
-//                                    onItemSelected(agendaItem)
                                 }
 
                                 AgendaDetailOption.OPEN.option -> {
                                     onOpenPressed(agendaItem)
-//                                    onItemSelected(agendaItem)
                                 }
                             }
                         },
@@ -412,7 +436,7 @@ fun AgendaItem(
         }
         Text(
             text = agendaItem.description ?: "",
-            style = TextStyle(color = colors.white),
+            style = TextStyle(color = textColor),
             modifier = Modifier.padding(start = 44.dp)
         )
         Box(
@@ -424,10 +448,10 @@ fun AgendaItem(
             Text(
                 text = when (agendaItem) {
                     is AgendaItem.Task -> agendaItem.remindAtTime.toMMMdHHmmFormat()
-                    is AgendaItem.Event -> TODO()
-                    is AgendaItem.Reminder -> TODO()
+                    is AgendaItem.Event -> agendaItem.remindAtTime.toMMMdHHmmFormat()
+                    is AgendaItem.Reminder -> agendaItem.remindAtTime.toMMMdHHmmFormat()
                 },
-                style = TextStyle(color = if (agendaItem is AgendaItem.Task) colors.white else colors.black)
+                style = TextStyle(color = textColor)
             )
         }
     }

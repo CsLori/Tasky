@@ -111,7 +111,7 @@ internal fun AgendaDetailScreen(
         } else {
             agendaDetailViewModel.updateState(
                 AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
-                    agendaDetailViewModel.loadTask(agendaItemId)
+                    agendaDetailViewModel.loadAgendaItem(agendaItemId)
                 )
             )
         }
@@ -128,9 +128,9 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnEditRowPressed -> onEditPressed()
                 AgendaDetailAction.OnSavePressed -> {
                     if (agendaItemId == null) {
-                        agendaDetailViewModel.createTask()
+                        state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {
-                        agendaDetailViewModel.updateTask(state.task)
+                        agendaDetailViewModel.updateAgendaItem(state.task)
                     }
                     onNavigateToAgendaScreen()
                 }
@@ -528,7 +528,7 @@ private fun VisitorItem(
     visitor: String,
     onStatusChanged: () -> Unit
 ) {
-    val visitorInitials = getInitials(visitor)
+    val visitorInitials by remember { mutableStateOf(getInitials(visitor))}
     Box(
         modifier = Modifier
             .fillMaxWidth()

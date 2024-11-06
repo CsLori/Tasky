@@ -46,4 +46,5 @@
     <string name="visitor_cannot_be_added">User could not be added, please check the email address again!</string>
     <string name="visitor_has_been_successfully_added">Visitor has been successfully added!</string>
     <string name="Photo">Photo</string>
+    <string name="Could_not_create_agenda_item">Could not create agenda item!</string>
 </resources>

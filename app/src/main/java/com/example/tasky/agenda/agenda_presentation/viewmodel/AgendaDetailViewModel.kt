@@ -29,6 +29,7 @@ import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.util.CredentialsValidator
 import com.example.tasky.util.PhotoCompressor
+import com.example.tasky.util.PhotoConverter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +46,8 @@ class AgendaDetailViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
     private val localDatabaseRepository: LocalDatabaseRepository,
     private val savedStateHandle: SavedStateHandle,
-    private val photoCompressor: PhotoCompressor
+    private val photoCompressor: PhotoCompressor,
+    private val photoConverter: PhotoConverter
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaDetailState())
@@ -125,64 +127,86 @@ class AgendaDetailViewModel @Inject constructor(
         }
     }
 
-    fun createTask() {
-        _state.update {
-            it.copy(isLoading = true)
-        }
+    fun createAgendaItem(agendaItem: AgendaItem) {
+        _state.update { it.copy(isLoading = true) }
+
         viewModelScope.launch {
-            val result = agendaRepository.addTask(
-                task = state.value.task
-            )
+            val result = when (agendaItem) {
+                is AgendaItem.Task -> agendaRepository.addTask(agendaItem)
+                is AgendaItem.Event -> {
+                    val photos = photoConverter.convertPhotosToByteArrays(state.value.event.photos)
+
+                    val event = state.value.event
+                    val newAgendaItem = AgendaItem.Event(
+                        eventId = event.eventId,
+                        eventTitle = event.eventTitle,
+                        eventDescription = event.eventDescription,
+                        from = event.from,
+                        to = event.to,
+                        photos = event.photos,
+                        attendees = agendaItem.attendees + event.attendees,
+                        isUserEventCreator = true,
+                        host = agendaItem.host,
+                        remindAtTime = event.remindAtTime
+                    )
+                    agendaRepository.addEvent(
+                        newAgendaItem,
+                        photos
+                    )
+                }
+                is AgendaItem.Reminder -> agendaRepository.addReminder(agendaItem)
+            }
+
             when (result) {
                 is Success -> {
                     _uiState.update { AgendaDetailUiState.Success }
-                    Success(Unit)
                 }
-
                 is Error -> {
                     _uiState.update { AgendaDetailUiState.None }
-                    Error(result.error)
+                    _uiState.update { AgendaDetailUiState.Error(R.string.Could_not_create_agenda_item) }
                 }
             }
             _state.update { it.copy(isLoading = false) }
         }
     }
 
-    fun updateTask(task: AgendaItem.Task) {
+    fun updateAgendaItem(agendaItem: AgendaItem) {
         _state.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
-            val result = agendaRepository.updateTask(task)
+            val result = when (agendaItem) {
+                is AgendaItem.Task -> agendaRepository.updateTask(agendaItem)
+//                is AgendaItem.Event -> agendaRepository.updateTask(agendaItem)
+//                is AgendaItem.Reminder -> agendaRepository.updateTask(agendaItem)
+                else -> return@launch
+            }
 
             when (result) {
                 is Success -> {
                     _uiState.update { AgendaDetailUiState.Success }
-                    Success(Unit)
                 }
-
                 is Error -> {
                     _uiState.update { AgendaDetailUiState.None }
-                    Error(result.error)
                 }
             }
             _state.update { it.copy(isLoading = false) }
         }
     }
 
-    fun loadTask(taskId: String): AgendaItem {
+    fun loadAgendaItem(agendaItemId: String): AgendaItem {
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
 
-            val taskEntity = localDatabaseRepository.getTaskById(taskId)
+            val agendaItem = localDatabaseRepository.getEventById(agendaItemId)?.toAgendaItem()
 
             _state.update { currentState ->
                 currentState.copy(
-                    task = taskEntity.toAgendaItem(),
+                    selectedAgendaItem = agendaItem,
                     isLoading = false
                 )
             }
         }
-        return state.value.task
+        return state.value.event
     }
 
     fun getAttendee(email: String) {

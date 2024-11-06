@@ -18,13 +18,17 @@ interface AgendaItemsRepository {
 
     fun getAllEvents(): Flow<List<EventEntity>>
 
+    suspend fun getEventById(eventId: String): EventEntity
+
     suspend fun upsertEvent(eventEntity: EventEntity)
 
     suspend fun deleteEvent(eventEntity: EventEntity)
 
     fun getAllReminders(): Flow<List<ReminderEntity>>
 
-    suspend fun insertReminder(reminderEntity: ReminderEntity)
+    suspend fun getReminderById(reminderId: String): ReminderEntity
+
+    suspend fun upsertReminder(reminderEntity: ReminderEntity)
 
     suspend fun deleteReminder(reminderEntity: ReminderEntity)
 

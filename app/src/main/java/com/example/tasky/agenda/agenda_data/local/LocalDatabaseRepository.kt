@@ -1,6 +1,5 @@
 package com.example.tasky.agenda.agenda_data.local
 
-import android.os.Build
 import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.local.dao.EventDao
 import com.example.tasky.agenda.agenda_data.local.dao.ReminderDao
@@ -40,6 +39,10 @@ class LocalDatabaseRepository @Inject constructor(
         return eventDao.getAllEvents()
     }
 
+    override suspend fun getEventById(eventId: String): EventEntity {
+        return eventDao.getEventById(eventId)
+    }
+
     override suspend fun upsertEvent(eventEntity: EventEntity) {
         return eventDao.upsertEvent(eventEntity)
     }
@@ -52,8 +55,12 @@ class LocalDatabaseRepository @Inject constructor(
         return reminderDao.getAllReminders()
     }
 
-    override suspend fun insertReminder(reminderEntity: ReminderEntity) {
-        return reminderDao.insertReminder(reminderEntity)
+    override suspend fun getReminderById(reminderId: String): ReminderEntity {
+        return reminderDao.getReminderById(reminderId)
+    }
+
+    override suspend fun upsertReminder(reminderEntity: ReminderEntity) {
+        return reminderDao.upsertReminder(reminderEntity)
     }
 
     override suspend fun deleteReminder(reminderEntity: ReminderEntity) {
@@ -71,15 +78,6 @@ class LocalDatabaseRepository @Inject constructor(
             combinedList.addAll(reminders.map { it.toAgendaItem() })
             combinedList.addAll(events.map { it.toAgendaItem() })
             combinedList
-        }
-    }
-
-    // Will be needed for permission
-    fun getPhotoPickerPermission(): String {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            android.Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            android.Manifest.permission.READ_EXTERNAL_STORAGE
         }
     }
 }

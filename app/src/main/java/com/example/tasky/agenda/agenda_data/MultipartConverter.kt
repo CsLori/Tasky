@@ -1,13 +1,13 @@
 package com.example.tasky.agenda.agenda_data
 
-import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_data.remote.dto.EventRequest
 import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
-fun createMultipartEventRequest(event: AgendaItem.Event): RequestBody {
+fun createMultipartEventRequest(event: EventRequest): RequestBody {
     val gson = Gson()
     val jsonEvent = gson.toJson(event)
     return jsonEvent.toRequestBody("application/json".toMediaTypeOrNull())
