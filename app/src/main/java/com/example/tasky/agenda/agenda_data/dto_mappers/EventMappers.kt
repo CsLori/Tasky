@@ -3,7 +3,6 @@ package com.example.tasky.agenda.agenda_data.dto_mappers
 import com.example.tasky.agenda.agenda_data.remote.dto.EventRequest
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
-import com.example.tasky.agenda.agenda_domain.model.ReminderType
 
 fun AgendaItem.Event.toEventResponse(): EventResponse {
     return EventResponse(
@@ -13,7 +12,7 @@ fun AgendaItem.Event.toEventResponse(): EventResponse {
         from = from,
         to = to,
         remindAt = remindAt,
-        attendees = attendees.toSerializedAttendees(),
+        attendees = attendees.toAttendeeDtos(),
         photos = photos.toSerializedPhotos(),
         host = host ?: "",
         isUserEventCreator = isUserEventCreator
@@ -32,7 +31,6 @@ fun EventResponse.toEvent(): AgendaItem.Event {
         isUserEventCreator = isUserEventCreator,
         attendees = attendees.toAttendees(),
         photos = photos.toPhotos(),
-        eventReminderType = ReminderType.EVENT
     )
 }
 

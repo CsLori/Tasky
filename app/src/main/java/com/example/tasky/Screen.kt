@@ -19,7 +19,8 @@ object Screen {
     data class AgendaDetail(
         val agendaItemId: String? = null,
         val isAgendaItemReadOnly: Boolean,
-        val agendaOption: AgendaOption? = null
+        val agendaOption: AgendaOption? = null,
+        val photoId: String? = null
     )
 
     @Serializable
@@ -28,4 +29,7 @@ object Screen {
         val description: String? = null,
         val editType: EditType
     )
+
+    @Serializable
+    data class Photo(val photoKey: String, val photoUrl: String)
 }

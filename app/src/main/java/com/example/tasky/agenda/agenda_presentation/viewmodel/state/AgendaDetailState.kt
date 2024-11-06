@@ -7,10 +7,11 @@ import androidx.compose.material3.TimePickerState
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
-import com.example.tasky.agenda.agenda_domain.model.ReminderType
 import com.example.tasky.agenda.agenda_presentation.components.reminderOptions
 import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
+import com.example.tasky.core.presentation.ErrorStatus
+import com.example.tasky.core.presentation.FieldInput
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
@@ -28,7 +29,6 @@ data class AgendaDetailState(
         time = ZonedDateTime.now().toInstant().toEpochMilli(),
         remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
         isDone = false,
-        taskReminderType = ReminderType.TASK
     ),
     val event: AgendaItem.Event = AgendaItem.Event(
         eventId = UUID.randomUUID().toString(),
@@ -41,7 +41,6 @@ data class AgendaDetailState(
         attendees = emptyList(),
         photos = emptyList(),
         host = null,
-        eventReminderType = ReminderType.EVENT
     ),
     val reminder: AgendaItem.Reminder = AgendaItem.Reminder(
         reminderId = UUID.randomUUID().toString(),
@@ -49,7 +48,6 @@ data class AgendaDetailState(
         reminderDescription = "Reminder description",
         time = ZonedDateTime.now().toInstant().toEpochMilli(),
         remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
-        reminderReminderType = ReminderType.REMINDER
     ),
     val isLoading: Boolean = false,
     val shouldShowDatePicker: Boolean = false,
@@ -68,6 +66,8 @@ data class AgendaDetailState(
     val selectedReminder: Long = reminderOptions[1].timeBeforeInMillis,
     val isReadOnly: Boolean = false,
     val selectedAgendaItem: AgendaItem? = null,
+    val addVisitorEmail: FieldInput? = null,
+    val emailErrorStatus: ErrorStatus? = null
 )
 
 enum class RemindBeforeDuration(val duration: Duration) {
@@ -97,4 +97,5 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem) : AgendaDetailStateUpdate
     data class UpdatePhotos(val photos: List<Photo>) : AgendaDetailStateUpdate
     data class UpdateAttendees(val attendees: List<Attendee>) : AgendaDetailStateUpdate
+    data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate
 }

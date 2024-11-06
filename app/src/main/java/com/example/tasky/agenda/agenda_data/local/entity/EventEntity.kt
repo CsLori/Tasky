@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
-import com.example.tasky.agenda.agenda_domain.model.ReminderType
 
 @Entity(tableName = "events")
 data class EventEntity(
@@ -16,7 +15,6 @@ data class EventEntity(
     val remindAt: Long,
     val photos: List<Photo>,
     val attendeeIds: List<Attendee>,
-    val reminderType: ReminderType,
     val isUserEventCreator: Boolean,
     val host: String?
 )

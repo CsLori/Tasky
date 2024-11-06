@@ -96,7 +96,7 @@ fun TimePickerPreview() {
             dismissButton = {
                 TextButton(
                     onClick = {}
-                ) { Text(stringResource(R.string.cancel)) }
+                ) { Text(stringResource(R.string.Cancel)) }
             },
             content = {
                 TimePicker(

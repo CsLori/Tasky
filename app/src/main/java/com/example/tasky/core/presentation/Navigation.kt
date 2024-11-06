@@ -14,11 +14,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.example.tasky.R
 import com.example.tasky.Screen
+import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaItemEditScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
+import com.example.tasky.agenda.agenda_presentation.ui.PhotoScreen
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
@@ -28,11 +29,13 @@ import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 
+const val DESCRIPTION = "description"
+const val TITLE = "title"
+const val PHOTO_ID = "photoId"
+
 @Composable
 fun Navigation() {
     val navController = rememberNavController()
-    val description = UiText.StringResource(R.string.description).asString()
-    val title = UiText.StringResource(R.string.title).asString()
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
@@ -129,7 +132,31 @@ fun Navigation() {
                     val args = it.toRoute<Screen.AgendaDetail>()
 
 
-                    savedStateHandle?.get<String>(title)?.let { newTitle ->
+
+                    LaunchedEffect(savedStateHandle?.get<String>(PHOTO_ID)) {
+                        savedStateHandle?.get<String>(PHOTO_ID)?.let { safePhotoId ->
+                            agendaDetailViewModel.deletePhoto(safePhotoId)
+                            savedStateHandle.remove<String>(PHOTO_ID)
+                        }
+                    }
+                    val navigationTitle =
+                        when (agendaDetailViewModel.agendaOption) {
+                            AgendaOption.TASK -> agendaDetailViewModel.state.value.task.title
+                            AgendaOption.EVENT -> agendaDetailViewModel.state.value.event.title
+                            AgendaOption.REMINDER -> agendaDetailViewModel.state.value.reminder.title
+
+                        }
+
+                    val navigationDescription =
+                        when (agendaDetailViewModel.agendaOption) {
+                            AgendaOption.TASK -> agendaDetailViewModel.state.value.task.description
+                            AgendaOption.EVENT -> agendaDetailViewModel.state.value.event.description
+                            AgendaOption.REMINDER -> agendaDetailViewModel.state.value.reminder.description
+
+                        }
+
+
+                    savedStateHandle?.get<String>(TITLE)?.let { newTitle ->
                         agendaDetailViewModel.updateState(
                             AgendaDetailStateUpdate.UpdateTitle(
                                 newTitle
@@ -137,7 +164,7 @@ fun Navigation() {
                         )
                     }
 
-                    savedStateHandle?.get<String>(description)?.let { newDescription ->
+                    savedStateHandle?.get<String>(DESCRIPTION)?.let { newDescription ->
                         agendaDetailViewModel.updateState(
                             AgendaDetailStateUpdate.UpdateDescription(
                                 newDescription
@@ -148,19 +175,27 @@ fun Navigation() {
                     AgendaDetailScreen(
                         agendaDetailViewModel = agendaDetailViewModel,
                         onNavigateToAgendaScreen = {
-                            navController.navigate(Screen.Agenda)
+                            navController.navigateUp()
                         },
                         onClose = { navController.navigateUp() },
                         onEditPressed = {
                             navController.navigate(
                                 Screen.AgendaItemEdit(
-                                    title = agendaDetailViewModel.state.value.task.title,
-                                    description = agendaDetailViewModel.state.value.task.description,
+                                    title = navigationTitle,
+                                    description = navigationDescription,
                                     editType = agendaDetailViewModel.state.value.editType
                                 )
                             )
                         },
                         agendaItemId = args.agendaItemId,
+                        onNavigateToSelectedPhoto = { photoId ->
+                            val photoUrl = agendaDetailViewModel.state.value.event.photos
+                                .firstOrNull { photo -> photo.key == photoId }?.url
+
+                            if (photoUrl != null && photoId != null) {
+                                navController.navigate(Screen.Photo(photoId, photoUrl))
+                            }
+                        }
                     )
                 }
                 composable<Screen.AgendaItemEdit> {
@@ -174,12 +209,25 @@ fun Navigation() {
                         onBackPressed = { navController.navigateUp() },
                         onSavePressed = { newTitle, newDescription ->
                             navController.previousBackStackEntry?.savedStateHandle?.set(
-                                title,
+                                TITLE,
                                 newTitle
                             )
                             navController.previousBackStackEntry?.savedStateHandle?.set(
-                                description,
+                                DESCRIPTION,
                                 newDescription
+                            )
+                            navController.navigateUp()
+                        }
+                    )
+                }
+
+                composable<Screen.Photo> {
+                    PhotoScreen(
+                        onNavigateBack = { navController.navigateUp() },
+                        onDeletePhoto = { photoId ->
+                            navController.previousBackStackEntry?.savedStateHandle?.set(
+                                PHOTO_ID,
+                                photoId
                             )
                             navController.navigateUp()
                         }

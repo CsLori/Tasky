@@ -1,6 +1,7 @@
 package com.example.tasky.core.data.remote
 
 import com.example.tasky.agenda.agenda_data.remote.dto.AgendaResponse
+import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.TaskSerialized
 import com.example.tasky.core.domain.Result
@@ -37,6 +38,9 @@ interface TaskyApi {
         @Part photos: List<MultipartBody.Part>
     ): Result<EventResponse, TaskyError>
 
+    @DELETE("/event")
+    suspend fun deleteEvent(@Query("eventId") eventId: String)
+
     @POST("/task")
     suspend fun addTask(@Body taskBody: TaskSerialized)
 
@@ -52,4 +56,9 @@ interface TaskyApi {
     @GET("/authenticate")
     suspend fun authenticateUser()
 
+    @GET("/attendee")
+    suspend fun getAttendee(@Query("email") email: String): AttendeeExistDto
+
+    @DELETE("/attendee")
+    suspend fun deleteAttendee(@Query("eventId") eventId: String)
 }

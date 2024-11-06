@@ -1,5 +1,6 @@
 package com.example.tasky.agenda.agenda_domain.repository
 
+import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.core.domain.Result
@@ -13,5 +14,7 @@ interface AgendaRepository {
     suspend fun deleteTask(task: AgendaItem.Task): Result<Unit, TaskyError>
 
     suspend fun addEvent(event: AgendaItem.Event, photos: List<ByteArray>): Result<EventResponse, TaskyError>
+
+    suspend fun getAttendee(email: String): Result<AttendeeExistDto, TaskyError>
 
 }

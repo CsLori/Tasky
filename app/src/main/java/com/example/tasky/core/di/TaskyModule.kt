@@ -17,6 +17,7 @@ import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
+import com.example.tasky.util.PhotoCompressor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -114,5 +115,11 @@ object TaskyModule {
         localDatabaseRepository: LocalDatabaseRepository
     ): AgendaRepository {
         return AgendaRepositoryImpl(api, userPrefsRepository, localDatabaseRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun providePhotoCompressor(@ApplicationContext context: Context): PhotoCompressor {
+        return PhotoCompressor(context)
     }
 }

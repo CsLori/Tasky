@@ -13,7 +13,7 @@
     <string name="Name_length_error">"Name should be 4 to 50 characters long"</string>
     <string name="Enter_at_least_x_characters_long">At least %1$s characters long</string>
     <string name="Password_error">Requires a number, a capital and a lowercase letter</string>
-    <string name="Error">Error</string>
+    <string name="Unknown_error">Unknown error</string>
     <string name="Check_your_credentials">Check your credentials!</string>
     <string name="No_internet_connection">No internet connection!</string>
     <string name="Login_failed">Login failed!</string>
@@ -23,8 +23,8 @@
     <string name="Something_went_wrong">Something went wrong</string>
     <string name="Don_t_have_an_account">"DON'T HAVE AN ACCOUNT? "</string>
     <string name="Sign_up">SIGN UP</string>
-    <string name="delete_task">DELETE TASK</string>
-    <string name="cancel">Cancel</string>
+    <string name="Delete_task">DELETE TASK</string>
+    <string name="Cancel">Cancel</string>
     <string name="select_time">Select Time</string>
     <string name="title">title</string>
     <string name="description">description</string>
@@ -41,4 +41,9 @@
     <string name="going">Going</string>
     <string name="not_going">Not going</string>
     <string name="add_photos">Add photos</string>
+    <string name="user_does_not_exist">User does not exist</string>
+    <string name="max_number_of_photos">You can\'t add more than 9 photos, please delete one if you would like to select another one.</string>
+    <string name="visitor_cannot_be_added">User could not be added, please check the email address again!</string>
+    <string name="visitor_has_been_successfully_added">Visitor has been successfully added!</string>
+    <string name="Photo">Photo</string>
 </resources>

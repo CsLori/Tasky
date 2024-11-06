@@ -2,7 +2,6 @@ package com.example.tasky.agenda.agenda_data.dto_mappers
 
 import com.example.tasky.agenda.agenda_data.remote.dto.TaskSerialized
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
-import com.example.tasky.agenda.agenda_domain.model.ReminderType
 
 fun AgendaItem.Task.toSerializedTask(): TaskSerialized {
     return TaskSerialized(
@@ -23,6 +22,5 @@ fun TaskSerialized.toTask(): AgendaItem.Task {
         time = time,
         isDone = isDone,
         remindAtTime = remindAtTime,
-        taskReminderType = ReminderType.TASK
     )
 }

@@ -1,38 +1,69 @@
 package com.example.tasky.agenda.agenda_data.dto_mappers
 
-import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeSerialized
+import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeDto
+import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeMinimalDto
 import com.example.tasky.agenda.agenda_domain.model.Attendee
-import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
-import com.example.tasky.core.presentation.DateUtils.toLong
+import com.example.tasky.agenda.agenda_domain.model.AttendeeMinimal
 
-fun Attendee.toSerializedAttendee(): AttendeeSerialized {
-    return AttendeeSerialized(
+fun AttendeeMinimal.toAttendeeMinimalDto(): AttendeeMinimalDto {
+    return AttendeeMinimalDto(
         userId = userId,
         email = email,
-        name = name,
-        eventId = eventId,
-        isGoing = isGoing,
-        remindAt = remindAt.toLong(),
-        isCreator = isCreator
+        fullName = fullName,
     )
 }
 
-fun List<Attendee>.toSerializedAttendees(): List<AttendeeSerialized> {
-    return map { it.toSerializedAttendee() }
+fun List<AttendeeMinimal>.toAttendeeMinimalDtos(): List<AttendeeMinimalDto> {
+    return map { it.toAttendeeMinimalDto() }
 }
 
-fun AttendeeSerialized.toAttendee(): Attendee {
+fun AttendeeMinimalDto.toAttendeeMinimal(): AttendeeMinimal {
+    return AttendeeMinimal(
+        userId = userId,
+        email = email,
+        fullName = fullName
+    )
+}
+
+fun AttendeeDto.toAttendee(): Attendee {
     return Attendee(
         userId = userId,
         email = email,
         name = name,
         eventId = eventId,
-        isGoing = isGoing,
-        remindAt = remindAt.toLocalDateTime(),
-        isCreator = isCreator
+        isGoing = true,
+        remindAt = remindAt,
+        isCreator = false
     )
 }
 
-fun List<AttendeeSerialized>.toAttendees(): List<Attendee> {
+fun List<AttendeeDto>.toAttendees(): List<Attendee> {
     return map { it.toAttendee() }
+}
+
+fun Attendee.toAttendeeDto(): AttendeeDto {
+    return AttendeeDto(
+        userId = userId,
+        email = email,
+        name = name,
+        eventId = eventId,
+        isGoing = true,
+        remindAt = remindAt,
+    )
+}
+
+fun List<Attendee>.toAttendeeDtos(): List<AttendeeDto> {
+    return map { it.toAttendeeDto() }
+}
+
+fun AttendeeMinimalDto.toAttendee(eventId: String, remindAt: Long, isGoing: Boolean = true): Attendee {
+    return Attendee(
+        userId = userId,
+        email = email,
+        name = fullName,
+        eventId = eventId,
+        isGoing = isGoing,
+        remindAt = remindAt,
+        isCreator = false
+    )
 }
