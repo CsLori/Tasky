@@ -43,6 +43,12 @@ interface TaskyApi {
         @Part photos: List<MultipartBody.Part>
     ): EventResponse
 
+    @PUT("/event")
+    suspend fun updateEvent(
+        @Part("create_event_request") createEventRequest: RequestBody,
+        @Part photos: List<MultipartBody.Part>
+    ): EventResponse
+
     @DELETE("/event")
     suspend fun deleteEventById(@Query("eventId") eventId: String)
 

@@ -353,7 +353,12 @@ fun MainContent(
                     modifier = Modifier
                         .padding(dimensions.small8dp)
                         .clickable { },
-                    text = stringResource(R.string.Delete_task),
+                    text = when (agendaItem) {
+                        is AgendaItem.Task -> stringResource(R.string.Delete_task)
+                        is AgendaItem.Reminder -> stringResource(R.string.Delete_reminder)
+                        is AgendaItem.Event -> stringResource(R.string.Delete_event)
+                        null -> stringResource(R.string.Delete_event)
+                    },
                     style = typography.bodyLarge.copy(fontWeight = FontWeight.W600),
                     color = colors.lightGray
                 )

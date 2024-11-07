@@ -78,8 +78,8 @@ class AgendaViewModel @Inject constructor(
                         agendaRepository.deleteReminder(reminder)
                     }
                 }
+                _state.update { it.copy(isLoading = false) }
             }
-            _state.update { it.copy(isLoading = false) }
         }
     }
 

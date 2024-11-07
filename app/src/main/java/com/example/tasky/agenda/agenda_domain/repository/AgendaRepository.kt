@@ -15,6 +15,8 @@ interface AgendaRepository {
 
     suspend fun addEvent(event: AgendaItem.Event, photos: List<ByteArray>): Result<EventResponse, TaskyError>
 
+    suspend fun updateEvent(event: AgendaItem.Event, photos: List<ByteArray>): Result<EventResponse, TaskyError>
+
     suspend fun deleteEvent(event: AgendaItem.Event): Result<Unit, TaskyError>
 
     suspend fun addReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError>

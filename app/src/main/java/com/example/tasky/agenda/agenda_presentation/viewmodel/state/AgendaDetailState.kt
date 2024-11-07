@@ -34,8 +34,8 @@ data class AgendaDetailState(
         eventId = UUID.randomUUID().toString(),
         eventTitle = "Event",
         eventDescription = "Event description",
-        from = 1232,
-        to = 3434,
+        from = ZonedDateTime.now().toInstant().toEpochMilli(),
+        to = ZonedDateTime.now().toInstant().toEpochMilli(),
         remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
         isUserEventCreator = false,
         attendees = emptyList(),
@@ -94,7 +94,7 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateTitle(val title: String) : AgendaDetailStateUpdate
     data class UpdateDescription(val description: String) : AgendaDetailStateUpdate
     data class UpdateIsReadOnly(val isReadOnly: Boolean) : AgendaDetailStateUpdate
-    data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem) : AgendaDetailStateUpdate
+    data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem?) : AgendaDetailStateUpdate
     data class UpdatePhotos(val photos: List<Photo>) : AgendaDetailStateUpdate
     data class UpdateAttendees(val attendees: List<Attendee>) : AgendaDetailStateUpdate
     data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate

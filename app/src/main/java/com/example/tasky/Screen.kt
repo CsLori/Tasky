@@ -19,7 +19,7 @@ object Screen {
     data class AgendaDetail(
         val agendaItemId: String? = null,
         val isAgendaItemReadOnly: Boolean,
-        val agendaOption: AgendaOption? = null,
+        val agendaOption: AgendaOption,
         val photoId: String? = null
     )
 

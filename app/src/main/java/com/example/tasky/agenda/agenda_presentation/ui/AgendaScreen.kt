@@ -274,7 +274,7 @@ private fun AgendaContent(
                             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                                 items(
                                     items = state.agendaItems,
-                                    key = { it.id }) { agendaItem ->
+                                    key = { it.hashCode() }) { agendaItem ->
                                     when (agendaItem) {
                                         is AgendaItem.Task -> {
                                             AgendaItem(
@@ -287,8 +287,20 @@ private fun AgendaContent(
                                                         )
                                                     )
                                                 },
-                                                onEditPressed = { onEditPressed(agendaItem) },
+                                                onEditPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.TASK
+                                                        )
+                                                    )
+                                                    onEditPressed(agendaItem)
+                                                },
                                                 onOpenPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.TASK
+                                                        )
+                                                    )
                                                     onAction(
                                                         AgendaAction.OnOpenPressed(
                                                             agendaItem
@@ -309,8 +321,20 @@ private fun AgendaContent(
                                                         )
                                                     )
                                                 },
-                                                onEditPressed = { onEditPressed(agendaItem) },
+                                                onEditPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.EVENT
+                                                        )
+                                                    )
+                                                    onEditPressed(agendaItem)
+                                                },
                                                 onOpenPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.EVENT
+                                                        )
+                                                    )
                                                     onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
                                             )
@@ -327,8 +351,20 @@ private fun AgendaContent(
                                                         )
                                                     )
                                                 },
-                                                onEditPressed = { onEditPressed(agendaItem) },
+                                                onEditPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.REMINDER
+                                                        )
+                                                    )
+                                                    onEditPressed(agendaItem)
+                                                },
                                                 onOpenPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.REMINDER
+                                                        )
+                                                    )
                                                     onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
                                             )
@@ -353,7 +389,7 @@ fun AgendaItem(
     backgroundColor: Color,
     onDelete: (String) -> Unit,
     onEditPressed: () -> Unit,
-    onOpenPressed: (AgendaItem) -> Unit,
+    onOpenPressed: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -425,7 +461,7 @@ fun AgendaItem(
                                 }
 
                                 AgendaDetailOption.OPEN.option -> {
-                                    onOpenPressed(agendaItem)
+                                    onOpenPressed()
                                 }
                             }
                         },
@@ -436,7 +472,11 @@ fun AgendaItem(
             }
         }
         Text(
-            text = agendaItem.description ?: "",
+            text = when (agendaItem) {
+                is AgendaItem.Task -> agendaItem.taskDescription ?: ""
+                is AgendaItem.Event -> agendaItem.eventDescription ?: ""
+                is AgendaItem.Reminder -> agendaItem.reminderDescription ?: ""
+            },
             style = TextStyle(color = textColor),
             modifier = Modifier.padding(start = 44.dp)
         )

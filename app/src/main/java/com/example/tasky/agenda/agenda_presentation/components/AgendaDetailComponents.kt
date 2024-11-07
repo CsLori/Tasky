@@ -174,9 +174,9 @@ fun AgendaItemDescription(
     ) {
         Text(
             text = when (agendaItem) {
-                is AgendaItem.Task -> state.task.description ?: ""
-                is AgendaItem.Event -> state.event.description ?: ""
-                is AgendaItem.Reminder -> state.reminder.description ?: ""
+                is AgendaItem.Task -> state.task.taskDescription ?: ""
+                is AgendaItem.Event -> state.event.eventDescription ?: ""
+                is AgendaItem.Reminder -> state.reminder.reminderDescription ?: ""
                 null -> ""
             },
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)

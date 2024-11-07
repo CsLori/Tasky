@@ -35,11 +35,9 @@ class AgendaRepositoryImpl(
             Result.Success(Unit)
 
         } catch (e: Exception) {
-            if (e is CancellationException) {
-                throw e
-            }
-            e.printStackTrace()
+            if (e is CancellationException) throw e
 
+            e.printStackTrace()
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -52,11 +50,9 @@ class AgendaRepositoryImpl(
             Result.Success(Unit)
 
         } catch (e: Exception) {
-            if (e is CancellationException) {
-                throw e
-            }
-            e.printStackTrace()
+            if (e is CancellationException) throw e
 
+            e.printStackTrace()
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -69,11 +65,9 @@ class AgendaRepositoryImpl(
             api.deleteTaskById(task.id)
             Result.Success(Unit)
         } catch (e: Exception) {
-            if (e is CancellationException) {
-                throw e
-            }
-            e.printStackTrace()
+            if (e is CancellationException) throw e
 
+            e.printStackTrace()
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -100,12 +94,33 @@ class AgendaRepositoryImpl(
         }
     }
 
+    override suspend fun updateEvent(
+        event: AgendaItem.Event,
+        photos: List<ByteArray>
+    ): Result<EventResponse, TaskyError> {
+        val eventPart = createMultipartEventRequest(event.toEventRequest())
+        val photosPart = photos.mapIndexed { index, photo -> createPhotoPart(photo, index) }
+
+        return try {
+            localDatabaseRepository.upsertEvent(event.toEventEntity())
+            val result = api.updateEvent(eventPart, photosPart)
+
+            Result.Success(result)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+            e.printStackTrace()
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
+    }
+
     override suspend fun deleteEvent(event: AgendaItem.Event): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.deleteEvent(event.toEventEntity())
             api.deleteEventById(event.eventId)
             Result.Success(Unit)
-        } catch (e : Exception) {
+        } catch (e: Exception) {
             if (e is CancellationException) throw e
 
             e.printStackTrace()
@@ -115,17 +130,17 @@ class AgendaRepositoryImpl(
     }
 
     override suspend fun addReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError> {
-       return try {
-           localDatabaseRepository.upsertReminder(reminder.toReminderEntity())
-           api.addReminder(reminder.toSerializedReminder())
-           Result.Success(Unit)
-       } catch (e : Exception) {
-           if (e is CancellationException) throw e
+        return try {
+            localDatabaseRepository.upsertReminder(reminder.toReminderEntity())
+            api.addReminder(reminder.toSerializedReminder())
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
 
-           e.printStackTrace()
-           val error = e.asResult(::mapToTaskyError).error
-           Result.Error(error)
-       }
+            e.printStackTrace()
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
     }
 
     override suspend fun updateReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError> {
@@ -137,7 +152,7 @@ class AgendaRepositoryImpl(
             localDatabaseRepository.deleteReminder(reminder.toReminderEntity())
             api.deleteReminderById(reminder.reminderId)
             Result.Success(Unit)
-        } catch (e : Exception) {
+        } catch (e: Exception) {
             if (e is CancellationException) throw e
 
             e.printStackTrace()

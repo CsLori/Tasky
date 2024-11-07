@@ -6,7 +6,7 @@ import java.time.LocalDate
 
 sealed interface AgendaUpdateState {
     data class UpdateSelectedDate(val newDate: LocalDate) : AgendaUpdateState
-    data class UpdateSelectedOption(val item: AgendaOption?) : AgendaUpdateState
+    data class UpdateSelectedOption(val item: AgendaOption) : AgendaUpdateState
     data class UpdateVisibility(val visible: Boolean) : AgendaUpdateState
     data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaUpdateState
     data class UpdateMonth(val month: String) : AgendaUpdateState

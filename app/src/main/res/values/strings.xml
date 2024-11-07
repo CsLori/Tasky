@@ -24,6 +24,8 @@
     <string name="Don_t_have_an_account">"DON'T HAVE AN ACCOUNT? "</string>
     <string name="Sign_up">SIGN UP</string>
     <string name="Delete_task">DELETE TASK</string>
+    <string name="Delete_reminder">DELETE REMINDER</string>
+    <string name="Delete_event">DELETE EVENT</string>
     <string name="Cancel">Cancel</string>
     <string name="select_time">Select Time</string>
     <string name="title">title</string>
