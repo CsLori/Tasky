@@ -15,6 +15,9 @@ interface ReminderDao {
     @Query("SELECT * FROM reminders WHERE id = :reminderId")
     suspend fun getReminderById(reminderId: String): ReminderEntity
 
+    @Query("SELECT EXISTS(SELECT 1 FROM reminders WHERE id = :reminderId)")
+    suspend fun existsById(reminderId: String): Boolean
+
     @Upsert
     suspend fun upsertReminder(reminder: ReminderEntity)
 

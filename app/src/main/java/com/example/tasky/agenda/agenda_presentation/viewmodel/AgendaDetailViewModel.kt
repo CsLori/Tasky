@@ -154,6 +154,7 @@ class AgendaDetailViewModel @Inject constructor(
                         photos
                     )
                 }
+
                 is AgendaItem.Reminder -> agendaRepository.addReminder(agendaItem)
             }
 
@@ -161,6 +162,7 @@ class AgendaDetailViewModel @Inject constructor(
                 is Success -> {
                     _uiState.update { AgendaDetailUiState.Success }
                 }
+
                 is Error -> {
                     _uiState.update { AgendaDetailUiState.None }
                     _uiState.update { AgendaDetailUiState.Error(R.string.Could_not_create_agenda_item) }
@@ -185,6 +187,7 @@ class AgendaDetailViewModel @Inject constructor(
                 is Success -> {
                     _uiState.update { AgendaDetailUiState.Success }
                 }
+
                 is Error -> {
                     _uiState.update { AgendaDetailUiState.None }
                 }
@@ -197,7 +200,14 @@ class AgendaDetailViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
 
-            val agendaItem = localDatabaseRepository.getEventById(agendaItemId)?.toAgendaItem()
+            val agendaOption = localDatabaseRepository.getAgendaItemTypeById(agendaItemId)
+
+            val agendaItem = when (agendaOption) {
+                AgendaOption.EVENT -> localDatabaseRepository.getEventById(agendaItemId).toAgendaItem()
+                AgendaOption.TASK -> localDatabaseRepository.getTaskById(agendaItemId).toAgendaItem()
+                AgendaOption.REMINDER -> localDatabaseRepository.getReminderById(agendaItemId).toAgendaItem()
+                else -> null
+            }
 
             _state.update { currentState ->
                 currentState.copy(
@@ -206,7 +216,7 @@ class AgendaDetailViewModel @Inject constructor(
                 )
             }
         }
-        return state.value.event
+        return state.value.selectedAgendaItem ?: state.value.task
     }
 
     fun getAttendee(email: String) {

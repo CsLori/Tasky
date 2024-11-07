@@ -15,6 +15,9 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :taskId LIMIT 1")
     suspend fun getTaskById(taskId: String): TaskEntity
 
+    @Query("SELECT EXISTS(SELECT 1 FROM tasks WHERE id = :taskId)")
+    suspend fun existsById(taskId: String): Boolean
+
     @Upsert
     suspend fun upsertTask(task: TaskEntity)
 

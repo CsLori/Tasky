@@ -4,6 +4,7 @@ import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import kotlinx.coroutines.flow.Flow
 
 interface AgendaItemsRepository {
@@ -31,6 +32,8 @@ interface AgendaItemsRepository {
     suspend fun upsertReminder(reminderEntity: ReminderEntity)
 
     suspend fun deleteReminder(reminderEntity: ReminderEntity)
+
+    suspend fun getAgendaItemTypeById(agendaItemId: String): AgendaOption?
 
     fun getAllAgendaItems(): Flow<List<AgendaItem>>
 }

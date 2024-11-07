@@ -1,6 +1,5 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -99,6 +98,7 @@ internal fun AgendaScreen(
                 is AgendaAction.OnFabItemPressed -> {
                     onFabItemPressed()
                 }
+
                 is AgendaAction.OnOpenPressed -> {
                     onOpenPressed(action.agendaItem)
                 }
@@ -280,7 +280,12 @@ private fun AgendaContent(
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.green,
-                                                onDelete = { onAction(AgendaAction.OnDeleteAgendaItem(agendaItem))
+                                                onDelete = {
+                                                    onAction(
+                                                        AgendaAction.OnDeleteAgendaItem(
+                                                            agendaItem
+                                                        )
+                                                    )
                                                 },
                                                 onEditPressed = { onEditPressed(agendaItem) },
                                                 onOpenPressed = {
@@ -305,10 +310,8 @@ private fun AgendaContent(
                                                     )
                                                 },
                                                 onEditPressed = { onEditPressed(agendaItem) },
-                                                onOpenPressed = { agendaItemId ->
-                                                    AgendaAction.OnOpenPressed(
-                                                        agendaItemId
-                                                    )
+                                                onOpenPressed = {
+                                                    onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
                                             )
                                         }
@@ -326,9 +329,7 @@ private fun AgendaContent(
                                                 },
                                                 onEditPressed = { onEditPressed(agendaItem) },
                                                 onOpenPressed = {
-                                                    AgendaAction.OnOpenPressed(
-                                                        agendaItem
-                                                    )
+                                                    onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
                                             )
                                         }

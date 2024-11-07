@@ -15,6 +15,9 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE id = :eventId")
     suspend fun getEventById(eventId: String): EventEntity
 
+    @Query("SELECT EXISTS(SELECT 1 FROM events WHERE id = :eventId)")
+    suspend fun existsById(eventId: String): Boolean
+
     @Upsert
     suspend fun upsertEvent(event: EventEntity)
 

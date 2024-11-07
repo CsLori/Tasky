@@ -9,6 +9,7 @@ import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaItemsRepository
+import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
@@ -78,6 +79,15 @@ class LocalDatabaseRepository @Inject constructor(
             combinedList.addAll(reminders.map { it.toAgendaItem() })
             combinedList.addAll(events.map { it.toAgendaItem() })
             combinedList
+        }
+    }
+
+    override suspend fun getAgendaItemTypeById(agendaItemId: String): AgendaOption? {
+        return when {
+            eventDao.existsById(agendaItemId) -> AgendaOption.EVENT
+            taskDao.existsById(agendaItemId) -> AgendaOption.TASK
+            reminderDao.existsById(agendaItemId) -> AgendaOption.REMINDER
+            else -> null
         }
     }
 }

@@ -130,7 +130,7 @@ internal fun AgendaDetailScreen(
                     if (agendaItemId == null) {
                         state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {
-                        agendaDetailViewModel.updateAgendaItem(state.task)
+                        agendaDetailViewModel.updateAgendaItem(state.selectedAgendaItem ?: state.task)
                     }
                     onNavigateToAgendaScreen()
                 }
