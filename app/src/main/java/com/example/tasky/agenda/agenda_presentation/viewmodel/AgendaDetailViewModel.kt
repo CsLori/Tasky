@@ -216,57 +216,59 @@ class AgendaDetailViewModel @Inject constructor(
             attendees = (agendaItem.attendees + currentEvent.attendees).distinctBy { it.userId },
             remindAtTime = agendaItem.remindAtTime
         )
-        Log.d("DDD - newEvent", "${newEvent.eventId} | ${newEvent.photos}")
         return Pair(photos, newEvent)
     }
 
-    fun loadAgendaItem(agendaItemId: String): AgendaItem? {
+    fun loadAgendaItem(agendaItemId: String) {
         _state.update { it.copy(isLoading = true) }
-        var agendaItem: AgendaItem? = null
 
         viewModelScope.launch {
-            agendaItem = when (agendaOption) {
+            when (agendaOption) {
                 AgendaOption.EVENT -> {
                     val event = localDatabaseRepository.getEventById(agendaItemId)
                     _state.update { currentState ->
                         currentState.copy(
-                            event =  event
+                            selectedAgendaItem = event
+                                .toAgendaItem(),
+                            event = event
                                 .toAgendaItem(),
                             isLoading = false
                         )
                     }
-                    state.value.event
                 }
 
                 AgendaOption.TASK -> {
                     val task = localDatabaseRepository.getTaskById(agendaItemId)
                     _state.update { currentState ->
                         currentState.copy(
+                            selectedAgendaItem = task
+                                .toAgendaItem(),
                             task = task
                                 .toAgendaItem(),
                             isLoading = false
                         )
                     }
-                    state.value.task
                 }
 
                 AgendaOption.REMINDER -> {
                     val reminder = localDatabaseRepository.getReminderById(agendaItemId)
                     _state.update { currentState ->
                         currentState.copy(
+                            selectedAgendaItem = reminder
+                                .toAgendaItem(),
                             reminder = reminder
                                 .toAgendaItem(),
                             isLoading = false
                         )
                     }
-                    state.value.reminder
                 }
 
-                else -> null
+                else -> {
+                    _state.update { it.copy(isLoading = false) }
+                    return@launch
+                }
             }
-            Log.d("DDD - agendaItem", "${agendaItem}")
         }
-        return state.value.selectedAgendaItem
     }
 
     fun getAttendee(email: String) {

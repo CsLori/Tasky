@@ -109,9 +109,10 @@ internal fun AgendaDetailScreen(
                 )
             )
         } else {
+            agendaDetailViewModel.loadAgendaItem(agendaItemId)
             agendaDetailViewModel.updateState(
                 AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
-                    agendaDetailViewModel.loadAgendaItem(agendaItemId)
+                    state.selectedAgendaItem
                 )
             )
         }
@@ -130,7 +131,9 @@ internal fun AgendaDetailScreen(
                     if (agendaItemId == null) {
                         state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {
-                        agendaDetailViewModel.updateAgendaItem(state.selectedAgendaItem ?: state.task)
+                        agendaDetailViewModel.updateAgendaItem(
+                            state.selectedAgendaItem ?: state.task
+                        )
                     }
                     onNavigateToAgendaScreen()
                 }
@@ -533,7 +536,7 @@ private fun VisitorItem(
     visitor: String,
     onStatusChanged: () -> Unit
 ) {
-    val visitorInitials by remember { mutableStateOf(getInitials(visitor))}
+    val visitorInitials by remember { mutableStateOf(getInitials(visitor)) }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -671,7 +674,7 @@ fun AgendaDetailReadOnlyPreview() {
                 host = null,
                 remindAtTime = 4626,
 
-            ),
+                ),
             onUpdatePhotos = {},
             onShowDialog = {},
             onDialogDismiss = {},
