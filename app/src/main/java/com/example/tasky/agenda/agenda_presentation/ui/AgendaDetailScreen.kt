@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -220,8 +219,7 @@ private fun AgendaDetailContent(
                     ),
                     color = colors.white,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight()
+                        .fillMaxSize()
                         .padding(top = 70.dp)
                 ) {
                     Column(
@@ -270,8 +268,6 @@ fun MainContent(
     onDialogDismiss: () -> Unit,
     dialogState: DialogState,
 ) {
-    val defaultHorizontalPadding = Modifier.padding(horizontal = dimensions.default16dp)
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -316,11 +312,9 @@ fun MainContent(
         }
     }
 
-    DefaultHorizontalDivider()
-
     Column(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(horizontal = dimensions.default16dp)
     ) {
         DefaultHorizontalDivider()
@@ -347,7 +341,9 @@ fun MainContent(
             contentAlignment = Alignment.BottomCenter
         ) {
             Column(
-                modifier = Modifier.align(Alignment.BottomCenter),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .align(Alignment.BottomCenter),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 DefaultHorizontalDivider()

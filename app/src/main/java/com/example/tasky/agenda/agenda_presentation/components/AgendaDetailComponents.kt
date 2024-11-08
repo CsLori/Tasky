@@ -271,20 +271,28 @@ fun TimeAndDateRow(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                val selectedHour = state.time.hour
-                                val selectedMinute = state.time.minute
+                                val selectedHour = if (isEventSecondRow) state.toTime.hour else state.fromAtTime.hour
+                                val selectedMinute = if (isEventSecondRow) state.toTime.minute else state.fromAtTime.minute
 
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
                                         shouldShowTimePicker = false
                                     )
                                 )
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateTime(
+                                //This one is used for Event where we have 2 rows for time and date
+                                if (isEventSecondRow) {
+                                    onUpdateState(AgendaDetailStateUpdate.UpdateToTime(
                                         hour = selectedHour,
                                         minute = selectedMinute
+                                    ))
+                                } else {
+                                    onUpdateState(
+                                        AgendaDetailStateUpdate.UpdateFromAtTime(
+                                            hour = selectedHour,
+                                            minute = selectedMinute
+                                        )
                                     )
-                                )
+                                }
                             }
                         ) { Text(stringResource(R.string.OK)) }
                     },
@@ -301,7 +309,7 @@ fun TimeAndDateRow(
                     },
                     content = {
                         TimePicker(
-                            state = state.time
+                            state = if (isEventSecondRow) state.toTime else state.fromAtTime
                         )
 
                     }

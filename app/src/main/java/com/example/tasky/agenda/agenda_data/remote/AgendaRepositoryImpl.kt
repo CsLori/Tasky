@@ -144,7 +144,18 @@ class AgendaRepositoryImpl(
     }
 
     override suspend fun updateReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError> {
-        TODO("Not yet implemented")
+        return try {
+            localDatabaseRepository.upsertReminder(reminder.toReminderEntity())
+            api.updateReminder(reminder.toSerializedReminder())
+            Result.Success(Unit)
+
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+            e.printStackTrace()
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
     }
 
     override suspend fun deleteReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError> {

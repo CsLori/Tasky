@@ -52,7 +52,12 @@ data class AgendaDetailState(
     val isLoading: Boolean = false,
     val shouldShowDatePicker: Boolean = false,
     val date: String = DateUtils.getCurrentDate().localDateToStringMMMdyyyyFormat(),
-    val time: TimePickerState = TimePickerState(
+    val fromAtTime: TimePickerState = TimePickerState(
+        initialHour = LocalTime.now().hour,
+        initialMinute = LocalTime.now().minute,
+        is24Hour = true
+    ),
+    val toTime: TimePickerState = TimePickerState(
         initialHour = LocalTime.now().hour,
         initialMinute = LocalTime.now().minute,
         is24Hour = true
@@ -85,7 +90,8 @@ enum class EditType {
 sealed interface AgendaDetailStateUpdate {
     data class UpdateDate(val newDate: LocalDate) : AgendaDetailStateUpdate
     data class UpdateMonth(val month: String) : AgendaDetailStateUpdate
-    data class UpdateTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
+    data class UpdateFromAtTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
+    data class UpdateToTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
     data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateShouldShowTimePicker(val shouldShowTimePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateEditType(val editType: EditType) : AgendaDetailStateUpdate
