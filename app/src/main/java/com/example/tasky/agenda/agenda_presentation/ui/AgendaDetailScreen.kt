@@ -44,6 +44,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -66,6 +67,7 @@ import com.example.tasky.agenda.agenda_presentation.components.AgendaItemTitle
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.SetReminderRow
 import com.example.tasky.agenda.agenda_presentation.components.TimeAndDateRow
+import com.example.tasky.agenda.agenda_presentation.components.TimeAndDateSecondRow
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
@@ -76,7 +78,7 @@ import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.components.AddVisitorDialog
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.DialogState
-import com.example.tasky.core.presentation.components.showToast
+import com.example.tasky.core.presentation.components.ErrorDialog
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
@@ -95,6 +97,9 @@ internal fun AgendaDetailScreen(
 ) {
     val state = agendaDetailViewModel.state.collectAsStateWithLifecycle().value
     val uiState = agendaDetailViewModel.uiState.collectAsStateWithLifecycle().value
+    val dialogState = agendaDetailViewModel.dialogState.collectAsStateWithLifecycle().value
+    val errorDialogState =
+        agendaDetailViewModel.errorDialogState.collectAsStateWithLifecycle().value
 
     LaunchedEffect(agendaItemId) {
         if (agendaItemId == null) {
@@ -161,6 +166,10 @@ internal fun AgendaDetailScreen(
                     agendaDetailViewModel.deleteAgendaItem(action.agendaItem)
                     onNavigateToAgendaScreen()
                 }
+
+                is AgendaDetailAction.OnDeleteAttendee -> {
+                    agendaDetailViewModel.deleteAttendee(action.attendee)
+                }
             }
         },
         agendaItemId = agendaItemId,
@@ -170,10 +179,13 @@ internal fun AgendaDetailScreen(
         },
         onShowDialog = { agendaDetailViewModel.showAddVisitorDialog() },
         onDialogDismiss = { agendaDetailViewModel.hideAddVisitorDialog() },
-        dialogState = agendaDetailViewModel.dialogState.collectAsStateWithLifecycle().value,
+        onErrorDialogDismiss = { agendaDetailViewModel.hideErrorDialog() },
+        dialogState = dialogState,
+        errorDialogState = errorDialogState
     )
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun AgendaDetailContent(
     state: AgendaDetailState,
@@ -186,6 +198,8 @@ private fun AgendaDetailContent(
     onShowDialog: () -> Unit,
     onDialogDismiss: () -> Unit,
     dialogState: DialogState,
+    errorDialogState: AgendaDetailViewModel.ErrorDialogState,
+    onErrorDialogDismiss: () -> Unit
 ) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val getContent =
@@ -209,6 +223,38 @@ private fun AgendaDetailContent(
             }
 
             AgendaDetailViewModel.AgendaDetailUiState.None -> {
+                if (dialogState is DialogState.ShowError) {
+                    when (errorDialogState) {
+                        is AgendaDetailViewModel.ErrorDialogState.AgendaItemError -> {
+                            ErrorDialog(
+                                label = errorDialogState.message.asString() ?: "",
+                                displayCloseIcon = false,
+                                positiveButtonText = stringResource(R.string.OK),
+                                positiveOnClick = { onErrorDialogDismiss() },
+                            )
+                        }
+
+                        is AgendaDetailViewModel.ErrorDialogState.AttendeeError -> {
+                            ErrorDialog(
+                                label = errorDialogState.message.asString() ?: "",
+                                displayCloseIcon = false,
+                                positiveButtonText = stringResource(R.string.OK),
+                                positiveOnClick = { onErrorDialogDismiss() },
+                            )
+                        }
+
+                        is AgendaDetailViewModel.ErrorDialogState.GeneralError -> {
+                            ErrorDialog(
+                                label = errorDialogState.message.asString() ?: "",
+                                displayCloseIcon = false,
+                                positiveButtonText = stringResource(R.string.OK),
+                                positiveOnClick = { onErrorDialogDismiss() },
+                            )
+                        }
+
+                        AgendaDetailViewModel.ErrorDialogState.None -> {}
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxSize(),
@@ -258,10 +304,6 @@ private fun AgendaDetailContent(
                     }
                 }
             }
-
-            is AgendaDetailViewModel.AgendaDetailUiState.Error -> {
-                showToast(context = context, message = uiState.message)
-            }
         }
     }
 }
@@ -291,21 +333,30 @@ fun MainContent(
 
         if (agendaItem is AgendaItem.Event) {
             TimeAndDateRow(
-                text = stringResource(R.string.from), onUpdateState = onUpdateState, state = state,
-            )
+                agendaItem = agendaItem,
+                text = stringResource(R.string.from),
+                onUpdateState = onUpdateState,
+                state = state,
+
+                )
 
             DefaultHorizontalDivider()
 
-            TimeAndDateRow(
+            TimeAndDateSecondRow(
+                agendaItem = agendaItem,
                 text = stringResource(R.string.to),
                 onUpdateState = onUpdateState,
                 state = state,
-                isEventSecondRow = true
             )
         } else {
-            TimeAndDateRow(
-                text = stringResource(R.string.at), onUpdateState = onUpdateState, state = state
-            )
+            if (agendaItem != null) {
+                TimeAndDateRow(
+                    agendaItem = agendaItem,
+                    text = stringResource(R.string.at),
+                    onUpdateState = onUpdateState,
+                    state = state,
+                )
+            }
         }
     }
 
@@ -398,8 +449,9 @@ private fun VisitorsSection(
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
     visitorFilter: VisitorFilter,
-    isReadOnly: Boolean
+    isReadOnly: Boolean,
 ) {
+
     Column(modifier = Modifier.padding(top = dimensions.large32dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -429,108 +481,55 @@ private fun VisitorsSection(
         }
 
         Spacer(modifier = Modifier.height(dimensions.default16dp))
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            FilterChip(
-                selected = true,
-                onClick = {
-                    onVisitorStatusChanged()
-                    onUpdateState(AgendaDetailStateUpdate.UpdateVisitorFilter(VisitorFilter.ALL))
-                },
-                label = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.All),
-                            style = typography.bodySmall.copy(
-                                fontWeight = FontWeight.W500,
-                                lineHeight = 15.sp
-                            ),
-                            textAlign = TextAlign.Center,
-                            color = colors.white,
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .requiredWidth(110.dp)
-                    .requiredHeight(30.dp),
-                shape = RoundedCornerShape(100.dp),
-                border = BorderStroke(1.dp, colors.transparent),
-                colors = FilterChipDefaults.filterChipColors()
-                    .copy(selectedContainerColor = colors.black, containerColor = colors.light2),
-            )
+            listOf(
+                VisitorFilter.ALL to stringResource(R.string.All),
+                VisitorFilter.GOING to stringResource(R.string.Going),
+                VisitorFilter.NOT_GOING to stringResource(R.string.Not_going)
+            ).forEach { (filter, label) ->
+                val isSelected = visitorFilter == filter
 
-            FilterChip(
-                modifier = Modifier
-                    .requiredWidth(110.dp)
-                    .requiredHeight(30.dp),
-                selected = false,
-                onClick = {
-                    onVisitorStatusChanged()
-                    onUpdateState(AgendaDetailStateUpdate.UpdateVisitorFilter(VisitorFilter.GOING))
-                },
-                label = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            stringResource(R.string.Going),
-                            style = typography.bodySmall.copy(
-                                fontWeight = FontWeight.W500,
-                                lineHeight = 15.sp
-                            ),
-                            textAlign = TextAlign.Center,
-                            color = colors.black,
-                        )
-                    }
-                },
-                shape = RoundedCornerShape(100.dp),
-                border = BorderStroke(1.dp, colors.transparent),
-                colors = FilterChipDefaults.filterChipColors()
-                    .copy(selectedContainerColor = colors.black, containerColor = colors.light2),
-
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {
+                        if (!isSelected) {
+                            onVisitorStatusChanged()
+                            onUpdateState(AgendaDetailStateUpdate.UpdateVisitorFilter(filter))
+                        }
+                    },
+                    label = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                style = typography.bodySmall.copy(
+                                    fontWeight = FontWeight.W500,
+                                    lineHeight = 15.sp
+                                ),
+                                textAlign = TextAlign.Center,
+                                color = if (isSelected) colors.white else colors.black,
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .requiredWidth(110.dp)
+                        .requiredHeight(30.dp),
+                    shape = RoundedCornerShape(100.dp),
+                    border = BorderStroke(1.dp, colors.transparent),
+                    colors = FilterChipDefaults.filterChipColors()
+                        .copy(
+                            selectedContainerColor = colors.black,
+                            containerColor = colors.light2
+                        ),
                 )
-
-            FilterChip(
-                modifier = Modifier
-                    .requiredWidth(110.dp)
-                    .requiredHeight(30.dp),
-                selected = false,
-                onClick = {
-                    onVisitorStatusChanged()
-                    onUpdateState(AgendaDetailStateUpdate.UpdateVisitorFilter(VisitorFilter.NOT_GOING))
-                },
-                label = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            stringResource(R.string.Not_going),
-                            style = typography.bodySmall.copy(
-                                fontWeight = FontWeight.W500,
-                                lineHeight = 15.sp
-                            ),
-                            textAlign = TextAlign.Center,
-                            color = colors.black,
-                        )
-                    }
-                },
-                shape = RoundedCornerShape(100.dp),
-                border = BorderStroke(1.dp, colors.transparent),
-                colors = FilterChipDefaults.filterChipColors()
-                    .copy(selectedContainerColor = colors.black, containerColor = colors.light2),
-            )
+            }
         }
 
         Spacer(modifier = Modifier.height(dimensions.default16dp))
@@ -550,15 +549,15 @@ private fun VisitorsSection(
             visitors.forEach { visitor ->
                 VisitorItem(
                     visitor = visitor,
-                    onStatusChanged = {}
+                    onDeleteAttendee = { onAction(AgendaDetailAction.OnDeleteAttendee(it)) }
                 )
                 Spacer(modifier = Modifier.height(dimensions.small8dp))
 
             }
         }
 
-        if (visitorFilter == VisitorFilter.GOING || visitorFilter == VisitorFilter.ALL) {
-            Spacer(modifier = Modifier.height(dimensions.default16dp))
+        if (visitorFilter == VisitorFilter.NOT_GOING || visitorFilter == VisitorFilter.ALL) {
+            Spacer(modifier = Modifier.height(dimensions.small8dp))
 
             Text(
                 text = stringResource(R.string.Not_going),
@@ -573,7 +572,7 @@ private fun VisitorsSection(
             emptyList<Attendee>().forEach { visitor ->
                 VisitorItem(
                     visitor = visitor,
-                    onStatusChanged = {}
+                    onDeleteAttendee = { onAction(AgendaDetailAction.OnDeleteAttendee(visitor)) }
                 )
                 Spacer(modifier = Modifier.height(dimensions.small8dp))
 
@@ -598,7 +597,7 @@ private fun VisitorsSection(
 @Composable
 private fun VisitorItem(
     visitor: Attendee,
-    onStatusChanged: () -> Unit
+    onDeleteAttendee: (Attendee) -> Unit
 ) {
     val visitorInitials by remember { mutableStateOf(getInitials(visitor.name)) }
     Box(
@@ -652,7 +651,9 @@ private fun VisitorItem(
                 Icon(
                     Icons.Outlined.Delete,
                     contentDescription = "Delete icon",
-                    modifier = Modifier.padding(end = dimensions.small8dp)
+                    modifier = Modifier
+                        .padding(end = dimensions.small8dp)
+                        .clickable { onDeleteAttendee(visitor) }
                 )
             }
         }
@@ -707,7 +708,7 @@ private fun Header(
             if (agendaItemId.isNullOrEmpty() || !isReadOnly) {
                 Text(
                     modifier = Modifier.clickable { onSavePressed() },
-                    text = "Save", color = colors.white
+                    text = stringResource(R.string.Save), color = colors.white
                 )
             } else {
                 IconButton(
@@ -753,6 +754,8 @@ fun AgendaDetailReadOnlyPreview() {
             onShowDialog = {},
             onDialogDismiss = {},
             dialogState = DialogState.Hide,
+            errorDialogState = AgendaDetailViewModel.ErrorDialogState.None,
+            onErrorDialogDismiss = {}
         )
     }
 }
@@ -784,7 +787,9 @@ fun AgendaDetailEditablePreview() {
             onUpdatePhotos = {},
             onShowDialog = {},
             onDialogDismiss = {},
-            dialogState = DialogState.Hide
+            dialogState = DialogState.Hide,
+            errorDialogState = AgendaDetailViewModel.ErrorDialogState.None,
+            onErrorDialogDismiss = {}
         )
     }
 }

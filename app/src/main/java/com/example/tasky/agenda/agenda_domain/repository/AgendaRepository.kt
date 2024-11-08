@@ -28,6 +28,8 @@ interface AgendaRepository {
 
     suspend fun getAttendee(email: String): Result<AttendeeExistDto, TaskyError>
 
+    suspend fun deleteAttendee(eventId: String): Result<Unit, TaskyError>
+
     suspend fun getLoggedInUserDetails(): Result<AttendeeMinimal, TaskyError>
 
 }

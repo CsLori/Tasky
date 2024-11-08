@@ -186,6 +186,18 @@ class AgendaRepositoryImpl(
         }
     }
 
+    override suspend fun deleteAttendee(eventId: String): Result<Unit, TaskyError> {
+        return try {
+            api.deleteAttendee(eventId)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+            e.printStackTrace()
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }    }
+
     override suspend fun getLoggedInUserDetails(): Result<AttendeeMinimal, TaskyError> {
         return try {
             val loggedInAttendee = AttendeeMinimal(

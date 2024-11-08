@@ -63,6 +63,7 @@ data class AgendaDetailState(
         is24Hour = true
     ),
     val month: String = DateUtils.getCurrentMonth(),
+    val eventSecondRowMonth: String = DateUtils.getCurrentMonth(),
     val isDateSelectedFromDatePicker: Boolean = false,
     val selectedDate: LocalDate = DateUtils.getCurrentDate(),
     val shouldShowTimePicker: Boolean = false,
@@ -88,15 +89,16 @@ enum class EditType {
     TITLE, DESCRIPTION
 }
 
-enum class VisitorFilter {
-    ALL, GOING, NOT_GOING
+enum class VisitorFilter(val displayName: String) {
+    ALL("All"), GOING("Going"), NOT_GOING("Not going")
 }
 
 sealed interface AgendaDetailStateUpdate {
     data class UpdateDate(val newDate: LocalDate) : AgendaDetailStateUpdate
     data class UpdateMonth(val month: String) : AgendaDetailStateUpdate
+    data class UpdateEventSecondRowMonth(val month: String) : AgendaDetailStateUpdate
     data class UpdateFromAtTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
-    data class UpdateToTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
+    data class UpdateEventSecondRowTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
     data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateShouldShowTimePicker(val shouldShowTimePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateEditType(val editType: EditType) : AgendaDetailStateUpdate
