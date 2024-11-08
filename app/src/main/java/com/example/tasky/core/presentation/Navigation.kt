@@ -96,8 +96,9 @@ fun Navigation() {
                             navController.navigate(
                                 Screen.AgendaDetail(
                                     agendaItemId = agendaItem.id,
-                                    isAgendaItemReadOnly = false
-                                )
+                                    isAgendaItemReadOnly = false,
+                                    agendaOption = agendaViewModel.state.value.agendaOption,
+                                    )
                             )
                         },
                         onLogoutNavigateToLogin = {
@@ -120,7 +121,8 @@ fun Navigation() {
                             navController.navigate(
                                 Screen.AgendaDetail(
                                     agendaItemId = agendaItem.id,
-                                    isAgendaItemReadOnly = true
+                                    isAgendaItemReadOnly = true,
+                                    agendaOption = agendaViewModel.state.value.agendaOption,
                                 )
                             )
                         }

@@ -24,6 +24,8 @@
     <string name="Don_t_have_an_account">"DON'T HAVE AN ACCOUNT? "</string>
     <string name="Sign_up">SIGN UP</string>
     <string name="Delete_task">DELETE TASK</string>
+    <string name="Delete_reminder">DELETE REMINDER</string>
+    <string name="Delete_event">DELETE EVENT</string>
     <string name="Cancel">Cancel</string>
     <string name="select_time">Select Time</string>
     <string name="title">title</string>
@@ -46,4 +48,5 @@
     <string name="visitor_cannot_be_added">User could not be added, please check the email address again!</string>
     <string name="visitor_has_been_successfully_added">Visitor has been successfully added!</string>
     <string name="Photo">Photo</string>
+    <string name="Could_not_create_agenda_item">Could not create agenda item!</string>
 </resources>

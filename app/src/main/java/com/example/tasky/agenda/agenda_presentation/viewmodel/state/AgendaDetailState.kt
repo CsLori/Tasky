@@ -34,8 +34,8 @@ data class AgendaDetailState(
         eventId = UUID.randomUUID().toString(),
         eventTitle = "Event",
         eventDescription = "Event description",
-        from = 1232,
-        to = 3434,
+        from = ZonedDateTime.now().toInstant().toEpochMilli(),
+        to = ZonedDateTime.now().toInstant().toEpochMilli(),
         remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
         isUserEventCreator = false,
         attendees = emptyList(),
@@ -52,7 +52,12 @@ data class AgendaDetailState(
     val isLoading: Boolean = false,
     val shouldShowDatePicker: Boolean = false,
     val date: String = DateUtils.getCurrentDate().localDateToStringMMMdyyyyFormat(),
-    val time: TimePickerState = TimePickerState(
+    val fromAtTime: TimePickerState = TimePickerState(
+        initialHour = LocalTime.now().hour,
+        initialMinute = LocalTime.now().minute,
+        is24Hour = true
+    ),
+    val toTime: TimePickerState = TimePickerState(
         initialHour = LocalTime.now().hour,
         initialMinute = LocalTime.now().minute,
         is24Hour = true
@@ -85,7 +90,8 @@ enum class EditType {
 sealed interface AgendaDetailStateUpdate {
     data class UpdateDate(val newDate: LocalDate) : AgendaDetailStateUpdate
     data class UpdateMonth(val month: String) : AgendaDetailStateUpdate
-    data class UpdateTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
+    data class UpdateFromAtTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
+    data class UpdateToTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
     data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateShouldShowTimePicker(val shouldShowTimePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateEditType(val editType: EditType) : AgendaDetailStateUpdate
@@ -94,7 +100,7 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateTitle(val title: String) : AgendaDetailStateUpdate
     data class UpdateDescription(val description: String) : AgendaDetailStateUpdate
     data class UpdateIsReadOnly(val isReadOnly: Boolean) : AgendaDetailStateUpdate
-    data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem) : AgendaDetailStateUpdate
+    data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem?) : AgendaDetailStateUpdate
     data class UpdatePhotos(val photos: List<Photo>) : AgendaDetailStateUpdate
     data class UpdateAttendees(val attendees: List<Attendee>) : AgendaDetailStateUpdate
     data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate

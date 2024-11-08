@@ -18,6 +18,7 @@ import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import com.example.tasky.util.PhotoCompressor
+import com.example.tasky.util.PhotoConverter
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -121,5 +122,11 @@ object TaskyModule {
     @Singleton
     fun providePhotoCompressor(@ApplicationContext context: Context): PhotoCompressor {
         return PhotoCompressor(context)
+    }
+
+    @Provides
+    @Singleton
+    fun providePhotoConverter(@ApplicationContext context: Context): PhotoConverter {
+        return PhotoConverter(context)
     }
 }

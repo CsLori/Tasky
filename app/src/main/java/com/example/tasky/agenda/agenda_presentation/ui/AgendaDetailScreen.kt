@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -109,9 +108,10 @@ internal fun AgendaDetailScreen(
                 )
             )
         } else {
+            agendaDetailViewModel.loadAgendaItem(agendaItemId)
             agendaDetailViewModel.updateState(
                 AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
-                    agendaDetailViewModel.loadTask(agendaItemId)
+                    state.selectedAgendaItem
                 )
             )
         }
@@ -128,9 +128,11 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnEditRowPressed -> onEditPressed()
                 AgendaDetailAction.OnSavePressed -> {
                     if (agendaItemId == null) {
-                        agendaDetailViewModel.createTask()
+                        state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {
-                        agendaDetailViewModel.updateTask(state.task)
+                        agendaDetailViewModel.updateAgendaItem(
+                            state.selectedAgendaItem ?: state.task
+                        )
                     }
                     onNavigateToAgendaScreen()
                 }
@@ -217,8 +219,7 @@ private fun AgendaDetailContent(
                     ),
                     color = colors.white,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight()
+                        .fillMaxSize()
                         .padding(top = 70.dp)
                 ) {
                     Column(
@@ -267,8 +268,6 @@ fun MainContent(
     onDialogDismiss: () -> Unit,
     dialogState: DialogState,
 ) {
-    val defaultHorizontalPadding = Modifier.padding(horizontal = dimensions.default16dp)
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -313,11 +312,9 @@ fun MainContent(
         }
     }
 
-    DefaultHorizontalDivider()
-
     Column(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(horizontal = dimensions.default16dp)
     ) {
         DefaultHorizontalDivider()
@@ -344,7 +341,9 @@ fun MainContent(
             contentAlignment = Alignment.BottomCenter
         ) {
             Column(
-                modifier = Modifier.align(Alignment.BottomCenter),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .align(Alignment.BottomCenter),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 DefaultHorizontalDivider()
@@ -353,7 +352,12 @@ fun MainContent(
                     modifier = Modifier
                         .padding(dimensions.small8dp)
                         .clickable { },
-                    text = stringResource(R.string.Delete_task),
+                    text = when (agendaItem) {
+                        is AgendaItem.Task -> stringResource(R.string.Delete_task)
+                        is AgendaItem.Reminder -> stringResource(R.string.Delete_reminder)
+                        is AgendaItem.Event -> stringResource(R.string.Delete_event)
+                        null -> stringResource(R.string.Delete_event)
+                    },
                     style = typography.bodyLarge.copy(fontWeight = FontWeight.W600),
                     color = colors.lightGray
                 )
@@ -528,7 +532,7 @@ private fun VisitorItem(
     visitor: String,
     onStatusChanged: () -> Unit
 ) {
-    val visitorInitials = getInitials(visitor)
+    val visitorInitials by remember { mutableStateOf(getInitials(visitor)) }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -666,7 +670,7 @@ fun AgendaDetailReadOnlyPreview() {
                 host = null,
                 remindAtTime = 4626,
 
-            ),
+                ),
             onUpdatePhotos = {},
             onShowDialog = {},
             onDialogDismiss = {},

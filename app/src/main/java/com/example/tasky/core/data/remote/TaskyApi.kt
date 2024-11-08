@@ -3,9 +3,8 @@ package com.example.tasky.core.data.remote
 import com.example.tasky.agenda.agenda_data.remote.dto.AgendaResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
+import com.example.tasky.agenda.agenda_data.remote.dto.ReminderSerialized
 import com.example.tasky.agenda.agenda_data.remote.dto.TaskSerialized
-import com.example.tasky.core.domain.Result
-import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginRequest
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginUserResponse
 import com.example.tasky.onboarding.onboarding_data.remote.dto.RegisterRequest
@@ -28,6 +27,12 @@ interface TaskyApi {
     @POST("/login")
     suspend fun login(@Body loginBody: LoginRequest): LoginUserResponse
 
+    @GET("/logout")
+    suspend fun logout()
+
+    @GET("/authenticate")
+    suspend fun authenticateUser()
+
     @GET("/agenda")
     suspend fun getAgenda(@Query("time") time: Long): AgendaResponse
 
@@ -36,10 +41,16 @@ interface TaskyApi {
     suspend fun addEvent(
         @Part("create_event_request") createEventRequest: RequestBody,
         @Part photos: List<MultipartBody.Part>
-    ): Result<EventResponse, TaskyError>
+    ): EventResponse
+
+    @PUT("/event")
+    suspend fun updateEvent(
+        @Part("create_event_request") createEventRequest: RequestBody,
+        @Part photos: List<MultipartBody.Part>
+    ): EventResponse
 
     @DELETE("/event")
-    suspend fun deleteEvent(@Query("eventId") eventId: String)
+    suspend fun deleteEventById(@Query("eventId") eventId: String)
 
     @POST("/task")
     suspend fun addTask(@Body taskBody: TaskSerialized)
@@ -50,11 +61,14 @@ interface TaskyApi {
     @DELETE("/task")
     suspend fun deleteTaskById(@Query("taskId") taskId: String)
 
-    @GET("/logout")
-    suspend fun logout()
+    @POST("/reminder")
+    suspend fun addReminder(@Body reminderBody: ReminderSerialized)
 
-    @GET("/authenticate")
-    suspend fun authenticateUser()
+    @PUT("/reminder")
+    suspend fun updateReminder(@Body reminderBody: ReminderSerialized)
+
+    @DELETE("/reminder")
+    suspend fun deleteReminderById(@Query("reminderId") reminderId: String)
 
     @GET("/attendee")
     suspend fun getAttendee(@Query("email") email: String): AttendeeExistDto

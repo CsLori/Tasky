@@ -2,8 +2,6 @@ package com.example.tasky.agenda.agenda_data.entity_mappers
 
 import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
-import com.example.tasky.agenda.agenda_domain.model.Attendee
-import com.example.tasky.agenda.agenda_domain.model.Photo
 
 fun EventEntity.toAgendaItem(): AgendaItem.Event {
     return AgendaItem.Event(
@@ -13,8 +11,8 @@ fun EventEntity.toAgendaItem(): AgendaItem.Event {
         from = from,
         to = to,
         remindAtTime = remindAt,
-        photos = listOf<Photo>(),
-        attendees = listOf<Attendee>(),
+        photos = photos,
+        attendees = attendeeIds,
         isUserEventCreator = false,
         host = null
     )
