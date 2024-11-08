@@ -2,9 +2,6 @@ package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tasky.agenda.agenda_data.entity_mappers.toEventEntity
-import com.example.tasky.agenda.agenda_data.entity_mappers.toReminderEntity
-import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
@@ -62,19 +59,16 @@ class AgendaViewModel @Inject constructor(
                 when (agendaItem) {
                     is AgendaItem.Task -> {
                         val task = safeAgendaItem as AgendaItem.Task
-                        localDatabaseRepository.deleteTask(task.toTaskEntity())
                         agendaRepository.deleteTask(task)
                     }
 
                     is AgendaItem.Event -> {
                         val event = safeAgendaItem as AgendaItem.Event
-                        localDatabaseRepository.deleteEvent(event.toEventEntity())
                         agendaRepository.deleteEvent(event)
                     }
 
                     is AgendaItem.Reminder -> {
                         val reminder = safeAgendaItem as AgendaItem.Reminder
-                        localDatabaseRepository.deleteReminder(reminder.toReminderEntity())
                         agendaRepository.deleteReminder(reminder)
                     }
                 }

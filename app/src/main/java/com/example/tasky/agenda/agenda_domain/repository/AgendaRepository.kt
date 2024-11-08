@@ -10,17 +10,23 @@ import com.example.tasky.core.domain.TaskyError
 interface AgendaRepository {
     suspend fun addTask(task: AgendaItem.Task): Result<Unit, TaskyError>
 
+    suspend fun getTaskById(taskId: String): Result<AgendaItem.Task, TaskyError>
+
     suspend fun updateTask(task: AgendaItem.Task): Result<Unit, TaskyError>
 
     suspend fun deleteTask(task: AgendaItem.Task): Result<Unit, TaskyError>
 
     suspend fun addEvent(event: AgendaItem.Event, photos: List<ByteArray>): Result<EventResponse, TaskyError>
 
+    suspend fun getEventById(eventId: String): Result<AgendaItem.Event, TaskyError>
+
     suspend fun updateEvent(event: AgendaItem.Event, photos: List<ByteArray>): Result<EventResponse, TaskyError>
 
     suspend fun deleteEvent(event: AgendaItem.Event): Result<Unit, TaskyError>
 
     suspend fun addReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError>
+
+    suspend fun getReminderById(reminderId: String): Result<AgendaItem.Reminder, TaskyError>
 
     suspend fun updateReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError>
 
