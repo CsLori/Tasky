@@ -13,8 +13,8 @@ fun EventEntity.toAgendaItem(): AgendaItem.Event {
         remindAtTime = remindAt,
         photos = photos,
         attendees = attendeeIds,
-        isUserEventCreator = false,
-        host = null
+        isUserEventCreator = isUserEventCreator,
+        host = host
     )
 }
 

@@ -72,7 +72,8 @@ data class AgendaDetailState(
     val isReadOnly: Boolean = false,
     val selectedAgendaItem: AgendaItem? = null,
     val addVisitorEmail: FieldInput? = null,
-    val emailErrorStatus: ErrorStatus? = null
+    val emailErrorStatus: ErrorStatus? = null,
+    val visitorFilter: VisitorFilter = VisitorFilter.ALL,
 )
 
 enum class RemindBeforeDuration(val duration: Duration) {
@@ -85,6 +86,10 @@ enum class RemindBeforeDuration(val duration: Duration) {
 
 enum class EditType {
     TITLE, DESCRIPTION
+}
+
+enum class VisitorFilter {
+    ALL, GOING, NOT_GOING
 }
 
 sealed interface AgendaDetailStateUpdate {
@@ -104,4 +109,5 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdatePhotos(val photos: List<Photo>) : AgendaDetailStateUpdate
     data class UpdateAttendees(val attendees: List<Attendee>) : AgendaDetailStateUpdate
     data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate
+    data class UpdateVisitorFilter(val filter: VisitorFilter) : AgendaDetailStateUpdate
 }

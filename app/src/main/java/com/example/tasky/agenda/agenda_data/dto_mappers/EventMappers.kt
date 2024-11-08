@@ -4,21 +4,6 @@ import com.example.tasky.agenda.agenda_data.remote.dto.EventRequest
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 
-fun AgendaItem.Event.toEventResponse(): EventResponse {
-    return EventResponse(
-        id = id,
-        title = title,
-        description = description ?: "",
-        from = from,
-        to = to,
-        remindAt = remindAt,
-        attendees = attendees.toAttendeeDtos(),
-        photos = photos.toSerializedPhotos(),
-        host = host ?: "",
-        isUserEventCreator = isUserEventCreator
-    )
-}
-
 fun EventResponse.toEvent(): AgendaItem.Event {
     return AgendaItem.Event(
         eventId = id,

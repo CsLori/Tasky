@@ -44,7 +44,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -71,6 +70,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewMo
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.VisitorFilter
 import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.components.AddVisitorDialog
@@ -150,6 +150,17 @@ internal fun AgendaDetailScreen(
                 }
 
                 is AgendaDetailAction.OnPhotoPressed -> onNavigateToSelectedPhoto(action.key)
+
+                is AgendaDetailAction.OnVisitorFilterChanged -> when (state.visitorFilter) {
+                    VisitorFilter.ALL -> state.event.attendees
+                    VisitorFilter.GOING -> state.event.attendees.filter { it.isGoing }
+                    VisitorFilter.NOT_GOING -> state.event.attendees.filterNot { it.isGoing }
+                }
+
+                is AgendaDetailAction.OnDeleteAgendaItem -> {
+                    agendaDetailViewModel.deleteAgendaItem(action.agendaItem)
+                    onNavigateToAgendaScreen()
+                }
             }
         },
         agendaItemId = agendaItemId,
@@ -163,7 +174,6 @@ internal fun AgendaDetailScreen(
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun AgendaDetailContent(
     state: AgendaDetailState,
@@ -244,6 +254,7 @@ private fun AgendaDetailContent(
                             onDialogDismiss = onDialogDismiss,
                             dialogState = dialogState,
                         )
+
                     }
                 }
             }
@@ -255,7 +266,6 @@ private fun AgendaDetailContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainContent(
     state: AgendaDetailState,
@@ -324,7 +334,7 @@ fun MainContent(
         if (agendaItem is AgendaItem.Event) {
             VisitorsSection(
                 visitors = state.event.attendees,
-                onVisitorStatusChanged = {},
+                onVisitorStatusChanged = { onAction(AgendaDetailAction.OnVisitorFilterChanged) },
                 onShowDialog = onShowDialog,
                 onDialogDismiss = onDialogDismiss,
                 dialogState = dialogState,
@@ -332,12 +342,14 @@ fun MainContent(
                 emailErrorStatus = state.emailErrorStatus ?: ErrorStatus(false),
                 onUpdateState = onUpdateState,
                 onAction = onAction,
+                visitorFilter = state.visitorFilter,
+                isReadOnly = state.isReadOnly
             )
         }
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = dimensions.default16dp),
+                .padding(top = dimensions.large32dp, bottom = dimensions.default16dp),
             contentAlignment = Alignment.BottomCenter
         ) {
             Column(
@@ -346,12 +358,19 @@ fun MainContent(
                     .align(Alignment.BottomCenter),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                DefaultHorizontalDivider()
+                if (agendaItem !is AgendaItem.Event) DefaultHorizontalDivider()
+
                 Spacer(modifier = Modifier.height(dimensions.small8dp))
                 Text(
                     modifier = Modifier
                         .padding(dimensions.small8dp)
-                        .clickable { },
+                        .clickable {
+                            agendaItem?.let { safeAgendaItem ->
+                                onAction(
+                                    AgendaDetailAction.OnDeleteAgendaItem(safeAgendaItem)
+                                )
+                            }
+                        },
                     text = when (agendaItem) {
                         is AgendaItem.Task -> stringResource(R.string.Delete_task)
                         is AgendaItem.Reminder -> stringResource(R.string.Delete_reminder)
@@ -378,6 +397,8 @@ private fun VisitorsSection(
     emailErrorStatus: ErrorStatus,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
+    visitorFilter: VisitorFilter,
+    isReadOnly: Boolean
 ) {
     Column(modifier = Modifier.padding(top = dimensions.large32dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -387,21 +408,23 @@ private fun VisitorsSection(
                 fontSize = 20.sp
             )
 
-            Spacer(modifier = Modifier.width(dimensions.small8dp))
-            Box(
-                modifier = Modifier
-                    .size(35.dp)
-                    .background(colors.light2),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Outlined.Add,
-                    contentDescription = stringResource(R.string.add_visitor),
-                    tint = colors.lightGray,
-                    modifier = Modifier.clickable {
-                        onShowDialog()
-                    }
-                )
+            if (!isReadOnly) {
+                Spacer(modifier = Modifier.width(dimensions.small8dp))
+                Box(
+                    modifier = Modifier
+                        .size(35.dp)
+                        .background(colors.light2),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = stringResource(R.string.add_visitor),
+                        tint = colors.lightGray,
+                        modifier = Modifier.clickable {
+                            onShowDialog()
+                        }
+                    )
+                }
             }
         }
 
@@ -414,7 +437,10 @@ private fun VisitorsSection(
         ) {
             FilterChip(
                 selected = true,
-                onClick = {},
+                onClick = {
+                    onVisitorStatusChanged()
+                    onUpdateState(AgendaDetailStateUpdate.UpdateVisitorFilter(VisitorFilter.ALL))
+                },
                 label = {
                     Box(
                         modifier = Modifier
@@ -422,7 +448,7 @@ private fun VisitorsSection(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "All",
+                            text = stringResource(R.string.All),
                             style = typography.bodySmall.copy(
                                 fontWeight = FontWeight.W500,
                                 lineHeight = 15.sp
@@ -446,7 +472,10 @@ private fun VisitorsSection(
                     .requiredWidth(110.dp)
                     .requiredHeight(30.dp),
                 selected = false,
-                onClick = {},
+                onClick = {
+                    onVisitorStatusChanged()
+                    onUpdateState(AgendaDetailStateUpdate.UpdateVisitorFilter(VisitorFilter.GOING))
+                },
                 label = {
                     Box(
                         modifier = Modifier
@@ -454,7 +483,7 @@ private fun VisitorsSection(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            stringResource(R.string.going),
+                            stringResource(R.string.Going),
                             style = typography.bodySmall.copy(
                                 fontWeight = FontWeight.W500,
                                 lineHeight = 15.sp
@@ -476,7 +505,10 @@ private fun VisitorsSection(
                     .requiredWidth(110.dp)
                     .requiredHeight(30.dp),
                 selected = false,
-                onClick = {},
+                onClick = {
+                    onVisitorStatusChanged()
+                    onUpdateState(AgendaDetailStateUpdate.UpdateVisitorFilter(VisitorFilter.NOT_GOING))
+                },
                 label = {
                     Box(
                         modifier = Modifier
@@ -484,7 +516,7 @@ private fun VisitorsSection(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            stringResource(R.string.not_going),
+                            stringResource(R.string.Not_going),
                             style = typography.bodySmall.copy(
                                 fontWeight = FontWeight.W500,
                                 lineHeight = 15.sp
@@ -503,20 +535,56 @@ private fun VisitorsSection(
 
         Spacer(modifier = Modifier.height(dimensions.default16dp))
 
-        visitors.forEach { visitor ->
-            VisitorItem(
-                visitor = visitor.name,
-                onStatusChanged = {}
+        if (visitorFilter == VisitorFilter.GOING || visitorFilter == VisitorFilter.ALL) {
+            Text(
+                text = stringResource(R.string.Going),
+                style = typography.bodyMedium.copy(
+                    fontWeight = FontWeight.W500,
+                    lineHeight = 15.sp
+                ),
+                textAlign = TextAlign.Start,
+                color = colors.black,
             )
-            Spacer(modifier = Modifier.height(dimensions.small8dp))
+            Spacer(modifier = Modifier.height(dimensions.default16dp))
 
+            visitors.forEach { visitor ->
+                VisitorItem(
+                    visitor = visitor,
+                    onStatusChanged = {}
+                )
+                Spacer(modifier = Modifier.height(dimensions.small8dp))
+
+            }
+        }
+
+        if (visitorFilter == VisitorFilter.GOING || visitorFilter == VisitorFilter.ALL) {
+            Spacer(modifier = Modifier.height(dimensions.default16dp))
+
+            Text(
+                text = stringResource(R.string.Not_going),
+                style = typography.bodyMedium.copy(
+                    fontWeight = FontWeight.W500,
+                    lineHeight = 15.sp
+                ),
+                textAlign = TextAlign.Start,
+                color = colors.black,
+            )
+
+            emptyList<Attendee>().forEach { visitor ->
+                VisitorItem(
+                    visitor = visitor,
+                    onStatusChanged = {}
+                )
+                Spacer(modifier = Modifier.height(dimensions.small8dp))
+
+            }
         }
 
         if (dialogState is DialogState.Show) {
             AddVisitorDialog(
-                title = "Add visitor",
+                title = stringResource(R.string.Add_visitor),
                 displayCloseIcon = true,
-                positiveButtonText = "ADD",
+                positiveButtonText = stringResource(R.string.Add),
                 onPositiveClick = { onAction(AgendaDetailAction.OnAddVisitorPressed) },
                 onCancelClicked = { onDialogDismiss() },
                 email = email,
@@ -529,10 +597,10 @@ private fun VisitorsSection(
 
 @Composable
 private fun VisitorItem(
-    visitor: String,
+    visitor: Attendee,
     onStatusChanged: () -> Unit
 ) {
-    val visitorInitials by remember { mutableStateOf(getInitials(visitor)) }
+    val visitorInitials by remember { mutableStateOf(getInitials(visitor.name)) }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -569,13 +637,24 @@ private fun VisitorItem(
 
                 Spacer(modifier = Modifier.width(dimensions.small8dp))
 
-                Text(text = visitor, style = typography.bodySmall.copy(color = colors.black))
+                Text(text = visitor.name, style = typography.bodySmall.copy(color = colors.black))
             }
-            Icon(
-                Icons.Outlined.Delete,
-                contentDescription = "Delete icon",
-                modifier = Modifier.padding(end = dimensions.small8dp)
-            )
+            if (visitor.isCreator) {
+                Text(
+                    text = stringResource(R.string.creator),
+                    style = typography.bodyMedium.copy(
+                        color = colors.lightBlue,
+                        fontWeight = FontWeight.W500
+                    ),
+                    modifier = Modifier.padding(end = dimensions.small8dp)
+                )
+            } else {
+                Icon(
+                    Icons.Outlined.Delete,
+                    contentDescription = "Delete icon",
+                    modifier = Modifier.padding(end = dimensions.small8dp)
+                )
+            }
         }
     }
 
@@ -669,8 +748,7 @@ fun AgendaDetailReadOnlyPreview() {
                 isUserEventCreator = false,
                 host = null,
                 remindAtTime = 4626,
-
-                ),
+            ),
             onUpdatePhotos = {},
             onShowDialog = {},
             onDialogDismiss = {},
@@ -691,18 +769,22 @@ fun AgendaDetailEditablePreview() {
             onAction = {},
             onUpdateState = {},
             agendaItemId = "12345",
-            agendaItem = AgendaItem.Task(
-                taskId = "persius",
-                taskTitle = "mauris",
-                taskDescription = null,
-                time = 7622,
-                isDone = false,
-                remindAtTime = 2214,
+            agendaItem = AgendaItem.Event(
+                eventId = "12345",
+                eventTitle = "ridens",
+                eventDescription = null,
+                from = 1221,
+                to = 4855,
+                photos = listOf(),
+                attendees = listOf(),
+                isUserEventCreator = false,
+                host = null,
+                remindAtTime = 4626,
             ),
             onUpdatePhotos = {},
             onShowDialog = {},
             onDialogDismiss = {},
-            dialogState = DialogState.Show(null)
+            dialogState = DialogState.Hide
         )
     }
 }

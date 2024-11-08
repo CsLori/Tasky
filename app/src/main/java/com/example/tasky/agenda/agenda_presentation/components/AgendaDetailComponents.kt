@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -271,8 +271,10 @@ fun TimeAndDateRow(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                val selectedHour = if (isEventSecondRow) state.toTime.hour else state.fromAtTime.hour
-                                val selectedMinute = if (isEventSecondRow) state.toTime.minute else state.fromAtTime.minute
+                                val selectedHour =
+                                    if (isEventSecondRow) state.toTime.hour else state.fromAtTime.hour
+                                val selectedMinute =
+                                    if (isEventSecondRow) state.toTime.minute else state.fromAtTime.minute
 
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
@@ -281,10 +283,12 @@ fun TimeAndDateRow(
                                 )
                                 //This one is used for Event where we have 2 rows for time and date
                                 if (isEventSecondRow) {
-                                    onUpdateState(AgendaDetailStateUpdate.UpdateToTime(
-                                        hour = selectedHour,
-                                        minute = selectedMinute
-                                    ))
+                                    onUpdateState(
+                                        AgendaDetailStateUpdate.UpdateToTime(
+                                            hour = selectedHour,
+                                            minute = selectedMinute
+                                        )
+                                    )
                                 } else {
                                     onUpdateState(
                                         AgendaDetailStateUpdate.UpdateFromAtTime(
@@ -408,35 +412,37 @@ fun AddPhotosSection(
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = 100.dp)
+            .height(100.dp)
             .background(colors.light2)
             .padding(dimensions.default16dp),
-        horizontalArrangement = Arrangement.spacedBy(dimensions.small8dp),
+        horizontalArrangement = if (photos.isEmpty() || isReadOnly) Arrangement.Center else Arrangement.spacedBy(
+            dimensions.small8dp
+        ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        items(photos.take(MAX_NUMBER_OF_PHOTOS), key = { photo -> photo.key }) { photo ->
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = rememberAsyncImagePainter(photo.url),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable {
-                            onAction(AgendaDetailAction.OnPhotoPressed(photo.key))
-                        }
-                )
-            }
-        }
-
         if (!isReadOnly) {
+            items(photos.take(MAX_NUMBER_OF_PHOTOS), key = { photo -> photo.key }) { photo ->
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter(photo.url),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable {
+                                onAction(AgendaDetailAction.OnPhotoPressed(photo.key))
+                            }
+                    )
+                }
+            }
+
             item {
                 Box(
                     modifier = Modifier
@@ -460,24 +466,27 @@ fun AddPhotosSection(
                 }
             }
         }
-    }
 
-    if (photos.isEmpty() && isReadOnly) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onAddPhotos() }
-                .padding(vertical = dimensions.default16dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add photos",
-                tint = colors.gray
-            )
-            Spacer(modifier = Modifier.width(dimensions.small8dp))
-            Text("Add Photos", color = colors.gray)
+        if (photos.isEmpty() || isReadOnly) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .clickable { onAddPhotos() }
+                        .padding(vertical = dimensions.default16dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add photos",
+                        tint = colors.gray
+                    )
+                    Spacer(modifier = Modifier.width(dimensions.small8dp))
+                    Text(stringResource(R.string.Add_photos), color = colors.gray)
+                }
+            }
         }
     }
 }

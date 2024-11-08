@@ -65,7 +65,7 @@ class LoginViewModel @Inject constructor(
                     is Result.Success -> {
                         _uiState.update { LoginUiState.Success }
                         // Update auth related tokens
-                        updateTokens(result)
+                        updateTokens(result, email.value)
                     }
 
                     is Result.Error -> {
@@ -93,12 +93,14 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    private suspend fun updateTokens(result: Result.Success<LoginUser>) {
+    private suspend fun updateTokens(result: Result.Success<LoginUser>, email: String) {
         result.data.apply {
             userPrefsRepository.updateRefreshToken(refreshToken)
             userPrefsRepository.updateAccessToken(accessToken)
             userPrefsRepository.updateUserId(userId)
+            userPrefsRepository.updateUserName(fullName)
             userPrefsRepository.updateAccessTokenExpirationTimestamp(accessTokenExpirationTimestamp)
+            userPrefsRepository.updateUserEmail(email)
 
         }
     }

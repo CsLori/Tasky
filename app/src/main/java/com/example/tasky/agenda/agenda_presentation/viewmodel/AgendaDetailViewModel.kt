@@ -3,6 +3,7 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -14,6 +15,7 @@ import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
 import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
@@ -151,6 +153,8 @@ class AgendaDetailViewModel @Inject constructor(
                     val updateTime = LocalTime.of(action.hour, action.minute).toMillis()
                     it.copy(event = it.event.copy(to = updateTime))
                 }
+
+                is AgendaDetailStateUpdate.UpdateVisitorFilter -> it.copy(visitorFilter = action.filter)
             }
         }
     }
@@ -162,7 +166,7 @@ class AgendaDetailViewModel @Inject constructor(
             val result = when (agendaItem) {
                 is AgendaItem.Task -> agendaRepository.addTask(agendaItem)
                 is AgendaItem.Event -> {
-                    val (photos, newAgendaItem) = createNewEvent(agendaItem)
+                    val (photos, newAgendaItem) = createNewEvent()
                     agendaRepository.addEvent(newAgendaItem, photos)
                 }
 
@@ -201,6 +205,7 @@ class AgendaDetailViewModel @Inject constructor(
                     val newReminder = prepareUpdatedReminder(agendaItem)
                     agendaRepository.updateReminder(newReminder)
                 }
+
                 else -> return@launch
             }
 
@@ -240,39 +245,84 @@ class AgendaDetailViewModel @Inject constructor(
         return newReminder
     }
 
-    private suspend fun createNewEvent(agendaItem: AgendaItem.Event): Pair<List<ByteArray>, AgendaItem.Event> {
-        val photos = photoConverter.convertPhotosToByteArrays(state.value.event.photos)
+    private suspend fun createNewEvent(): Pair<List<ByteArray>, AgendaItem.Event> {
+        val currentState = state.value.event
+        val photos = photoConverter.convertPhotosToByteArrays(currentState.photos)
 
-        val event = state.value.event
+        val eventId = UUID.randomUUID().toString()
+
+        val loggedInUserResult = agendaRepository.getLoggedInUserDetails()
+        val loggedInAttendee: Attendee? = when (loggedInUserResult) {
+            is Success -> {
+                Attendee(
+                    userId = loggedInUserResult.data.userId,
+                    name = loggedInUserResult.data.fullName,
+                    email = loggedInUserResult.data.email,
+                    eventId = eventId,
+                    isGoing = true,
+                    remindAt = currentState.remindAtTime,
+                    isCreator = true
+                )
+            }
+
+            is Error -> {
+                Log.d(
+                    "LoadingUserError",
+                    "Error fetching user details: ${loggedInUserResult.error}"
+                )
+                null
+            }
+        }
+
         val newAgendaItem = AgendaItem.Event(
-            eventId = UUID.randomUUID().toString(),
-            eventTitle = event.eventTitle,
-            eventDescription = event.eventDescription,
-            from = event.from,
-            to = event.to,
-            photos = event.photos,
-            attendees = agendaItem.attendees + event.attendees,
+            eventId = eventId,
+            eventTitle = currentState.eventTitle,
+            eventDescription = currentState.eventDescription,
+            from = currentState.from,
+            to = currentState.to,
+            photos = currentState.photos,
+            attendees = currentState.attendees + listOfNotNull(loggedInAttendee),
             isUserEventCreator = true,
-            host = agendaItem.host,
-            remindAtTime = event.remindAtTime
+            host = currentState.host,
+            remindAtTime = currentState.remindAtTime
         )
         return Pair(photos, newAgendaItem)
     }
 
     private suspend fun prepareUpdatedEvent(agendaItem: AgendaItem.Event): Pair<List<ByteArray>, AgendaItem.Event> {
-        val currentEvent = state.value.event
-        val photos = photoConverter.convertPhotosToByteArrays(currentEvent.photos)
+        val currentState = state.value.event
+        val photos = photoConverter.convertPhotosToByteArrays(currentState.photos)
 
         val newEvent = _state.value.event.copy(
-            eventTitle = currentEvent.title,
-            eventDescription = currentEvent.description,
-            from = currentEvent.from,
-            to = currentEvent.to,
-            photos = (agendaItem.photos + currentEvent.photos).distinctBy { it.key },
-            attendees = (agendaItem.attendees + currentEvent.attendees).distinctBy { it.userId },
-            remindAtTime = currentEvent.remindAtTime
+            eventTitle = currentState.title,
+            eventDescription = currentState.description,
+            from = currentState.from,
+            to = currentState.to,
+            photos = (agendaItem.photos + currentState.photos).distinctBy { it.key },
+            attendees = (agendaItem.attendees + currentState.attendees).distinctBy { it.userId },
+            remindAtTime = currentState.remindAtTime
         )
         return Pair(photos, newEvent)
+    }
+
+    fun deleteAgendaItem(agendaItem: AgendaItem) {
+        _state.update { it.copy(isLoading = true) }
+        viewModelScope.launch {
+            val result = when (agendaItem) {
+                is AgendaItem.Task -> agendaRepository.deleteTask(agendaItem)
+                is AgendaItem.Event -> agendaRepository.deleteEvent(agendaItem)
+                is AgendaItem.Reminder -> agendaRepository.deleteReminder(agendaItem)
+            }
+                .onSuccess {
+                    //Maybe some success message here
+//                    _uiState.update { AgendaDetailUiState.Error(R.string.Agenda_item_was_succesfully_deleted) }
+
+                }
+                .onError {
+                    _uiState.update { AgendaDetailUiState.Error(R.string.Could_not_delete_agenda_item) }
+                }
+            _state.update { it.copy(isLoading = false) }
+        }
     }
 
     fun loadAgendaItem(agendaItemId: String) {

@@ -58,6 +58,24 @@ class ProtoUserPrefsRepository(context: Context) : UserPrefsRepository {
 
     override suspend fun getUserId(): String = userPrefsStore.data.first().userId
 
+    // UserName
+    override suspend fun updateUserName(userName: String) {
+        userPrefsStore.updateData { preference ->
+           preference.toBuilder().setUserName(userName).build()
+        }
+    }
+
+    override suspend fun getUserName(): String = userPrefsStore.data.first().userName
+
+    // Email
+    override suspend fun updateUserEmail(email: String) {
+        userPrefsStore.updateData { preference ->
+            preference.toBuilder().setEmail(email).build()
+        }
+    }
+
+    override suspend fun getUserEmail(): String = userPrefsStore.data.first().email
+
     // AccessTokenExpiryDate
     override suspend fun updateAccessTokenExpirationTimestamp(timestamp: Long) {
         userPrefsStore.updateData { preference ->

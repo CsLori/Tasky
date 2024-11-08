@@ -12,6 +12,7 @@ import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AttendeeMinimal
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.data.remote.TaskyApi
@@ -177,6 +178,23 @@ class AgendaRepositoryImpl(
             val attendee = api.getAttendee(email)
             Result.Success(attendee)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+            e.printStackTrace()
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
+    }
+
+    override suspend fun getLoggedInUserDetails(): Result<AttendeeMinimal, TaskyError> {
+        return try {
+            val loggedInAttendee = AttendeeMinimal(
+                userId = userPrefsRepository.getUserId(),
+                fullName = userPrefsRepository.getUserName(),
+                email = userPrefsRepository.getUserEmail()
+            )
+            Result.Success(loggedInAttendee)
+        }  catch (e: Exception) {
             if (e is CancellationException) throw e
 
             e.printStackTrace()
