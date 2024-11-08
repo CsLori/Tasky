@@ -81,13 +81,4 @@ class LocalDatabaseRepository @Inject constructor(
             combinedList
         }
     }
-
-    override suspend fun getAgendaItemTypeById(agendaItemId: String): AgendaOption? {
-        return when {
-            eventDao.existsById(agendaItemId) -> AgendaOption.EVENT
-            taskDao.existsById(agendaItemId) -> AgendaOption.TASK
-            reminderDao.existsById(agendaItemId) -> AgendaOption.REMINDER
-            else -> null
-        }
-    }
 }

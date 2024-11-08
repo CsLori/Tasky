@@ -11,7 +11,6 @@ import androidx.navigation.toRoute
 import com.example.tasky.R
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
-import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.Photo
@@ -201,6 +200,7 @@ class AgendaDetailViewModel @Inject constructor(
                     val newReminder = prepareUpdatedReminder(agendaItem)
                     agendaRepository.updateReminder(newReminder)
                 }
+
                 else -> return@launch
             }
 
@@ -281,42 +281,51 @@ class AgendaDetailViewModel @Inject constructor(
         viewModelScope.launch {
             when (agendaOption) {
                 AgendaOption.EVENT -> {
-                    val event = localDatabaseRepository.getEventById(agendaItemId)
-                    _state.update { currentState ->
-                        currentState.copy(
-                            selectedAgendaItem = event
-                                .toAgendaItem(),
-                            event = event
-                                .toAgendaItem(),
-                            isLoading = false
-                        )
-                    }
+                    agendaRepository.getEventById(agendaItemId)
+                        .onSuccess { event ->
+                            _state.update { currentState ->
+                                currentState.copy(
+                                    selectedAgendaItem = event,
+                                    event = event,
+                                    isLoading = false
+                                )
+                            }
+                        }
+                        .onError {
+                            _state.update { it.copy(isLoading = false) }
+                        }
                 }
 
                 AgendaOption.TASK -> {
-                    val task = localDatabaseRepository.getTaskById(agendaItemId)
-                    _state.update { currentState ->
-                        currentState.copy(
-                            selectedAgendaItem = task
-                                .toAgendaItem(),
-                            task = task
-                                .toAgendaItem(),
-                            isLoading = false
-                        )
-                    }
+                    agendaRepository.getTaskById(agendaItemId)
+                        .onSuccess { task ->
+                            _state.update { currentState ->
+                                currentState.copy(
+                                    selectedAgendaItem = task,
+                                    task = task,
+                                    isLoading = false
+                                )
+                            }
+                        }
+                        .onError {
+                            _state.update { it.copy(isLoading = false) }
+                        }
                 }
 
                 AgendaOption.REMINDER -> {
-                    val reminder = localDatabaseRepository.getReminderById(agendaItemId)
-                    _state.update { currentState ->
-                        currentState.copy(
-                            selectedAgendaItem = reminder
-                                .toAgendaItem(),
-                            reminder = reminder
-                                .toAgendaItem(),
-                            isLoading = false
-                        )
-                    }
+                    agendaRepository.getReminderById(agendaItemId)
+                        .onSuccess { reminder ->
+                            _state.update { currentState ->
+                                currentState.copy(
+                                    selectedAgendaItem = reminder,
+                                    reminder = reminder,
+                                    isLoading = false
+                                )
+                            }
+                        }
+                        .onError {
+                            _state.update { it.copy(isLoading = false) }
+                        }
                 }
 
                 else -> {

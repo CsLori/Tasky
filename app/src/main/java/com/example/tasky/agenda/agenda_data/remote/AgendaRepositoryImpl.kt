@@ -5,6 +5,7 @@ import com.example.tasky.agenda.agenda_data.createPhotoPart
 import com.example.tasky.agenda.agenda_data.dto_mappers.toEventRequest
 import com.example.tasky.agenda.agenda_data.dto_mappers.toSerializedReminder
 import com.example.tasky.agenda.agenda_data.dto_mappers.toSerializedTask
+import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.entity_mappers.toEventEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toReminderEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
@@ -42,6 +43,21 @@ class AgendaRepositoryImpl(
             Result.Error(error)
         }
     }
+
+    override suspend fun getTaskById(taskId: String): Result<AgendaItem.Task, TaskyError> {
+        return try {
+            val result = localDatabaseRepository.getTaskById(taskId).toAgendaItem()
+            Result.Success(result)
+
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+            e.printStackTrace()
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
+    }
+
 
     override suspend fun updateTask(task: AgendaItem.Task): Result<Unit, TaskyError> {
         return try {
@@ -94,6 +110,20 @@ class AgendaRepositoryImpl(
         }
     }
 
+    override suspend fun getEventById(eventId: String): Result<AgendaItem.Event, TaskyError> {
+        return try {
+            val result = localDatabaseRepository.getEventById(eventId).toAgendaItem()
+            Result.Success(result)
+
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+            e.printStackTrace()
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
+    }
+
     override suspend fun updateEvent(
         event: AgendaItem.Event,
         photos: List<ByteArray>
@@ -134,6 +164,20 @@ class AgendaRepositoryImpl(
             localDatabaseRepository.upsertReminder(reminder.toReminderEntity())
             api.addReminder(reminder.toSerializedReminder())
             Result.Success(Unit)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+            e.printStackTrace()
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
+    }
+
+    override suspend fun getReminderById(reminderId: String): Result<AgendaItem.Reminder, TaskyError> {
+        return try {
+            val result = localDatabaseRepository.getReminderById(reminderId).toAgendaItem()
+            Result.Success(result)
+
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
