@@ -5,20 +5,20 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 
 fun AgendaItem.Reminder.toSerializedReminder(): ReminderSerialized {
     return ReminderSerialized(
-        reminderId = id,
-        reminderTitle = title,
-        reminderDescription = description,
+        id = id,
+        title = title,
+        description = description,
         time = time,
-        remindAtTime = remindAt,
+        remindAt = remindAt,
     )
 }
 
 fun ReminderSerialized.toReminder(): AgendaItem.Reminder {
     return AgendaItem.Reminder(
-        reminderId = reminderId,
-        reminderTitle = reminderTitle,
-        reminderDescription = reminderDescription,
+        reminderId = id,
+        reminderTitle = title,
+        reminderDescription = description,
         time = time,
-        remindAtTime = remindAtTime,
+        remindAtTime = remindAt,
     )
 }
