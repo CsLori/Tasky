@@ -51,7 +51,9 @@ data class AgendaDetailState(
     ),
     val isLoading: Boolean = false,
     val shouldShowDatePicker: Boolean = false,
+    val shouldShowSecondRowDatePicker: Boolean = false,
     val date: String = DateUtils.getCurrentDate().localDateToStringMMMdyyyyFormat(),
+    val secondRowDate: String = DateUtils.getCurrentDate().localDateToStringMMMdyyyyFormat(),
     val fromAtTime: TimePickerState = TimePickerState(
         initialHour = LocalTime.now().hour,
         initialMinute = LocalTime.now().minute,
@@ -67,6 +69,7 @@ data class AgendaDetailState(
     val isDateSelectedFromDatePicker: Boolean = false,
     val selectedDate: LocalDate = DateUtils.getCurrentDate(),
     val shouldShowTimePicker: Boolean = false,
+    val shouldShowSecondRowTimePicker: Boolean = false,
     val editType: EditType = EditType.TITLE,
     val shouldShowReminderDropdown: Boolean = false,
     val selectedReminder: Long = reminderOptions[1].timeBeforeInMillis,
@@ -94,13 +97,16 @@ enum class VisitorFilter(val displayName: String) {
 }
 
 sealed interface AgendaDetailStateUpdate {
-    data class UpdateDate(val newDate: LocalDate) : AgendaDetailStateUpdate
+    data class UpdateDate(val date: LocalDate) : AgendaDetailStateUpdate
     data class UpdateMonth(val month: String) : AgendaDetailStateUpdate
+    data class UpdateEventSecondRowDate(val date: LocalDate) : AgendaDetailStateUpdate
     data class UpdateEventSecondRowMonth(val month: String) : AgendaDetailStateUpdate
     data class UpdateFromAtTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
     data class UpdateEventSecondRowTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
     data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaDetailStateUpdate
+    data class UpdateShouldShowSecondRowDatePicker(val shouldShowSecondRowDatePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateShouldShowTimePicker(val shouldShowTimePicker: Boolean) : AgendaDetailStateUpdate
+    data class UpdateShouldShowSecondRowTimePicker(val shouldShowTimePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateEditType(val editType: EditType) : AgendaDetailStateUpdate
     data class UpdateShouldShowReminderDropdown(val shouldShowReminderDropdown: Boolean) : AgendaDetailStateUpdate
     data class UpdateSelectedReminder(val selectedReminder: Long) : AgendaDetailStateUpdate
@@ -112,4 +118,5 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateAttendees(val attendees: List<Attendee>) : AgendaDetailStateUpdate
     data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate
     data class UpdateVisitorFilter(val filter: VisitorFilter) : AgendaDetailStateUpdate
+    data class UpdateRemindAtTime(val remindAtTime: Long) : AgendaDetailStateUpdate
 }

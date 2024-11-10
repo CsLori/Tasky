@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.ZoneId
 import javax.inject.Inject
 
 @HiltViewModel
@@ -81,6 +82,7 @@ class AgendaViewModel @Inject constructor(
         _state.update {
             when (action) {
                 is AgendaUpdateState.UpdateSelectedDate -> it.copy(selectedDate = action.newDate)
+//                is AgendaUpdateState.UpdateFilterDate -> it.copy(filterDate = action.newDate)
                 is AgendaUpdateState.UpdateSelectedOption -> it.copy(agendaOption = action.item)
                 is AgendaUpdateState.UpdateVisibility -> it.copy(isVisible = action.visible)
                 is AgendaUpdateState.UpdateIsDateSelectedFromDatePicker -> it.copy(
@@ -95,6 +97,7 @@ class AgendaViewModel @Inject constructor(
                 )
 
                 is AgendaUpdateState.UpdateSelectedItem -> it.copy(selectedItem = action.agendaItem)
+                is AgendaUpdateState.UpdateAgendaList -> it.copy(filteredList = action.agendaItems)
             }
         }
     }
@@ -108,6 +111,20 @@ class AgendaViewModel @Inject constructor(
             }
             _state.update { it.copy(isLoading = false) }
         }
+    }
+
+    fun filterListByDate(): List<AgendaItem>? {
+        val startOfDay =
+            state.value.selectedDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()
+                .toEpochMilli()
+        val endOfDay =
+            state.value.selectedDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault())
+                .toInstant().toEpochMilli()
+
+        val filteredAgendaItems = state.value.agendaItems.filter { agendaItem ->
+            agendaItem.remindAt in startOfDay..endOfDay
+        }
+        return filteredAgendaItems
     }
 
     sealed class AgendaUiState {

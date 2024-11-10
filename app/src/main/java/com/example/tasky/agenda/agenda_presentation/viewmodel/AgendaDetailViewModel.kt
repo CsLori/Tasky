@@ -34,6 +34,7 @@ import com.example.tasky.util.PhotoCompressor
 import com.example.tasky.util.PhotoConverter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -76,7 +77,12 @@ class AgendaDetailViewModel @Inject constructor(
         _state.update {
             when (action) {
                 is AgendaDetailStateUpdate.UpdateDate -> it.copy(
-                    date = action.newDate.localDateToStringMMMdyyyyFormat(),
+                    date = action.date.localDateToStringMMMdyyyyFormat(),
+                    isDateSelectedFromDatePicker = false
+                )
+
+                is AgendaDetailStateUpdate.UpdateEventSecondRowDate -> it.copy(
+                    secondRowDate = action.date.localDateToStringMMMdyyyyFormat(),
                     isDateSelectedFromDatePicker = false
                 )
 
@@ -104,10 +110,18 @@ class AgendaDetailViewModel @Inject constructor(
                     shouldShowDatePicker = action.shouldShowDatePicker
                 )
 
+                is AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker -> it.copy(
+                    shouldShowSecondRowDatePicker = action.shouldShowSecondRowDatePicker
+                )
+
                 is AgendaDetailStateUpdate.UpdateMonth -> it.copy(month = action.month)
                 is AgendaDetailStateUpdate.UpdateEventSecondRowMonth -> it.copy(eventSecondRowMonth = action.month)
                 is AgendaDetailStateUpdate.UpdateShouldShowTimePicker -> it.copy(
                     shouldShowTimePicker = action.shouldShowTimePicker
+                )
+
+                is AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker -> it.copy(
+                    shouldShowSecondRowTimePicker = action.shouldShowTimePicker
                 )
 
                 is AgendaDetailStateUpdate.UpdateEditType -> it.copy(editType = action.editType)
@@ -159,6 +173,14 @@ class AgendaDetailViewModel @Inject constructor(
                 }
 
                 is AgendaDetailStateUpdate.UpdateVisitorFilter -> it.copy(visitorFilter = action.filter)
+                is AgendaDetailStateUpdate.UpdateRemindAtTime -> {
+                    when (it.selectedAgendaItem) {
+                        is AgendaItem.Task -> it.copy(task = it.task.copy(remindAtTime = action.remindAtTime))
+                        is AgendaItem.Event -> it.copy(event = it.event.copy(remindAtTime = action.remindAtTime))
+                        is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(remindAtTime = action.remindAtTime))
+                        null -> TODO()
+                    }
+                }
             }
         }
     }
@@ -185,7 +207,13 @@ class AgendaDetailViewModel @Inject constructor(
                 is Error -> {
                     _uiState.update { AgendaDetailUiState.None }
                     _dialogState.update { DialogState.ShowError }
-                    _errorDialogState.update { ErrorDialogState.AgendaItemError(UiText.StringResource(R.string.Could_not_create_agenda_item)) }
+                    _errorDialogState.update {
+                        ErrorDialogState.AgendaItemError(
+                            UiText.StringResource(
+                                R.string.Could_not_create_agenda_item
+                            )
+                        )
+                    }
                 }
             }
             _state.update { it.copy(isLoading = false) }
@@ -211,8 +239,6 @@ class AgendaDetailViewModel @Inject constructor(
                     val newReminder = prepareUpdatedReminder(agendaItem)
                     agendaRepository.updateReminder(newReminder)
                 }
-
-                else -> return@launch
             }
 
             when (result) {
@@ -223,7 +249,13 @@ class AgendaDetailViewModel @Inject constructor(
                 is Error -> {
                     _uiState.update { AgendaDetailUiState.None }
                     _dialogState.update { DialogState.ShowError }
-                    _errorDialogState.update { ErrorDialogState.AgendaItemError(UiText.StringResource(R.string.Something_went_wrong)) }
+                    _errorDialogState.update {
+                        ErrorDialogState.AgendaItemError(
+                            UiText.StringResource(
+                                R.string.Something_went_wrong
+                            )
+                        )
+                    }
 
                 }
             }
@@ -231,7 +263,7 @@ class AgendaDetailViewModel @Inject constructor(
         }
     }
 
-    private suspend fun prepareUpdatedTask(agendaItem: AgendaItem.Task): AgendaItem.Task {
+    private fun prepareUpdatedTask(agendaItem: AgendaItem.Task): AgendaItem.Task {
         val currentState = state.value.task
         val newTask = _state.value.task.copy(
             taskTitle = currentState.taskTitle,
@@ -243,7 +275,7 @@ class AgendaDetailViewModel @Inject constructor(
         return newTask
     }
 
-    private suspend fun prepareUpdatedReminder(agendaItem: AgendaItem.Reminder): AgendaItem.Reminder {
+    private fun prepareUpdatedReminder(agendaItem: AgendaItem.Reminder): AgendaItem.Reminder {
         val currentState = state.value.reminder
         val newReminder = _state.value.reminder.copy(
             reminderTitle = currentState.reminderTitle,
@@ -256,7 +288,10 @@ class AgendaDetailViewModel @Inject constructor(
 
     private suspend fun createNewEvent(): Pair<List<ByteArray>, AgendaItem.Event> {
         val currentState = state.value.event
-        val photos = photoConverter.convertPhotosToByteArrays(currentState.photos)
+        val photosJob = viewModelScope.async(Dispatchers.IO) {
+            photoConverter.convertPhotosToByteArrays(currentState.photos)
+        }
+        val photos = photosJob.await()
 
         val eventId = UUID.randomUUID().toString()
 
@@ -300,7 +335,10 @@ class AgendaDetailViewModel @Inject constructor(
 
     private suspend fun prepareUpdatedEvent(agendaItem: AgendaItem.Event): Pair<List<ByteArray>, AgendaItem.Event> {
         val currentState = state.value.event
-        val photos = photoConverter.convertPhotosToByteArrays(currentState.photos)
+        val photosJob = viewModelScope.async(Dispatchers.IO) {
+            photoConverter.convertPhotosToByteArrays(currentState.photos)
+        }
+        val photos = photosJob.await()
 
         val newEvent = _state.value.event.copy(
             eventTitle = currentState.title,
@@ -322,15 +360,21 @@ class AgendaDetailViewModel @Inject constructor(
                 is AgendaItem.Event -> agendaRepository.deleteEvent(agendaItem)
                 is AgendaItem.Reminder -> agendaRepository.deleteReminder(agendaItem)
             }
-                .onSuccess {
-                    //Maybe some success message here
+
+            result.onSuccess {
+                //Maybe some success message here
 //                    _uiState.update { AgendaDetailUiState.Error(R.string.Agenda_item_was_succesfully_deleted) }
 
+            }.onError {
+                _dialogState.update { DialogState.ShowError }
+                _errorDialogState.update {
+                    ErrorDialogState.AgendaItemError(
+                        UiText.StringResource(
+                            R.string.Could_not_create_agenda_item
+                        )
+                    )
                 }
-                .onError {
-                    _dialogState.update { DialogState.ShowError }
-                    _errorDialogState.update { ErrorDialogState.AgendaItemError(UiText.StringResource(R.string.Could_not_create_agenda_item)) }
-                }
+            }
             _state.update { it.copy(isLoading = false) }
         }
     }
@@ -344,7 +388,13 @@ class AgendaDetailViewModel @Inject constructor(
                 }
                 .onError {
                     _dialogState.update { DialogState.ShowError }
-                    _errorDialogState.update { ErrorDialogState.AttendeeError(UiText.StringResource(R.string.Something_went_wrong)) }
+                    _errorDialogState.update {
+                        ErrorDialogState.AttendeeError(
+                            UiText.StringResource(
+                                R.string.Something_went_wrong
+                            )
+                        )
+                    }
                 }
             _state.update { it.copy(isLoading = false) }
         }
@@ -400,13 +450,15 @@ class AgendaDetailViewModel @Inject constructor(
                         }
                         .onError {
                             _state.update { it.copy(isLoading = false) }
+                            _dialogState.update { DialogState.ShowError }
+                            _errorDialogState.update {
+                                ErrorDialogState.AgendaItemError(
+                                    UiText.StringResource(
+                                        R.string.Agenda_item_failed
+                                    )
+                                )
+                            }
                         }
-                }
-
-                else -> {
-                    _state.update { it.copy(isLoading = false) }
-                    _dialogState.update { DialogState.ShowError }
-                    _errorDialogState.update { ErrorDialogState.AgendaItemError(UiText.StringResource(R.string.Agenda_item_failed)) }
                 }
             }
         }
@@ -433,12 +485,24 @@ class AgendaDetailViewModel @Inject constructor(
                     } else {
                         _state.update { it.copy(isLoading = false) }
                         _dialogState.update { DialogState.ShowError }
-                        _errorDialogState.update { ErrorDialogState.AttendeeError(UiText.StringResource(R.string.user_does_not_exist)) }
+                        _errorDialogState.update {
+                            ErrorDialogState.AttendeeError(
+                                UiText.StringResource(
+                                    R.string.user_does_not_exist
+                                )
+                            )
+                        }
                     }
                 }.onError {
                     _state.update { it.copy(isLoading = false) }
                     _dialogState.update { DialogState.ShowError }
-                    _errorDialogState.update { ErrorDialogState.AttendeeError(UiText.StringResource(R.string.Unknown_error)) }
+                    _errorDialogState.update {
+                        ErrorDialogState.AttendeeError(
+                            UiText.StringResource(
+                                R.string.Unknown_error
+                            )
+                        )
+                    }
                 }
             _state.update { it.copy(isLoading = false) }
         }
@@ -479,7 +543,7 @@ class AgendaDetailViewModel @Inject constructor(
     }
 
     sealed class ErrorDialogState {
-        data object None: ErrorDialogState()
+        data object None : ErrorDialogState()
         data class GeneralError(val message: UiText) : ErrorDialogState()
         data class AttendeeError(val message: UiText) : ErrorDialogState()
         data class AgendaItemError(val message: UiText) : ErrorDialogState()

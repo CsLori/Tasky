@@ -67,7 +67,6 @@ import com.example.tasky.agenda.agenda_presentation.components.AgendaItemTitle
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.SetReminderRow
 import com.example.tasky.agenda.agenda_presentation.components.TimeAndDateRow
-import com.example.tasky.agenda.agenda_presentation.components.TimeAndDateSecondRow
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
@@ -342,11 +341,12 @@ fun MainContent(
 
             DefaultHorizontalDivider()
 
-            TimeAndDateSecondRow(
+            TimeAndDateRow(
                 agendaItem = agendaItem,
                 text = stringResource(R.string.to),
                 onUpdateState = onUpdateState,
                 state = state,
+                isSecondRow = true
             )
         } else {
             if (agendaItem != null) {

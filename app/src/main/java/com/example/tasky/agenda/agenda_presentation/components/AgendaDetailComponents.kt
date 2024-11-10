@@ -198,6 +198,7 @@ fun TimeAndDateRow(
     text: String,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     state: AgendaDetailState,
+    isSecondRow: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -216,11 +217,19 @@ fun TimeAndDateRow(
                         Modifier
                     } else {
                         Modifier.clickable {
-                            onUpdateState(
-                                AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                    !state.shouldShowTimePicker
+                            if (isSecondRow) {
+                                onUpdateState(
+                                    AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker(
+                                        !state.shouldShowSecondRowTimePicker
+                                    )
                                 )
-                            )
+                            } else {
+                                onUpdateState(
+                                    AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
+                                        !state.shouldShowTimePicker
+                                    )
+                                )
+                            }
                         }
                     }
                 ),
@@ -244,7 +253,7 @@ fun TimeAndDateRow(
                 Text(
                     text = when (agendaItem) {
                         is AgendaItem.Task -> state.task.time.toHourMinuteFormat()
-                        is AgendaItem.Event -> state.event.from.toHourMinuteFormat()
+                        is AgendaItem.Event -> if (isSecondRow) state.event.to.toHourMinuteFormat() else state.event.from.toHourMinuteFormat()
                         is AgendaItem.Reminder -> state.reminder.time.toHourMinuteFormat()
                     },
 
@@ -263,7 +272,7 @@ fun TimeAndDateRow(
                 }
             }
 
-            if (state.shouldShowTimePicker)
+            if (state.shouldShowTimePicker) {
                 TimePickerDialog(
                     onDismissRequest = {
                         onUpdateState(
@@ -309,6 +318,54 @@ fun TimeAndDateRow(
 
                     }
                 )
+            }
+
+            if (state.shouldShowSecondRowTimePicker) {
+                TimePickerDialogSecondRow(
+                    onDismissRequest = {
+                        onUpdateState(
+                            AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker(
+                                false
+                            )
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+
+                                onUpdateState(
+                                    AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker(
+                                        shouldShowTimePicker = false
+                                    )
+                                )
+                                onUpdateState(
+                                    AgendaDetailStateUpdate.UpdateEventSecondRowTime(
+                                        hour = state.toTime.hour,
+                                        minute = state.toTime.minute
+                                    )
+                                )
+                            }
+                        ) { Text(stringResource(R.string.OK)) }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                onUpdateState(
+                                    AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker(
+                                        false
+                                    )
+                                )
+                            }
+                        ) { Text(stringResource(R.string.Cancel)) }
+                    },
+                    content = {
+                        TimePicker(
+                            state = state.toTime
+                        )
+
+                    }
+                )
+            }
         }
 
         Row(
@@ -319,11 +376,19 @@ fun TimeAndDateRow(
                         Modifier
                     } else {
                         Modifier.clickable {
-                            onUpdateState(
-                                AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
-                                    !state.shouldShowDatePicker
+                            if (isSecondRow) {
+                                onUpdateState(
+                                    AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker(
+                                        !state.shouldShowSecondRowDatePicker
+                                    )
                                 )
-                            )
+                            } else {
+                                onUpdateState(
+                                    AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
+                                        !state.shouldShowDatePicker
+                                    )
+                                )
+                            }
                         }
                     }
                 ),
@@ -333,7 +398,7 @@ fun TimeAndDateRow(
             Text(
                 modifier = Modifier
                     .padding(start = dimensions.default16dp),
-                text = state.date,
+                text = if (isSecondRow) state.secondRowDate else state.date,
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
             if (!state.isReadOnly) {
@@ -359,6 +424,12 @@ fun TimeAndDateRow(
                         onUpdateState(
                             AgendaDetailStateUpdate.UpdateDate(
                                 DateUtils.longToLocalDate(safeDate)
+                            )
+                        )
+
+                        onUpdateState(
+                            AgendaDetailStateUpdate.UpdateRemindAtTime(
+                                safeDate
                             )
                         )
                         onUpdateState(
@@ -379,181 +450,28 @@ fun TimeAndDateRow(
                     .toInstant()
                     .toEpochMilli()
             )
-        }
-    }
-}
 
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-fun TimeAndDateSecondRow(
-    agendaItem: AgendaItem,
-    text: String,
-    onUpdateState: (AgendaDetailStateUpdate) -> Unit,
-    state: AgendaDetailState,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = dimensions.default16dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-
-    ) {
-        Row(
-            modifier = Modifier
-                .width(120.dp)
-                .weight(1f)
-                .then(
-                    if (state.isReadOnly) {
-                        Modifier
-                    } else {
-                        Modifier.clickable {
-                            onUpdateState(
-                                AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                    !state.shouldShowTimePicker
-                                )
-                            )
-                        }
-                    }
-                ),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                modifier = Modifier.weight(0.4f),
-                text = text,
-                style = typography.bodyLarge.copy(
-                    lineHeight = 15.sp,
-                    fontWeight = FontWeight.W400
-                )
-            )
-
-            Row(
-                modifier = Modifier.weight(0.6f),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = when (agendaItem) {
-                        is AgendaItem.Task -> state.task.time.toHourMinuteFormat()
-                        is AgendaItem.Event -> state.event.to.toHourMinuteFormat()
-                        is AgendaItem.Reminder -> state.reminder.time.toHourMinuteFormat()
-                    },
-
-                    style = typography.bodyLarge.copy(
-                        lineHeight = 15.sp,
-                        fontWeight = FontWeight.W400
-                    )
-                )
-
-                if (!state.isReadOnly) {
-                    Icon(
-                        modifier = Modifier.padding(end = dimensions.default16dp),
-                        imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                        contentDescription = "Navigate next"
-                    )
-                }
-            }
-
-            if (state.shouldShowTimePicker)
-                TimePickerDialog(
-                    onDismissRequest = {
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                false
-                            )
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                        shouldShowTimePicker = false
-                                    )
-                                )
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateEventSecondRowTime(
-                                        hour = state.toTime.hour,
-                                        minute = state.toTime.minute
-                                    )
-                                )
-                            }
-                        ) { Text(stringResource(R.string.OK)) }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                        false
-                                    )
-                                )
-                            }
-                        ) { Text(stringResource(R.string.Cancel)) }
-                    },
-                    content = {
-                        TimePicker(
-                            state = state.toTime
-                        )
-
-                    }
-                )
         }
 
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .then(
-                    if (state.isReadOnly) {
-                        Modifier
-                    } else {
-                        Modifier.clickable {
-                            onUpdateState(
-                                AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
-                                    !state.shouldShowDatePicker
-                                )
-                            )
-                        }
-                    }
-                ),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                modifier = Modifier
-                    .padding(start = dimensions.default16dp),
-                text = state.date,
-                style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
-            )
-            if (!state.isReadOnly) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.NavigateNext,
-                    contentDescription = "Navigate next"
-                )
-            }
-        }
-
-        if (state.shouldShowDatePicker) {
-            DatePickerModal(
+        if (state.shouldShowSecondRowDatePicker) {
+            DatePickerModalSecondRow(
                 onDateSelected = { date ->
                     date?.let { safeDate ->
                         val result = DateUtils.convertMillisToLocalDate(safeDate)
 
                         onUpdateState(
-                            AgendaDetailStateUpdate.UpdateMonth(
+                            AgendaDetailStateUpdate.UpdateEventSecondRowMonth(
                                 result.month.name
                             )
                         )
 
                         onUpdateState(
-                            AgendaDetailStateUpdate.UpdateDate(
+                            AgendaDetailStateUpdate.UpdateEventSecondRowDate(
                                 DateUtils.longToLocalDate(safeDate)
                             )
                         )
                         onUpdateState(
-                            AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
+                            AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker(
                                 true
                             )
                         )
@@ -561,7 +479,7 @@ fun TimeAndDateSecondRow(
                 },
                 onDismiss = {
                     onUpdateState(
-                        AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
+                        AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker(
                             false
                         )
                     )
@@ -625,7 +543,6 @@ fun AddPhotosSection(
                     )
                 }
             }
-
             item {
                 Box(
                     modifier = Modifier
@@ -648,9 +565,7 @@ fun AddPhotosSection(
                     )
                 }
             }
-        }
-
-        if (photos.isEmpty() || isReadOnly) {
+        } else {
             item {
                 Row(
                     modifier = Modifier
@@ -759,11 +674,14 @@ fun SetReminderRow(
 fun AddPhotosSectionEditablePreview() {
     AppTheme {
         AddPhotosSection(
-            selectedImageUri = Uri.EMPTY,
+            selectedImageUri = android.net.Uri.EMPTY,
             onAddPhotos = {},
             isReadOnly = false,
             onUpdateState = {},
-            photos = emptyList(),
+            photos = listOf(
+                Photo("dfdff", "https://picsum.photos/200"),
+                Photo("fdfdffeferf", "https://picsum.photos/200")
+            ),
             onAction = {}
         )
     }
@@ -774,7 +692,7 @@ fun AddPhotosSectionEditablePreview() {
 fun AddPhotosSectionReadOnlyPreview() {
     AppTheme {
         AddPhotosSection(
-            selectedImageUri = Uri.EMPTY,
+            selectedImageUri = android.net.Uri.EMPTY,
             onAddPhotos = {},
             isReadOnly = true,
             onUpdateState = {},
@@ -799,32 +717,6 @@ fun TimeAndDateRowPreview() {
                 remindAtTime = 9437
             ),
             text = "From",
-            onUpdateState = {},
-            state = AgendaDetailState()
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview
-@Composable
-fun TimeAndDateSecondRowPreview() {
-    AppTheme {
-        TimeAndDateSecondRow(
-            agendaItem = AgendaItem.Event(
-                eventId = "dui",
-                eventTitle = "eripuit",
-                eventDescription = null,
-                from = 4242,
-                to = 8352,
-                photos = listOf(),
-                attendees = listOf(),
-                isUserEventCreator = false,
-                host = null,
-                remindAtTime = 5012
-
-            ),
-            text = "To",
             onUpdateState = {},
             state = AgendaDetailState()
         )
