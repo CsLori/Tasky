@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -203,6 +202,8 @@ fun AddVisitorDialog(
 sealed class DialogState {
     data object Hide : DialogState()
     data class Show(val errorMessage: UiText?) : DialogState()
+    data object HideError : DialogState()
+    data object ShowError : DialogState()
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -211,7 +212,8 @@ sealed class DialogState {
 fun DialogPreview() {
     AppTheme {
         ErrorDialog(
-            title = "Title", label = "Label",
+            title = "Title",
+            label = "Label",
             displayCloseIcon = false,
             positiveButtonText = "Ok",
             positiveOnClick = {},

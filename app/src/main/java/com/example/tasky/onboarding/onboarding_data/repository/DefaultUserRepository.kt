@@ -49,7 +49,7 @@ class DefaultUserRepository(
     ): Result<LoginUser, TaskyError> {
         return try {
             val result = api.login(LoginRequest(email, password))
-            Result.Success(result.toLoginUser())
+            Result.Success(result.toLoginUser().copy(email = email))
         } catch (e: Exception) {
             if (e is CancellationException) {
                 throw e

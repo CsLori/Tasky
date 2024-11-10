@@ -3,6 +3,7 @@ package com.example.tasky.agenda.agenda_domain.repository
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AttendeeMinimal
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
 
@@ -32,5 +33,9 @@ interface AgendaRepository {
     suspend fun deleteReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError>
 
     suspend fun getAttendee(email: String): Result<AttendeeExistDto, TaskyError>
+
+    suspend fun deleteAttendee(eventId: String): Result<Unit, TaskyError>
+
+    suspend fun getLoggedInUserDetails(): Result<AttendeeMinimal, TaskyError>
 
 }

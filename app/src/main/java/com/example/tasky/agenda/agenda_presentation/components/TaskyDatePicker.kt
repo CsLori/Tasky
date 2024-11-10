@@ -40,6 +40,35 @@ fun DatePickerModal(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerModalSecondRow(
+    onDateSelected: (Long?) -> Unit,
+    onDismiss: () -> Unit,
+    initialDate: Long?
+) {
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate)
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                onDateSelected(datePickerState.selectedDateMillis)
+                onDismiss()
+            }) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 fun DatePickerModalPreview() {

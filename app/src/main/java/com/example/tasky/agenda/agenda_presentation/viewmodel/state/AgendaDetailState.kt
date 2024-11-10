@@ -51,7 +51,9 @@ data class AgendaDetailState(
     ),
     val isLoading: Boolean = false,
     val shouldShowDatePicker: Boolean = false,
+    val shouldShowSecondRowDatePicker: Boolean = false,
     val date: String = DateUtils.getCurrentDate().localDateToStringMMMdyyyyFormat(),
+    val secondRowDate: String = DateUtils.getCurrentDate().localDateToStringMMMdyyyyFormat(),
     val fromAtTime: TimePickerState = TimePickerState(
         initialHour = LocalTime.now().hour,
         initialMinute = LocalTime.now().minute,
@@ -63,16 +65,19 @@ data class AgendaDetailState(
         is24Hour = true
     ),
     val month: String = DateUtils.getCurrentMonth(),
+    val eventSecondRowMonth: String = DateUtils.getCurrentMonth(),
     val isDateSelectedFromDatePicker: Boolean = false,
     val selectedDate: LocalDate = DateUtils.getCurrentDate(),
     val shouldShowTimePicker: Boolean = false,
+    val shouldShowSecondRowTimePicker: Boolean = false,
     val editType: EditType = EditType.TITLE,
     val shouldShowReminderDropdown: Boolean = false,
     val selectedReminder: Long = reminderOptions[1].timeBeforeInMillis,
     val isReadOnly: Boolean = false,
     val selectedAgendaItem: AgendaItem? = null,
     val addVisitorEmail: FieldInput? = null,
-    val emailErrorStatus: ErrorStatus? = null
+    val emailErrorStatus: ErrorStatus? = null,
+    val visitorFilter: VisitorFilter = VisitorFilter.ALL,
 )
 
 enum class RemindBeforeDuration(val duration: Duration) {
@@ -87,13 +92,21 @@ enum class EditType {
     TITLE, DESCRIPTION
 }
 
+enum class VisitorFilter(val displayName: String) {
+    ALL("All"), GOING("Going"), NOT_GOING("Not going")
+}
+
 sealed interface AgendaDetailStateUpdate {
-    data class UpdateDate(val newDate: LocalDate) : AgendaDetailStateUpdate
+    data class UpdateDate(val date: LocalDate) : AgendaDetailStateUpdate
     data class UpdateMonth(val month: String) : AgendaDetailStateUpdate
+    data class UpdateEventSecondRowDate(val date: LocalDate) : AgendaDetailStateUpdate
+    data class UpdateEventSecondRowMonth(val month: String) : AgendaDetailStateUpdate
     data class UpdateFromAtTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
-    data class UpdateToTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
+    data class UpdateEventSecondRowTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
     data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaDetailStateUpdate
+    data class UpdateShouldShowSecondRowDatePicker(val shouldShowSecondRowDatePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateShouldShowTimePicker(val shouldShowTimePicker: Boolean) : AgendaDetailStateUpdate
+    data class UpdateShouldShowSecondRowTimePicker(val shouldShowTimePicker: Boolean) : AgendaDetailStateUpdate
     data class UpdateEditType(val editType: EditType) : AgendaDetailStateUpdate
     data class UpdateShouldShowReminderDropdown(val shouldShowReminderDropdown: Boolean) : AgendaDetailStateUpdate
     data class UpdateSelectedReminder(val selectedReminder: Long) : AgendaDetailStateUpdate
@@ -104,4 +117,6 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdatePhotos(val photos: List<Photo>) : AgendaDetailStateUpdate
     data class UpdateAttendees(val attendees: List<Attendee>) : AgendaDetailStateUpdate
     data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate
+    data class UpdateVisitorFilter(val filter: VisitorFilter) : AgendaDetailStateUpdate
+    data class UpdateRemindAtTime(val remindAtTime: Long) : AgendaDetailStateUpdate
 }

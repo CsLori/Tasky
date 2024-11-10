@@ -21,6 +21,16 @@ interface UserPrefsRepository {
 
     suspend fun getUserId(): String
 
+    // UserName
+    suspend fun updateUserName(userName: String)
+
+    suspend fun getUserName(): String
+
+    // UserId
+    suspend fun updateUserEmail(email: String)
+
+    suspend fun getUserEmail(): String
+
     // Access token expiration timestamp
     suspend fun updateAccessTokenExpirationTimestamp(timestamp: Long)
 

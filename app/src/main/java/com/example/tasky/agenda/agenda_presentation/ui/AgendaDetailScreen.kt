@@ -71,12 +71,13 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewMo
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.VisitorFilter
 import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.components.AddVisitorDialog
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.DialogState
-import com.example.tasky.core.presentation.components.showToast
+import com.example.tasky.core.presentation.components.ErrorDialog
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
@@ -95,6 +96,9 @@ internal fun AgendaDetailScreen(
 ) {
     val state = agendaDetailViewModel.state.collectAsStateWithLifecycle().value
     val uiState = agendaDetailViewModel.uiState.collectAsStateWithLifecycle().value
+    val dialogState = agendaDetailViewModel.dialogState.collectAsStateWithLifecycle().value
+    val errorDialogState =
+        agendaDetailViewModel.errorDialogState.collectAsStateWithLifecycle().value
 
     LaunchedEffect(agendaItemId) {
         if (agendaItemId == null) {
@@ -150,6 +154,21 @@ internal fun AgendaDetailScreen(
                 }
 
                 is AgendaDetailAction.OnPhotoPressed -> onNavigateToSelectedPhoto(action.key)
+
+                is AgendaDetailAction.OnVisitorFilterChanged -> when (state.visitorFilter) {
+                    VisitorFilter.ALL -> state.event.attendees
+                    VisitorFilter.GOING -> state.event.attendees.filter { it.isGoing }
+                    VisitorFilter.NOT_GOING -> state.event.attendees.filterNot { it.isGoing }
+                }
+
+                is AgendaDetailAction.OnDeleteAgendaItem -> {
+                    agendaDetailViewModel.deleteAgendaItem(action.agendaItem)
+                    onNavigateToAgendaScreen()
+                }
+
+                is AgendaDetailAction.OnDeleteAttendee -> {
+                    agendaDetailViewModel.deleteAttendee(action.attendee)
+                }
             }
         },
         agendaItemId = agendaItemId,
@@ -159,7 +178,9 @@ internal fun AgendaDetailScreen(
         },
         onShowDialog = { agendaDetailViewModel.showAddVisitorDialog() },
         onDialogDismiss = { agendaDetailViewModel.hideAddVisitorDialog() },
-        dialogState = agendaDetailViewModel.dialogState.collectAsStateWithLifecycle().value,
+        onErrorDialogDismiss = { agendaDetailViewModel.hideErrorDialog() },
+        dialogState = dialogState,
+        errorDialogState = errorDialogState
     )
 }
 
@@ -176,6 +197,8 @@ private fun AgendaDetailContent(
     onShowDialog: () -> Unit,
     onDialogDismiss: () -> Unit,
     dialogState: DialogState,
+    errorDialogState: AgendaDetailViewModel.ErrorDialogState,
+    onErrorDialogDismiss: () -> Unit
 ) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val getContent =
@@ -199,6 +222,38 @@ private fun AgendaDetailContent(
             }
 
             AgendaDetailViewModel.AgendaDetailUiState.None -> {
+                if (dialogState is DialogState.ShowError) {
+                    when (errorDialogState) {
+                        is AgendaDetailViewModel.ErrorDialogState.AgendaItemError -> {
+                            ErrorDialog(
+                                label = errorDialogState.message.asString() ?: "",
+                                displayCloseIcon = false,
+                                positiveButtonText = stringResource(R.string.OK),
+                                positiveOnClick = { onErrorDialogDismiss() },
+                            )
+                        }
+
+                        is AgendaDetailViewModel.ErrorDialogState.AttendeeError -> {
+                            ErrorDialog(
+                                label = errorDialogState.message.asString() ?: "",
+                                displayCloseIcon = false,
+                                positiveButtonText = stringResource(R.string.OK),
+                                positiveOnClick = { onErrorDialogDismiss() },
+                            )
+                        }
+
+                        is AgendaDetailViewModel.ErrorDialogState.GeneralError -> {
+                            ErrorDialog(
+                                label = errorDialogState.message.asString() ?: "",
+                                displayCloseIcon = false,
+                                positiveButtonText = stringResource(R.string.OK),
+                                positiveOnClick = { onErrorDialogDismiss() },
+                            )
+                        }
+
+                        AgendaDetailViewModel.ErrorDialogState.None -> {}
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxSize(),
@@ -244,18 +299,14 @@ private fun AgendaDetailContent(
                             onDialogDismiss = onDialogDismiss,
                             dialogState = dialogState,
                         )
+
                     }
                 }
-            }
-
-            is AgendaDetailViewModel.AgendaDetailUiState.Error -> {
-                showToast(context = context, message = uiState.message)
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainContent(
     state: AgendaDetailState,
@@ -281,21 +332,31 @@ fun MainContent(
 
         if (agendaItem is AgendaItem.Event) {
             TimeAndDateRow(
-                text = stringResource(R.string.from), onUpdateState = onUpdateState, state = state,
-            )
+                agendaItem = agendaItem,
+                text = stringResource(R.string.from),
+                onUpdateState = onUpdateState,
+                state = state,
+
+                )
 
             DefaultHorizontalDivider()
 
             TimeAndDateRow(
+                agendaItem = agendaItem,
                 text = stringResource(R.string.to),
                 onUpdateState = onUpdateState,
                 state = state,
-                isEventSecondRow = true
+                isSecondRow = true
             )
         } else {
-            TimeAndDateRow(
-                text = stringResource(R.string.at), onUpdateState = onUpdateState, state = state
-            )
+            if (agendaItem != null) {
+                TimeAndDateRow(
+                    agendaItem = agendaItem,
+                    text = stringResource(R.string.at),
+                    onUpdateState = onUpdateState,
+                    state = state,
+                )
+            }
         }
     }
 
@@ -324,7 +385,7 @@ fun MainContent(
         if (agendaItem is AgendaItem.Event) {
             VisitorsSection(
                 visitors = state.event.attendees,
-                onVisitorStatusChanged = {},
+                onVisitorStatusChanged = { onAction(AgendaDetailAction.OnVisitorFilterChanged) },
                 onShowDialog = onShowDialog,
                 onDialogDismiss = onDialogDismiss,
                 dialogState = dialogState,
@@ -332,12 +393,14 @@ fun MainContent(
                 emailErrorStatus = state.emailErrorStatus ?: ErrorStatus(false),
                 onUpdateState = onUpdateState,
                 onAction = onAction,
+                visitorFilter = state.visitorFilter,
+                isReadOnly = state.isReadOnly
             )
         }
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = dimensions.default16dp),
+                .padding(top = dimensions.large32dp, bottom = dimensions.default16dp),
             contentAlignment = Alignment.BottomCenter
         ) {
             Column(
@@ -346,12 +409,19 @@ fun MainContent(
                     .align(Alignment.BottomCenter),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                DefaultHorizontalDivider()
+                if (agendaItem !is AgendaItem.Event) DefaultHorizontalDivider()
+
                 Spacer(modifier = Modifier.height(dimensions.small8dp))
                 Text(
                     modifier = Modifier
                         .padding(dimensions.small8dp)
-                        .clickable { },
+                        .clickable {
+                            agendaItem?.let { safeAgendaItem ->
+                                onAction(
+                                    AgendaDetailAction.OnDeleteAgendaItem(safeAgendaItem)
+                                )
+                            }
+                        },
                     text = when (agendaItem) {
                         is AgendaItem.Task -> stringResource(R.string.Delete_task)
                         is AgendaItem.Reminder -> stringResource(R.string.Delete_reminder)
@@ -378,7 +448,10 @@ private fun VisitorsSection(
     emailErrorStatus: ErrorStatus,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
+    visitorFilter: VisitorFilter,
+    isReadOnly: Boolean,
 ) {
+
     Column(modifier = Modifier.padding(top = dimensions.large32dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -387,136 +460,130 @@ private fun VisitorsSection(
                 fontSize = 20.sp
             )
 
-            Spacer(modifier = Modifier.width(dimensions.small8dp))
-            Box(
-                modifier = Modifier
-                    .size(35.dp)
-                    .background(colors.light2),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Outlined.Add,
-                    contentDescription = stringResource(R.string.add_visitor),
-                    tint = colors.lightGray,
-                    modifier = Modifier.clickable {
-                        onShowDialog()
-                    }
+            if (!isReadOnly) {
+                Spacer(modifier = Modifier.width(dimensions.small8dp))
+                Box(
+                    modifier = Modifier
+                        .size(35.dp)
+                        .background(colors.light2),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = stringResource(R.string.add_visitor),
+                        tint = colors.lightGray,
+                        modifier = Modifier.clickable {
+                            onShowDialog()
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(dimensions.default16dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            listOf(
+                VisitorFilter.ALL to stringResource(R.string.All),
+                VisitorFilter.GOING to stringResource(R.string.Going),
+                VisitorFilter.NOT_GOING to stringResource(R.string.Not_going)
+            ).forEach { (filter, label) ->
+                val isSelected = visitorFilter == filter
+
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {
+                        if (!isSelected) {
+                            onVisitorStatusChanged()
+                            onUpdateState(AgendaDetailStateUpdate.UpdateVisitorFilter(filter))
+                        }
+                    },
+                    label = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                style = typography.bodySmall.copy(
+                                    fontWeight = FontWeight.W500,
+                                    lineHeight = 15.sp
+                                ),
+                                textAlign = TextAlign.Center,
+                                color = if (isSelected) colors.white else colors.black,
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .requiredWidth(110.dp)
+                        .requiredHeight(30.dp),
+                    shape = RoundedCornerShape(100.dp),
+                    border = BorderStroke(1.dp, colors.transparent),
+                    colors = FilterChipDefaults.filterChipColors()
+                        .copy(
+                            selectedContainerColor = colors.black,
+                            containerColor = colors.light2
+                        ),
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(dimensions.default16dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            FilterChip(
-                selected = true,
-                onClick = {},
-                label = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "All",
-                            style = typography.bodySmall.copy(
-                                fontWeight = FontWeight.W500,
-                                lineHeight = 15.sp
-                            ),
-                            textAlign = TextAlign.Center,
-                            color = colors.white,
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .requiredWidth(110.dp)
-                    .requiredHeight(30.dp),
-                shape = RoundedCornerShape(100.dp),
-                border = BorderStroke(1.dp, colors.transparent),
-                colors = FilterChipDefaults.filterChipColors()
-                    .copy(selectedContainerColor = colors.black, containerColor = colors.light2),
+        if (visitorFilter == VisitorFilter.GOING || visitorFilter == VisitorFilter.ALL) {
+            Text(
+                text = stringResource(R.string.Going),
+                style = typography.bodyMedium.copy(
+                    fontWeight = FontWeight.W500,
+                    lineHeight = 15.sp
+                ),
+                textAlign = TextAlign.Start,
+                color = colors.black,
             )
+            Spacer(modifier = Modifier.height(dimensions.default16dp))
 
-            FilterChip(
-                modifier = Modifier
-                    .requiredWidth(110.dp)
-                    .requiredHeight(30.dp),
-                selected = false,
-                onClick = {},
-                label = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            stringResource(R.string.going),
-                            style = typography.bodySmall.copy(
-                                fontWeight = FontWeight.W500,
-                                lineHeight = 15.sp
-                            ),
-                            textAlign = TextAlign.Center,
-                            color = colors.black,
-                        )
-                    }
-                },
-                shape = RoundedCornerShape(100.dp),
-                border = BorderStroke(1.dp, colors.transparent),
-                colors = FilterChipDefaults.filterChipColors()
-                    .copy(selectedContainerColor = colors.black, containerColor = colors.light2),
-
+            visitors.forEach { visitor ->
+                VisitorItem(
+                    visitor = visitor,
+                    onDeleteAttendee = { onAction(AgendaDetailAction.OnDeleteAttendee(it)) }
                 )
+                Spacer(modifier = Modifier.height(dimensions.small8dp))
 
-            FilterChip(
-                modifier = Modifier
-                    .requiredWidth(110.dp)
-                    .requiredHeight(30.dp),
-                selected = false,
-                onClick = {},
-                label = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            stringResource(R.string.not_going),
-                            style = typography.bodySmall.copy(
-                                fontWeight = FontWeight.W500,
-                                lineHeight = 15.sp
-                            ),
-                            textAlign = TextAlign.Center,
-                            color = colors.black,
-                        )
-                    }
-                },
-                shape = RoundedCornerShape(100.dp),
-                border = BorderStroke(1.dp, colors.transparent),
-                colors = FilterChipDefaults.filterChipColors()
-                    .copy(selectedContainerColor = colors.black, containerColor = colors.light2),
-            )
+            }
         }
 
-        Spacer(modifier = Modifier.height(dimensions.default16dp))
-
-        visitors.forEach { visitor ->
-            VisitorItem(
-                visitor = visitor.name,
-                onStatusChanged = {}
-            )
+        if (visitorFilter == VisitorFilter.NOT_GOING || visitorFilter == VisitorFilter.ALL) {
             Spacer(modifier = Modifier.height(dimensions.small8dp))
 
+            Text(
+                text = stringResource(R.string.Not_going),
+                style = typography.bodyMedium.copy(
+                    fontWeight = FontWeight.W500,
+                    lineHeight = 15.sp
+                ),
+                textAlign = TextAlign.Start,
+                color = colors.black,
+            )
+
+            emptyList<Attendee>().forEach { visitor ->
+                VisitorItem(
+                    visitor = visitor,
+                    onDeleteAttendee = { onAction(AgendaDetailAction.OnDeleteAttendee(visitor)) }
+                )
+                Spacer(modifier = Modifier.height(dimensions.small8dp))
+
+            }
         }
 
         if (dialogState is DialogState.Show) {
             AddVisitorDialog(
-                title = "Add visitor",
+                title = stringResource(R.string.Add_visitor),
                 displayCloseIcon = true,
-                positiveButtonText = "ADD",
+                positiveButtonText = stringResource(R.string.Add),
                 onPositiveClick = { onAction(AgendaDetailAction.OnAddVisitorPressed) },
                 onCancelClicked = { onDialogDismiss() },
                 email = email,
@@ -529,10 +596,10 @@ private fun VisitorsSection(
 
 @Composable
 private fun VisitorItem(
-    visitor: String,
-    onStatusChanged: () -> Unit
+    visitor: Attendee,
+    onDeleteAttendee: (Attendee) -> Unit
 ) {
-    val visitorInitials by remember { mutableStateOf(getInitials(visitor)) }
+    val visitorInitials by remember { mutableStateOf(getInitials(visitor.name)) }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -569,13 +636,26 @@ private fun VisitorItem(
 
                 Spacer(modifier = Modifier.width(dimensions.small8dp))
 
-                Text(text = visitor, style = typography.bodySmall.copy(color = colors.black))
+                Text(text = visitor.name, style = typography.bodySmall.copy(color = colors.black))
             }
-            Icon(
-                Icons.Outlined.Delete,
-                contentDescription = "Delete icon",
-                modifier = Modifier.padding(end = dimensions.small8dp)
-            )
+            if (visitor.isCreator) {
+                Text(
+                    text = stringResource(R.string.creator),
+                    style = typography.bodyMedium.copy(
+                        color = colors.lightBlue,
+                        fontWeight = FontWeight.W500
+                    ),
+                    modifier = Modifier.padding(end = dimensions.small8dp)
+                )
+            } else {
+                Icon(
+                    Icons.Outlined.Delete,
+                    contentDescription = "Delete icon",
+                    modifier = Modifier
+                        .padding(end = dimensions.small8dp)
+                        .clickable { onDeleteAttendee(visitor) }
+                )
+            }
         }
     }
 
@@ -628,7 +708,7 @@ private fun Header(
             if (agendaItemId.isNullOrEmpty() || !isReadOnly) {
                 Text(
                     modifier = Modifier.clickable { onSavePressed() },
-                    text = "Save", color = colors.white
+                    text = stringResource(R.string.Save), color = colors.white
                 )
             } else {
                 IconButton(
@@ -669,12 +749,13 @@ fun AgendaDetailReadOnlyPreview() {
                 isUserEventCreator = false,
                 host = null,
                 remindAtTime = 4626,
-
-                ),
+            ),
             onUpdatePhotos = {},
             onShowDialog = {},
             onDialogDismiss = {},
             dialogState = DialogState.Hide,
+            errorDialogState = AgendaDetailViewModel.ErrorDialogState.None,
+            onErrorDialogDismiss = {}
         )
     }
 }
@@ -691,18 +772,24 @@ fun AgendaDetailEditablePreview() {
             onAction = {},
             onUpdateState = {},
             agendaItemId = "12345",
-            agendaItem = AgendaItem.Task(
-                taskId = "persius",
-                taskTitle = "mauris",
-                taskDescription = null,
-                time = 7622,
-                isDone = false,
-                remindAtTime = 2214,
+            agendaItem = AgendaItem.Event(
+                eventId = "12345",
+                eventTitle = "ridens",
+                eventDescription = null,
+                from = 1221,
+                to = 4855,
+                photos = listOf(),
+                attendees = listOf(),
+                isUserEventCreator = false,
+                host = null,
+                remindAtTime = 4626,
             ),
             onUpdatePhotos = {},
             onShowDialog = {},
             onDialogDismiss = {},
-            dialogState = DialogState.Show(null)
+            dialogState = DialogState.Hide,
+            errorDialogState = AgendaDetailViewModel.ErrorDialogState.None,
+            onErrorDialogDismiss = {}
         )
     }
 }

@@ -274,7 +274,7 @@ private fun AgendaContent(
                             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                                 items(
                                     items = state.agendaItems,
-                                    key = { it.hashCode() }) { agendaItem ->
+                                    key = { it.id }) { agendaItem ->
                                     when (agendaItem) {
                                         is AgendaItem.Task -> {
                                             AgendaItem(
@@ -504,7 +504,7 @@ fun CalendarDays(
     date: LocalDate,
     selectedIndex: Int,
     isDateSelectedFromDatePicker: Boolean,
-    onSelectedIndexChanged: (Int) -> Unit
+    onSelectedIndexChanged: (Int) -> Unit,
 ) {
     val days = getDaysWithDates(date, NUMBER_OF_DAYS_TO_SHOW)
 
@@ -516,10 +516,12 @@ fun CalendarDays(
     ) {
         days.forEachIndexed { index, (dayLetter, dayNumber) ->
             if (dayLetter != null) {
+                val isSelected =
+                    if (isDateSelectedFromDatePicker) index == 0 else index == selectedIndex
                 CalendarComponent(
                     dayLetter = dayLetter,
                     dayNumber = dayNumber.toString(),
-                    isSelected = index == if (isDateSelectedFromDatePicker) 0 else selectedIndex,
+                    isSelected = isSelected,
                     onClick = {
                         onSelectedIndexChanged(index)
                     }

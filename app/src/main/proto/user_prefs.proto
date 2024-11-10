@@ -8,4 +8,6 @@ message UserPreferences {
   string refreshToken = 2;
   string accessTokenExpirationTimestamp = 3;
   string userId = 4;
+  string userName = 5;
+  string email = 6;
 }

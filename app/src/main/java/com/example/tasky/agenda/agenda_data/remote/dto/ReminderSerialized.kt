@@ -4,9 +4,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ReminderSerialized(
-    val reminderId: String,
-    val reminderTitle: String,
-    val reminderDescription: String?,
+    val id: String,
+    val title: String,
+    val description: String?,
     val time: Long,
-    val remindAtTime: Long,
+    val remindAt: Long,
 )

@@ -3,6 +3,7 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -13,6 +14,7 @@ import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
@@ -25,12 +27,14 @@ import com.example.tasky.core.domain.onSuccess
 import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
 import com.example.tasky.core.presentation.DateUtils.toMillis
 import com.example.tasky.core.presentation.FieldInput
+import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.util.CredentialsValidator
 import com.example.tasky.util.PhotoCompressor
 import com.example.tasky.util.PhotoConverter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -58,6 +62,9 @@ class AgendaDetailViewModel @Inject constructor(
     private var _dialogState = MutableStateFlow<DialogState>(DialogState.Hide)
     val dialogState: StateFlow<DialogState> = _dialogState.asStateFlow()
 
+    private var _errorDialogState = MutableStateFlow<ErrorDialogState>(ErrorDialogState.None)
+    val errorDialogState: StateFlow<ErrorDialogState> = _errorDialogState.asStateFlow()
+
     val agendaOption = savedStateHandle.toRoute<Screen.AgendaDetail>().agendaOption
     private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
 
@@ -70,7 +77,12 @@ class AgendaDetailViewModel @Inject constructor(
         _state.update {
             when (action) {
                 is AgendaDetailStateUpdate.UpdateDate -> it.copy(
-                    date = action.newDate.localDateToStringMMMdyyyyFormat(),
+                    date = action.date.localDateToStringMMMdyyyyFormat(),
+                    isDateSelectedFromDatePicker = false
+                )
+
+                is AgendaDetailStateUpdate.UpdateEventSecondRowDate -> it.copy(
+                    secondRowDate = action.date.localDateToStringMMMdyyyyFormat(),
                     isDateSelectedFromDatePicker = false
                 )
 
@@ -89,13 +101,27 @@ class AgendaDetailViewModel @Inject constructor(
                     }
                 }
 
+                is AgendaDetailStateUpdate.UpdateEventSecondRowTime -> {
+                    val updateTime = LocalTime.of(action.hour, action.minute).toMillis()
+                    it.copy(event = it.event.copy(to = updateTime))
+                }
+
                 is AgendaDetailStateUpdate.UpdateShouldShowDatePicker -> it.copy(
                     shouldShowDatePicker = action.shouldShowDatePicker
                 )
 
+                is AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker -> it.copy(
+                    shouldShowSecondRowDatePicker = action.shouldShowSecondRowDatePicker
+                )
+
                 is AgendaDetailStateUpdate.UpdateMonth -> it.copy(month = action.month)
+                is AgendaDetailStateUpdate.UpdateEventSecondRowMonth -> it.copy(eventSecondRowMonth = action.month)
                 is AgendaDetailStateUpdate.UpdateShouldShowTimePicker -> it.copy(
                     shouldShowTimePicker = action.shouldShowTimePicker
+                )
+
+                is AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker -> it.copy(
+                    shouldShowSecondRowTimePicker = action.shouldShowTimePicker
                 )
 
                 is AgendaDetailStateUpdate.UpdateEditType -> it.copy(editType = action.editType)
@@ -146,9 +172,14 @@ class AgendaDetailViewModel @Inject constructor(
                     )
                 }
 
-                is AgendaDetailStateUpdate.UpdateToTime -> {
-                    val updateTime = LocalTime.of(action.hour, action.minute).toMillis()
-                    it.copy(event = it.event.copy(to = updateTime))
+                is AgendaDetailStateUpdate.UpdateVisitorFilter -> it.copy(visitorFilter = action.filter)
+                is AgendaDetailStateUpdate.UpdateRemindAtTime -> {
+                    when (it.selectedAgendaItem) {
+                        is AgendaItem.Task -> it.copy(task = it.task.copy(remindAtTime = action.remindAtTime))
+                        is AgendaItem.Event -> it.copy(event = it.event.copy(remindAtTime = action.remindAtTime))
+                        is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(remindAtTime = action.remindAtTime))
+                        null -> TODO()
+                    }
                 }
             }
         }
@@ -161,7 +192,7 @@ class AgendaDetailViewModel @Inject constructor(
             val result = when (agendaItem) {
                 is AgendaItem.Task -> agendaRepository.addTask(agendaItem)
                 is AgendaItem.Event -> {
-                    val (photos, newAgendaItem) = createNewEvent(agendaItem)
+                    val (photos, newAgendaItem) = createNewEvent()
                     agendaRepository.addEvent(newAgendaItem, photos)
                 }
 
@@ -174,7 +205,15 @@ class AgendaDetailViewModel @Inject constructor(
                 }
 
                 is Error -> {
-                    _uiState.update { AgendaDetailUiState.Error(R.string.Could_not_create_agenda_item) }
+                    _uiState.update { AgendaDetailUiState.None }
+                    _dialogState.update { DialogState.ShowError }
+                    _errorDialogState.update {
+                        ErrorDialogState.AgendaItemError(
+                            UiText.StringResource(
+                                R.string.Could_not_create_agenda_item
+                            )
+                        )
+                    }
                 }
             }
             _state.update { it.copy(isLoading = false) }
@@ -200,8 +239,6 @@ class AgendaDetailViewModel @Inject constructor(
                     val newReminder = prepareUpdatedReminder(agendaItem)
                     agendaRepository.updateReminder(newReminder)
                 }
-
-                else -> return@launch
             }
 
             when (result) {
@@ -211,13 +248,22 @@ class AgendaDetailViewModel @Inject constructor(
 
                 is Error -> {
                     _uiState.update { AgendaDetailUiState.None }
+                    _dialogState.update { DialogState.ShowError }
+                    _errorDialogState.update {
+                        ErrorDialogState.AgendaItemError(
+                            UiText.StringResource(
+                                R.string.Something_went_wrong
+                            )
+                        )
+                    }
+
                 }
             }
             _state.update { it.copy(isLoading = false) }
         }
     }
 
-    private suspend fun prepareUpdatedTask(agendaItem: AgendaItem.Task): AgendaItem.Task {
+    private fun prepareUpdatedTask(agendaItem: AgendaItem.Task): AgendaItem.Task {
         val currentState = state.value.task
         val newTask = _state.value.task.copy(
             taskTitle = currentState.taskTitle,
@@ -229,7 +275,7 @@ class AgendaDetailViewModel @Inject constructor(
         return newTask
     }
 
-    private suspend fun prepareUpdatedReminder(agendaItem: AgendaItem.Reminder): AgendaItem.Reminder {
+    private fun prepareUpdatedReminder(agendaItem: AgendaItem.Reminder): AgendaItem.Reminder {
         val currentState = state.value.reminder
         val newReminder = _state.value.reminder.copy(
             reminderTitle = currentState.reminderTitle,
@@ -240,39 +286,118 @@ class AgendaDetailViewModel @Inject constructor(
         return newReminder
     }
 
-    private suspend fun createNewEvent(agendaItem: AgendaItem.Event): Pair<List<ByteArray>, AgendaItem.Event> {
-        val photos = photoConverter.convertPhotosToByteArrays(state.value.event.photos)
+    private suspend fun createNewEvent(): Pair<List<ByteArray>, AgendaItem.Event> {
+        val currentState = state.value.event
+        val photosJob = viewModelScope.async(Dispatchers.IO) {
+            photoConverter.convertPhotosToByteArrays(currentState.photos)
+        }
+        val photos = photosJob.await()
 
-        val event = state.value.event
+        val eventId = UUID.randomUUID().toString()
+
+        val loggedInUserResult = agendaRepository.getLoggedInUserDetails()
+        val loggedInAttendee: Attendee? = when (loggedInUserResult) {
+            is Success -> {
+                Attendee(
+                    userId = loggedInUserResult.data.userId,
+                    name = loggedInUserResult.data.fullName,
+                    email = loggedInUserResult.data.email,
+                    eventId = eventId,
+                    isGoing = true,
+                    remindAt = currentState.remindAtTime,
+                    isCreator = true
+                )
+            }
+
+            is Error -> {
+                Log.d(
+                    "LoadingUserError",
+                    "Error fetching user details: ${loggedInUserResult.error}"
+                )
+                null
+            }
+        }
+
         val newAgendaItem = AgendaItem.Event(
-            eventId = UUID.randomUUID().toString(),
-            eventTitle = event.eventTitle,
-            eventDescription = event.eventDescription,
-            from = event.from,
-            to = event.to,
-            photos = event.photos,
-            attendees = agendaItem.attendees + event.attendees,
+            eventId = eventId,
+            eventTitle = currentState.eventTitle,
+            eventDescription = currentState.eventDescription,
+            from = currentState.from,
+            to = currentState.to,
+            photos = currentState.photos,
+            attendees = currentState.attendees + listOfNotNull(loggedInAttendee),
             isUserEventCreator = true,
-            host = agendaItem.host,
-            remindAtTime = event.remindAtTime
+            host = currentState.host,
+            remindAtTime = currentState.remindAtTime
         )
         return Pair(photos, newAgendaItem)
     }
 
     private suspend fun prepareUpdatedEvent(agendaItem: AgendaItem.Event): Pair<List<ByteArray>, AgendaItem.Event> {
-        val currentEvent = state.value.event
-        val photos = photoConverter.convertPhotosToByteArrays(currentEvent.photos)
+        val currentState = state.value.event
+        val photosJob = viewModelScope.async(Dispatchers.IO) {
+            photoConverter.convertPhotosToByteArrays(currentState.photos)
+        }
+        val photos = photosJob.await()
 
         val newEvent = _state.value.event.copy(
-            eventTitle = currentEvent.title,
-            eventDescription = currentEvent.description,
-            from = currentEvent.from,
-            to = currentEvent.to,
-            photos = (agendaItem.photos + currentEvent.photos).distinctBy { it.key },
-            attendees = (agendaItem.attendees + currentEvent.attendees).distinctBy { it.userId },
-            remindAtTime = currentEvent.remindAtTime
+            eventTitle = currentState.title,
+            eventDescription = currentState.description,
+            from = currentState.from,
+            to = currentState.to,
+            photos = (agendaItem.photos + currentState.photos).distinctBy { it.key },
+            attendees = (agendaItem.attendees + currentState.attendees).distinctBy { it.userId },
+            remindAtTime = currentState.remindAtTime
         )
         return Pair(photos, newEvent)
+    }
+
+    fun deleteAgendaItem(agendaItem: AgendaItem) {
+        _state.update { it.copy(isLoading = true) }
+        viewModelScope.launch {
+            val result = when (agendaItem) {
+                is AgendaItem.Task -> agendaRepository.deleteTask(agendaItem)
+                is AgendaItem.Event -> agendaRepository.deleteEvent(agendaItem)
+                is AgendaItem.Reminder -> agendaRepository.deleteReminder(agendaItem)
+            }
+
+            result.onSuccess {
+                //Maybe some success message here
+//                    _uiState.update { AgendaDetailUiState.Error(R.string.Agenda_item_was_succesfully_deleted) }
+
+            }.onError {
+                _dialogState.update { DialogState.ShowError }
+                _errorDialogState.update {
+                    ErrorDialogState.AgendaItemError(
+                        UiText.StringResource(
+                            R.string.Could_not_create_agenda_item
+                        )
+                    )
+                }
+            }
+            _state.update { it.copy(isLoading = false) }
+        }
+    }
+
+    fun deleteAttendee(attendee: Attendee) {
+        _state.update { it.copy(isLoading = true) }
+        viewModelScope.launch {
+            agendaRepository.deleteAttendee(attendee.eventId)
+                .onSuccess {
+
+                }
+                .onError {
+                    _dialogState.update { DialogState.ShowError }
+                    _errorDialogState.update {
+                        ErrorDialogState.AttendeeError(
+                            UiText.StringResource(
+                                R.string.Something_went_wrong
+                            )
+                        )
+                    }
+                }
+            _state.update { it.copy(isLoading = false) }
+        }
     }
 
     fun loadAgendaItem(agendaItemId: String) {
@@ -325,12 +450,15 @@ class AgendaDetailViewModel @Inject constructor(
                         }
                         .onError {
                             _state.update { it.copy(isLoading = false) }
+                            _dialogState.update { DialogState.ShowError }
+                            _errorDialogState.update {
+                                ErrorDialogState.AgendaItemError(
+                                    UiText.StringResource(
+                                        R.string.Agenda_item_failed
+                                    )
+                                )
+                            }
                         }
-                }
-
-                else -> {
-                    _state.update { it.copy(isLoading = false) }
-                    return@launch
                 }
             }
         }
@@ -356,11 +484,25 @@ class AgendaDetailViewModel @Inject constructor(
                         _dialogState.update { DialogState.Hide }
                     } else {
                         _state.update { it.copy(isLoading = false) }
-                        _uiState.update { AgendaDetailUiState.Error(R.string.user_does_not_exist) }
+                        _dialogState.update { DialogState.ShowError }
+                        _errorDialogState.update {
+                            ErrorDialogState.AttendeeError(
+                                UiText.StringResource(
+                                    R.string.user_does_not_exist
+                                )
+                            )
+                        }
                     }
                 }.onError {
                     _state.update { it.copy(isLoading = false) }
-                    _uiState.update { AgendaDetailUiState.Error(R.string.Unknown_error) }
+                    _dialogState.update { DialogState.ShowError }
+                    _errorDialogState.update {
+                        ErrorDialogState.AttendeeError(
+                            UiText.StringResource(
+                                R.string.Unknown_error
+                            )
+                        )
+                    }
                 }
             _state.update { it.copy(isLoading = false) }
         }
@@ -375,6 +517,11 @@ class AgendaDetailViewModel @Inject constructor(
     fun hideAddVisitorDialog() {
         _dialogState.value = DialogState.Hide
     }
+
+    fun hideErrorDialog() {
+        _dialogState.value = DialogState.HideError
+    }
+
 
     fun handlePhotoCompression(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -395,9 +542,15 @@ class AgendaDetailViewModel @Inject constructor(
         }
     }
 
+    sealed class ErrorDialogState {
+        data object None : ErrorDialogState()
+        data class GeneralError(val message: UiText) : ErrorDialogState()
+        data class AttendeeError(val message: UiText) : ErrorDialogState()
+        data class AgendaItemError(val message: UiText) : ErrorDialogState()
+    }
+
     sealed class AgendaDetailUiState {
         data object None : AgendaDetailUiState()
         data object Success : AgendaDetailUiState()
-        data class Error(val message: Int) : AgendaDetailUiState()
     }
 }

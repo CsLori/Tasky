@@ -5,22 +5,22 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 
 fun AgendaItem.Task.toSerializedTask(): TaskSerialized {
     return TaskSerialized(
-        taskId = id,
-        taskTitle = title,
-        taskDescription = description,
+        id = id,
+        title = title,
+        description = description,
         time = time,
-        remindAtTime = remindAt,
+        remindAt = remindAt,
         isDone = isDone,
     )
 }
 
 fun TaskSerialized.toTask(): AgendaItem.Task {
     return AgendaItem.Task(
-        taskId = taskId,
-        taskTitle = taskTitle,
-        taskDescription = taskDescription,
+        taskId = id,
+        taskTitle = title,
+        taskDescription = description,
         time = time,
         isDone = isDone,
-        remindAtTime = remindAtTime,
+        remindAtTime = remindAt,
     )
 }
