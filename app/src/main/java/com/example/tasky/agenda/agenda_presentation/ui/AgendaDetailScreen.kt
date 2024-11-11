@@ -3,7 +3,6 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -84,6 +83,9 @@ import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 import com.example.tasky.util.getInitials
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 
 
 @Composable
@@ -132,6 +134,18 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnCreateSuccess -> onNavigateToAgendaScreen()
                 AgendaDetailAction.OnEditRowPressed -> onEditPressed()
                 AgendaDetailAction.OnSavePressed -> {
+                    val time = LocalTime.of(state.fromAtTime.hour, state.fromAtTime.minute)
+                    val dateTime = LocalDateTime.of(state.date, time)
+                    val timestamp = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    //Lori this one looks good now
+                    agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdateSortDate(timestamp))
+
+                    val secondRowTime = LocalTime.of(state.toTime.hour, state.toTime.minute)
+                    val secondRowDateTime = LocalDateTime.of(state.date, time)
+                    val secondRowTimestamp = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+                    agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdateSecondRowToDate(timestamp))
+                    //Lori
                     if (agendaItemId == null) {
                         state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {

@@ -78,7 +78,7 @@ class AgendaDetailViewModel @Inject constructor(
         _state.update {
             when (action) {
                 is AgendaDetailStateUpdate.UpdateDate -> it.copy(
-                    date = action.date.localDateToStringMMMdyyyyFormat(),
+                    date = action.date,
                     isDateSelectedFromDatePicker = false
                 )
 
@@ -97,12 +97,12 @@ class AgendaDetailViewModel @Inject constructor(
                                 time = updateTime
                             )
                         )
-
                         null -> TODO()
                     }
                 }
 
                 is AgendaDetailStateUpdate.UpdateEventSecondRowTime -> {
+                    Log.d("DDD - UpdateEventSecondRowTime", "${action.hour} | ${action.minute}")
                     val updateTime = LocalTime.of(action.hour, action.minute).toMillis()
                     it.copy(event = it.event.copy(to = updateTime))
                 }
@@ -115,8 +115,6 @@ class AgendaDetailViewModel @Inject constructor(
                     shouldShowSecondRowDatePicker = action.shouldShowSecondRowDatePicker
                 )
 
-                is AgendaDetailStateUpdate.UpdateMonth -> it.copy(month = action.month)
-                is AgendaDetailStateUpdate.UpdateEventSecondRowMonth -> it.copy(eventSecondRowMonth = action.month)
                 is AgendaDetailStateUpdate.UpdateShouldShowTimePicker -> it.copy(
                     shouldShowTimePicker = action.shouldShowTimePicker
                 )
@@ -181,6 +179,19 @@ class AgendaDetailViewModel @Inject constructor(
                         is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(remindAtTime = action.remindAtTime))
                         null -> TODO()
                     }
+                }
+
+                is AgendaDetailStateUpdate.UpdateSortDate -> {
+                    when (it.selectedAgendaItem) {
+                        is AgendaItem.Task -> it.copy(task = it.task.copy(time = action.sortDate))
+                        is AgendaItem.Event -> it.copy(event = it.event.copy(from = action.sortDate))
+                        is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(time = action.sortDate))
+                        null -> TODO()
+                    }
+                }
+
+                is AgendaDetailStateUpdate.UpdateSecondRowToDate -> {
+                    it.copy(event = it.event.copy(to = action.toDate))
                 }
             }
         }

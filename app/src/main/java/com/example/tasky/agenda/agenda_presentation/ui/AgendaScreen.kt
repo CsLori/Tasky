@@ -1,5 +1,6 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -499,12 +500,16 @@ fun AgendaItem(
         ) {
             Text(
                 text = when (agendaItem) {
-                    is AgendaItem.Task -> agendaItem.remindAtTime.toMMMdHHmmFormat()
+                    is AgendaItem.Task -> agendaItem.sortDate.toMMMdHHmmFormat()
                     is AgendaItem.Event -> {
-                        "${agendaItem.from.toMMMdHHmmFormat()} - ${agendaItem.to.toMMMdHHmmFormat()}"
+                        Log.d(
+                            "DDD - Event",
+                            "AgendaItem: ${agendaItem.sortDate.toMMMdHHmmFormat()} | ${agendaItem.to.toMMMdHHmmFormat()} "
+                        )
+                        "${agendaItem.sortDate.toMMMdHHmmFormat()} - ${agendaItem.to.toMMMdHHmmFormat()}"
                     }
 
-                    is AgendaItem.Reminder -> agendaItem.remindAtTime.toMMMdHHmmFormat()
+                    is AgendaItem.Reminder -> agendaItem.sortDate.toMMMdHHmmFormat()
                 },
                 style = TextStyle(color = textColor)
             )

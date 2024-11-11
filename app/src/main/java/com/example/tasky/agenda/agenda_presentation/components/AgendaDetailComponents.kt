@@ -1,7 +1,6 @@
 package com.example.tasky.agenda.agenda_presentation.components
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,6 +50,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetail
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.RemindBeforeDuration
 import com.example.tasky.core.presentation.DateUtils
+import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
 import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.ReminderDropdown
@@ -273,7 +273,7 @@ fun TimeAndDateRow(
                 }
             }
 
-            if (state.shouldShowTimePicker) {
+            if (state.shouldShowTimePicker && !isSecondRow) {
                 TimePickerDialog(
                     onDismissRequest = {
                         onUpdateState(
@@ -399,7 +399,7 @@ fun TimeAndDateRow(
             Text(
                 modifier = Modifier
                     .padding(start = dimensions.default16dp),
-                text = if (isSecondRow) state.secondRowDate else state.date,
+                text = if (isSecondRow) state.secondRowDate else state.date.localDateToStringMMMdyyyyFormat(), //Lori this looks ok!
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
             if (!state.isReadOnly) {
@@ -415,12 +415,6 @@ fun TimeAndDateRow(
                 onDateSelected = { date ->
                     date?.let { safeDate ->
                         val result = DateUtils.convertMillisToLocalDate(safeDate)
-
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateMonth(
-                                result.month.name
-                            )
-                        )
 
                         onUpdateState(
                             AgendaDetailStateUpdate.UpdateDate(
@@ -459,12 +453,6 @@ fun TimeAndDateRow(
                 onDateSelected = { date ->
                     date?.let { safeDate ->
                         val result = DateUtils.convertMillisToLocalDate(safeDate)
-
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateEventSecondRowMonth(
-                                result.month.name
-                            )
-                        )
 
                         onUpdateState(
                             AgendaDetailStateUpdate.UpdateEventSecondRowDate(
