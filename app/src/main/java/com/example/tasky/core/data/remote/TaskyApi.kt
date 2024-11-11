@@ -1,5 +1,6 @@
 package com.example.tasky.core.data.remote
 
+import com.example.tasky.agenda.agenda_data.remote.dto.AgendaItemsSerialized
 import com.example.tasky.agenda.agenda_data.remote.dto.AgendaResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
@@ -36,6 +37,9 @@ interface TaskyApi {
 
     @GET("/agenda")
     suspend fun getAgenda(@Query("time") time: Long): AgendaResponse
+
+    @GET("/fullAgenda")
+    suspend fun getFullAgenda(@Body agendaItems: AgendaItemsSerialized): AgendaResponse
 
     @POST("/syncAgenda")
     suspend fun syncAgenda(@Body syncAgendaBody: SyncAgendaRequest)

@@ -17,6 +17,7 @@ import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
+import com.example.tasky.util.NetworkConnectivityService
 import com.example.tasky.util.PhotoCompressor
 import com.example.tasky.util.PhotoConverter
 import dagger.Module
@@ -128,5 +129,11 @@ object TaskyModule {
     @Singleton
     fun providePhotoConverter(@ApplicationContext context: Context): PhotoConverter {
         return PhotoConverter(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNetworkConnectivityService(@ApplicationContext context: Context) : NetworkConnectivityService {
+        return NetworkConnectivityService(context)
     }
 }

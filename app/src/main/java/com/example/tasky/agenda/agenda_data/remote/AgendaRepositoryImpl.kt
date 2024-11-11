@@ -14,6 +14,7 @@ import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItems
 import com.example.tasky.agenda.agenda_domain.model.AttendeeMinimal
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
@@ -275,6 +276,10 @@ class AgendaRepositoryImpl(
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
+    }
+
+    override suspend fun getFullAgenda(): Result<AgendaItems, TaskyError> {
+        TODO("Not yet implemented")
     }
 
     override suspend fun syncAgenda(

@@ -3,6 +3,7 @@ package com.example.tasky.agenda.agenda_domain.repository
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItems
 import com.example.tasky.agenda.agenda_domain.model.AttendeeMinimal
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
@@ -40,7 +41,10 @@ interface AgendaRepository {
 
     suspend fun getLoggedInUserDetails(): Result<AttendeeMinimal, TaskyError>
 
+    //Used for querying all the items for a selected day
     suspend fun getAllAgendaItems(selectedDate: LocalDate): Result<Flow<List<AgendaItem>>, TaskyError>
+
+    suspend fun getFullAgenda(): Result<AgendaItems,TaskyError>
 
     suspend fun syncAgenda(eventIds: List<String>, taskIds: List<String>, reminderIds: List<String>): Result<Unit, TaskyError>
 

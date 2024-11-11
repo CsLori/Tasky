@@ -3,7 +3,6 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -100,6 +99,8 @@ internal fun AgendaDetailScreen(
     val dialogState = agendaDetailViewModel.dialogState.collectAsStateWithLifecycle().value
     val errorDialogState =
         agendaDetailViewModel.errorDialogState.collectAsStateWithLifecycle().value
+
+    val networkStatus = agendaDetailViewModel.networkStatus.collectAsStateWithLifecycle().value
 
     LaunchedEffect(agendaItemId) {
         if (agendaItemId == null) {

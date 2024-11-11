@@ -31,14 +31,18 @@ import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.util.CredentialsValidator
+import com.example.tasky.util.NetworkConnectivityService
+import com.example.tasky.util.NetworkStatus
 import com.example.tasky.util.PhotoCompressor
 import com.example.tasky.util.PhotoConverter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalTime
@@ -51,7 +55,8 @@ class AgendaDetailViewModel @Inject constructor(
     private val localDatabaseRepository: LocalDatabaseRepository,
     private val savedStateHandle: SavedStateHandle,
     private val photoCompressor: PhotoCompressor,
-    private val photoConverter: PhotoConverter
+    private val photoConverter: PhotoConverter,
+    private val networkConnectivityService: NetworkConnectivityService
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaDetailState())
@@ -68,6 +73,12 @@ class AgendaDetailViewModel @Inject constructor(
 
     val agendaOption = savedStateHandle.toRoute<Screen.AgendaDetail>().agendaOption
     private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
+
+    val networkStatus: StateFlow<NetworkStatus> = networkConnectivityService.networkStatus.stateIn(
+        initialValue = NetworkStatus.Unknown,
+        scope = viewModelScope,
+        started = WhileSubscribed(5000)
+    )
 
     init {
         updateState(AgendaDetailStateUpdate.UpdateIsReadOnly(isReadOnly))
