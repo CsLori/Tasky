@@ -345,10 +345,6 @@ class AgendaDetailViewModel @Inject constructor(
 
     private suspend fun prepareUpdatedEvent(agendaItem: AgendaItem.Event): Pair<List<ByteArray>, AgendaItem.Event> {
         val currentState = state.value.event
-        Log.d("DDD - currentState", "remindAt: ${currentState.remindAtTime} | from: ${currentState.from} | to: ${currentState.to}")
-        Log.d("DDD - agendaItem", "remindAt: ${agendaItem.remindAtTime} | from: ${agendaItem.from} | to: ${agendaItem.to}")
-        Log.d("DDD - currentState", "photos: ${currentState.remindAtTime} ")
-        Log.d("DDD - agendaItem", "photos: ${agendaItem.remindAtTime}")
         val photosJob = viewModelScope.async(Dispatchers.IO) {
             photoConverter.convertPhotosToByteArrays(currentState.photos)
         }
