@@ -1,6 +1,7 @@
 package com.example.tasky.agenda.agenda_presentation.components
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -543,26 +544,48 @@ fun AddPhotosSection(
                     )
                 }
             }
-            item {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp))
-                        .clickable {
-                            if (photos.size < MAX_NUMBER_OF_PHOTOS) {
-                                onAddPhotos()
-                            } else {
-                                showToast(context, R.string.max_number_of_photos)
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Add photos",
-                        tint = colors.lightBlue
-                    )
+            if (photos.isEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .clickable { onAddPhotos() }
+                            .padding(vertical = dimensions.default16dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add photos",
+                            tint = colors.gray
+                        )
+                        Spacer(modifier = Modifier.width(dimensions.small8dp))
+                        Text(stringResource(R.string.Add_photos), color = colors.gray)
+                    }
+                }
+            } else {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp))
+                            .clickable {
+                                if (photos.size < MAX_NUMBER_OF_PHOTOS) {
+                                    onAddPhotos()
+                                } else {
+                                    showToast(context, R.string.max_number_of_photos)
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Add photos",
+                            tint = colors.lightBlue
+                        )
+                    }
                 }
             }
         } else {

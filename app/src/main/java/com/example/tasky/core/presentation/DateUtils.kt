@@ -94,11 +94,9 @@ object DateUtils {
             .format(formatter)
     }
 
-    fun Long.toLocalDateTime(): LocalDateTime {
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
-    }
-
-    fun LocalDateTime.toLong(): Long {
-        return this.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    fun Long.toLocalDate(): LocalDate {
+        return Instant.ofEpochMilli(this)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
     }
 }

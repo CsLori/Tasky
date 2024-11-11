@@ -15,8 +15,6 @@ data class AgendaState(
     val selectedIndex: Int = 0,
     val isLoading: Boolean = false,
     val agendaItems: List<AgendaItem> = emptyList(),
-    // Used for showing the list for a certain date
-    val filteredList: List<AgendaItem> = emptyList(),
     val isAgendaItemReadOnly: Boolean = false,
     val selectedItem: AgendaItem? = null
 )

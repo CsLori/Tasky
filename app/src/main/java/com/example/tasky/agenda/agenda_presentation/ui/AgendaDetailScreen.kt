@@ -3,6 +3,7 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -134,9 +135,7 @@ internal fun AgendaDetailScreen(
                     if (agendaItemId == null) {
                         state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {
-                        agendaDetailViewModel.updateAgendaItem(
-                            state.selectedAgendaItem ?: state.task
-                        )
+                        state.selectedAgendaItem?.let { agendaDetailViewModel.updateAgendaItem(it) }
                     }
                     onNavigateToAgendaScreen()
                 }
@@ -733,7 +732,7 @@ private fun Header(
 fun AgendaDetailReadOnlyPreview() {
     AppTheme {
         AgendaDetailContent(
-            state = AgendaDetailState(),
+            state = AgendaDetailState(isReadOnly = true),
             uiState = AgendaDetailViewModel.AgendaDetailUiState.None,
             onAction = {},
             onUpdateState = {},

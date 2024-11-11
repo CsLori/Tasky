@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -46,6 +47,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
 import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
@@ -57,6 +59,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.getDaysWithDates
 import com.example.tasky.core.presentation.DateUtils.localDateToStringddMMMMyyyyFormat
+import com.example.tasky.core.presentation.DateUtils.toLocalDate
 import com.example.tasky.core.presentation.DateUtils.toMMMdHHmmFormat
 import com.example.tasky.core.presentation.components.AgendaDetailDropdown
 import com.example.tasky.core.presentation.components.AgendaDropdown
@@ -102,6 +105,8 @@ internal fun AgendaScreen(
                 is AgendaAction.OnOpenPressed -> {
                     onOpenPressed(action.agendaItem)
                 }
+
+                is AgendaAction.OnFilterAgendaItems -> agendaViewModel.getAgendaItems(action.filterDate.toLocalDate())
             }
         },
     )
@@ -212,6 +217,8 @@ private fun AgendaContent(
                                                         DateUtils.longToLocalDate(safeDate)
                                                     )
                                                 )
+
+                                                onAction(AgendaAction.OnFilterAgendaItems(safeDate))
                                                 onUpdateState(
                                                     AgendaUpdateState.UpdateIsDateSelectedFromDatePicker(
                                                         true
@@ -261,12 +268,16 @@ private fun AgendaContent(
                                 state.selectedDate,
                                 state.selectedIndex,
                                 state.isDateSelectedFromDatePicker,
-                                onSelectedIndexChanged = { action ->
-                                    onUpdateState(AgendaUpdateState.UpdateSelectedIndex(action))
+                                onSelectedIndexChanged = { selectedIndex ->
+                                    onUpdateState(
+                                        AgendaUpdateState.UpdateSelectedIndex(
+                                            selectedIndex
+                                        )
+                                    )
                                 })
 
                             Text(
-                                if (state.selectedDate == LocalDate.now()) "Today" else state.selectedDate.localDateToStringddMMMMyyyyFormat(),
+                                if (state.selectedDate == LocalDate.now()) stringResource(R.string.Today) else state.selectedDate.localDateToStringddMMMMyyyyFormat(),
                                 style = typography.calendarTitle,
                                 modifier = Modifier.padding(vertical = dimensions.default16dp)
                             )
@@ -489,7 +500,10 @@ fun AgendaItem(
             Text(
                 text = when (agendaItem) {
                     is AgendaItem.Task -> agendaItem.remindAtTime.toMMMdHHmmFormat()
-                    is AgendaItem.Event -> agendaItem.remindAtTime.toMMMdHHmmFormat()
+                    is AgendaItem.Event -> {
+                        "${agendaItem.from.toMMMdHHmmFormat()} - ${agendaItem.to.toMMMdHHmmFormat()}"
+                    }
+
                     is AgendaItem.Reminder -> agendaItem.remindAtTime.toMMMdHHmmFormat()
                 },
                 style = TextStyle(color = textColor)
@@ -622,6 +636,30 @@ fun AgendaContentPreview() {
                         remindAtTime = 7947,
                         isDone = false,
                     ),
+                    AgendaItem.Event(
+                        eventId = "334",
+                        eventTitle = "imperdiet",
+                        eventDescription = null,
+                        from = 4415,
+                        to = 2349,
+                        photos = listOf(),
+                        attendees = listOf(),
+                        isUserEventCreator = false,
+                        host = null,
+                        remindAtTime = 9459
+                    ),
+                    AgendaItem.Event(
+                        eventId = "545",
+                        eventTitle = "imperdiet",
+                        eventDescription = null,
+                        from = 4415,
+                        to = 2349,
+                        photos = listOf(),
+                        attendees = listOf(),
+                        isUserEventCreator = false,
+                        host = null,
+                        remindAtTime = 9459
+                    )
                 ),
             ),
             onEditPressed = {},

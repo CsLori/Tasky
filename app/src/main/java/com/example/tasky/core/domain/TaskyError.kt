@@ -15,7 +15,8 @@ sealed interface TaskyError : Error {
         NO_INTERNET,
         SERVER_ERROR,
         NOT_FOUND,
-        GENERAL_ERROR;
+        GENERAL_ERROR,
+        IMAGE_TOO_LARGE;
     }
 
     enum class AuthenticationError : TaskyError {

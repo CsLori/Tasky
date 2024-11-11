@@ -9,6 +9,8 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdat
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
+import com.example.tasky.core.domain.onError
+import com.example.tasky.core.domain.onSuccess
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.ZoneId
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -33,21 +35,27 @@ class AgendaViewModel @Inject constructor(
     val uiState: StateFlow<AgendaUiState> = _uiState.asStateFlow()
 
     init {
-        getAgendaItems()
+        getAgendaItems(state.value.selectedDate)
     }
 
-    private fun getAgendaItems() {
+    fun getAgendaItems(filterDate: LocalDate) {
+        _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-            localDatabaseRepository.getAllAgendaItems()
-                .collect { items ->
-                    _state.update {
-                        it.copy(
-                            agendaItems = items,
-                            isLoading = false
-                        )
+            agendaRepository.getAllAgendaItems(filterDate)
+                .onSuccess { flowItems ->
+                    flowItems.collect { agendaItems ->
+                        _state.update {
+                            it.copy(
+                                agendaItems = agendaItems ?: emptyList(),
+                                isLoading = false
+                            )
+                        }
                     }
                 }
+                .onError {
+                    _uiState.update { AgendaUiState.None }
+                }
+            _state.update { it.copy(isLoading = false) }
         }
     }
 
@@ -97,7 +105,6 @@ class AgendaViewModel @Inject constructor(
                 )
 
                 is AgendaUpdateState.UpdateSelectedItem -> it.copy(selectedItem = action.agendaItem)
-                is AgendaUpdateState.UpdateAgendaList -> it.copy(filteredList = action.agendaItems)
             }
         }
     }
@@ -111,20 +118,6 @@ class AgendaViewModel @Inject constructor(
             }
             _state.update { it.copy(isLoading = false) }
         }
-    }
-
-    fun filterListByDate(): List<AgendaItem>? {
-        val startOfDay =
-            state.value.selectedDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()
-                .toEpochMilli()
-        val endOfDay =
-            state.value.selectedDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault())
-                .toInstant().toEpochMilli()
-
-        val filteredAgendaItems = state.value.agendaItems.filter { agendaItem ->
-            agendaItem.remindAt in startOfDay..endOfDay
-        }
-        return filteredAgendaItems
     }
 
     sealed class AgendaUiState {

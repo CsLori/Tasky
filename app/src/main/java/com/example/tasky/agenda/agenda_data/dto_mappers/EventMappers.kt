@@ -2,6 +2,7 @@ package com.example.tasky.agenda.agenda_data.dto_mappers
 
 import com.example.tasky.agenda.agenda_data.remote.dto.EventRequest
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
+import com.example.tasky.agenda.agenda_data.remote.dto.EventUpdate
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 
 fun EventResponse.toEvent(): AgendaItem.Event {
@@ -28,5 +29,19 @@ fun AgendaItem.Event.toEventRequest(): EventRequest {
         to = to,
         remindAt = remindAt,
         attendeeIds = attendees.map { it.userId },
+    )
+}
+
+fun AgendaItem.Event.toEventUpdate(): EventUpdate {
+    return EventUpdate(
+        id = id,
+        title = title,
+        description = description ?: "",
+        from = from,
+        to = to,
+        remindAt = remindAt,
+        attendeeIds = attendees.map { it.userId },
+        deletedPhotoKeys = emptyList(),
+        isGoing = true,
     )
 }

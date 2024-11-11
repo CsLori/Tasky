@@ -6,6 +6,8 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AttendeeMinimal
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
+import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 interface AgendaRepository {
     suspend fun addTask(task: AgendaItem.Task): Result<Unit, TaskyError>
@@ -37,5 +39,9 @@ interface AgendaRepository {
     suspend fun deleteAttendee(eventId: String): Result<Unit, TaskyError>
 
     suspend fun getLoggedInUserDetails(): Result<AttendeeMinimal, TaskyError>
+
+    suspend fun getAllAgendaItems(selectedDate: LocalDate): Result<Flow<List<AgendaItem>>, TaskyError>
+
+    suspend fun syncAgenda(eventIds: List<String>, taskIds: List<String>, reminderIds: List<String>): Result<Unit, TaskyError>
 
 }

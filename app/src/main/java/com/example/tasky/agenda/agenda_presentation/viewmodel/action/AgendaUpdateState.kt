@@ -15,5 +15,4 @@ sealed interface AgendaUpdateState {
     data class UpdateSelectedIndex(val selectedIndex: Int) :
         AgendaUpdateState
     data class UpdateSelectedItem(val agendaItem: AgendaItem) : AgendaUpdateState
-    data class UpdateAgendaList(val agendaItems: List<AgendaItem>) : AgendaUpdateState
 }

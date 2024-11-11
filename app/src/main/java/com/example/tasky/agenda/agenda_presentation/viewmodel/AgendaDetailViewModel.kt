@@ -22,6 +22,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetail
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
+import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.core.domain.onError
 import com.example.tasky.core.domain.onSuccess
 import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
@@ -247,6 +248,15 @@ class AgendaDetailViewModel @Inject constructor(
                 }
 
                 is Error -> {
+                    val message = if ( result.error == TaskyError.NetworkError.IMAGE_TOO_LARGE) {
+                        UiText.StringResource(
+                            R.string.Image_too_large
+                        )
+                    } else {
+                        UiText.StringResource(
+                            R.string.Something_went_wrong
+                        )
+                    }
                     _uiState.update { AgendaDetailUiState.None }
                     _dialogState.update { DialogState.ShowError }
                     _errorDialogState.update {
@@ -335,6 +345,10 @@ class AgendaDetailViewModel @Inject constructor(
 
     private suspend fun prepareUpdatedEvent(agendaItem: AgendaItem.Event): Pair<List<ByteArray>, AgendaItem.Event> {
         val currentState = state.value.event
+        Log.d("DDD - currentState", "remindAt: ${currentState.remindAtTime} | from: ${currentState.from} | to: ${currentState.to}")
+        Log.d("DDD - agendaItem", "remindAt: ${agendaItem.remindAtTime} | from: ${agendaItem.from} | to: ${agendaItem.to}")
+        Log.d("DDD - currentState", "photos: ${currentState.remindAtTime} ")
+        Log.d("DDD - agendaItem", "photos: ${agendaItem.remindAtTime}")
         val photosJob = viewModelScope.async(Dispatchers.IO) {
             photoConverter.convertPhotosToByteArrays(currentState.photos)
         }
@@ -347,7 +361,7 @@ class AgendaDetailViewModel @Inject constructor(
             to = currentState.to,
             photos = (agendaItem.photos + currentState.photos).distinctBy { it.key },
             attendees = (agendaItem.attendees + currentState.attendees).distinctBy { it.userId },
-            remindAtTime = currentState.remindAtTime
+            remindAtTime = currentState.remindAtTime,
         )
         return Pair(photos, newEvent)
     }
@@ -363,7 +377,7 @@ class AgendaDetailViewModel @Inject constructor(
 
             result.onSuccess {
                 //Maybe some success message here
-//                    _uiState.update { AgendaDetailUiState.Error(R.string.Agenda_item_was_succesfully_deleted) }
+//                    _uiState.update { AgendaDetailUiState.Error(R.string.Agenda_item_was_successfully_deleted) }
 
             }.onError {
                 _dialogState.update { DialogState.ShowError }
