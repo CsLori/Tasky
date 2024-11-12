@@ -1,5 +1,6 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +61,7 @@ import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.getDaysWithDates
 import com.example.tasky.core.presentation.DateUtils.localDateToStringddMMMMyyyyFormat
 import com.example.tasky.core.presentation.DateUtils.toLocalDate
+import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.core.presentation.DateUtils.toMMMdHHmmFormat
 import com.example.tasky.core.presentation.components.AgendaDetailDropdown
 import com.example.tasky.core.presentation.components.AgendaDropdown
@@ -268,12 +270,13 @@ private fun AgendaContent(
                                 state.selectedDate,
                                 state.selectedIndex,
                                 state.isDateSelectedFromDatePicker,
-                                onSelectedIndexChanged = { selectedIndex ->
+                                onSelectedIndexChanged = { selectedIndex, date ->
                                     onUpdateState(
                                         AgendaUpdateState.UpdateSelectedIndex(
                                             selectedIndex
                                         )
                                     )
+                                    onAction(AgendaAction.OnFilterAgendaItems(date))
                                 })
 
                             Text(
@@ -499,12 +502,16 @@ fun AgendaItem(
         ) {
             Text(
                 text = when (agendaItem) {
-                    is AgendaItem.Task -> agendaItem.remindAtTime.toMMMdHHmmFormat()
+                    is AgendaItem.Task -> agendaItem.sortDate.toMMMdHHmmFormat()
                     is AgendaItem.Event -> {
-                        "${agendaItem.from.toMMMdHHmmFormat()} - ${agendaItem.to.toMMMdHHmmFormat()}"
+                        Log.d(
+                            "DDD - Event",
+                            "AgendaItem: ${agendaItem.sortDate.toMMMdHHmmFormat()} | ${agendaItem.to.toMMMdHHmmFormat()} "
+                        )
+                        "${agendaItem.sortDate.toMMMdHHmmFormat()} - ${agendaItem.to.toMMMdHHmmFormat()}"
                     }
 
-                    is AgendaItem.Reminder -> agendaItem.remindAtTime.toMMMdHHmmFormat()
+                    is AgendaItem.Reminder -> agendaItem.sortDate.toMMMdHHmmFormat()
                 },
                 style = TextStyle(color = textColor)
             )
@@ -518,7 +525,7 @@ fun CalendarDays(
     date: LocalDate,
     selectedIndex: Int,
     isDateSelectedFromDatePicker: Boolean,
-    onSelectedIndexChanged: (Int) -> Unit,
+    onSelectedIndexChanged: (Int, Long) -> Unit,
 ) {
     val days = getDaysWithDates(date, NUMBER_OF_DAYS_TO_SHOW)
 
@@ -537,7 +544,8 @@ fun CalendarDays(
                     dayNumber = dayNumber.toString(),
                     isSelected = isSelected,
                     onClick = {
-                        onSelectedIndexChanged(index)
+                        val selectedDate = date.plusDays(index.toLong())
+                        onSelectedIndexChanged(index, selectedDate.toLong())
                     }
                 )
             }
@@ -665,7 +673,7 @@ fun AgendaContentPreview() {
             onEditPressed = {},
             onUpdateState = {},
             onAction = { },
-            uiState = AgendaViewModel.AgendaUiState.None,
+            uiState = AgendaViewModel.AgendaUiState.None
         )
     }
 }

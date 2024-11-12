@@ -52,7 +52,7 @@ data class AgendaDetailState(
     val isLoading: Boolean = false,
     val shouldShowDatePicker: Boolean = false,
     val shouldShowSecondRowDatePicker: Boolean = false,
-    val date: String = DateUtils.getCurrentDate().localDateToStringMMMdyyyyFormat(),
+    val date: LocalDate = LocalDate.now(),
     val secondRowDate: String = DateUtils.getCurrentDate().localDateToStringMMMdyyyyFormat(),
     val fromAtTime: TimePickerState = TimePickerState(
         initialHour = LocalTime.now().hour,
@@ -64,8 +64,6 @@ data class AgendaDetailState(
         initialMinute = LocalTime.now().minute,
         is24Hour = true
     ),
-    val month: String = DateUtils.getCurrentMonth(),
-    val eventSecondRowMonth: String = DateUtils.getCurrentMonth(),
     val isDateSelectedFromDatePicker: Boolean = false,
     val selectedDate: LocalDate = DateUtils.getCurrentDate(),
     val shouldShowTimePicker: Boolean = false,
@@ -98,9 +96,7 @@ enum class VisitorFilter(val displayName: String) {
 
 sealed interface AgendaDetailStateUpdate {
     data class UpdateDate(val date: LocalDate) : AgendaDetailStateUpdate
-    data class UpdateMonth(val month: String) : AgendaDetailStateUpdate
     data class UpdateEventSecondRowDate(val date: LocalDate) : AgendaDetailStateUpdate
-    data class UpdateEventSecondRowMonth(val month: String) : AgendaDetailStateUpdate
     data class UpdateFromAtTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
     data class UpdateEventSecondRowTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
     data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaDetailStateUpdate
@@ -119,4 +115,6 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate
     data class UpdateVisitorFilter(val filter: VisitorFilter) : AgendaDetailStateUpdate
     data class UpdateRemindAtTime(val remindAtTime: Long) : AgendaDetailStateUpdate
+    data class UpdateSortDate(val sortDate: Long) : AgendaDetailStateUpdate
+    data class UpdateSecondRowToDate(val toDate: Long) : AgendaDetailStateUpdate
 }
