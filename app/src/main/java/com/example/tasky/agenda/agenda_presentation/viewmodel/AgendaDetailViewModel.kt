@@ -22,6 +22,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetail
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
+import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.core.domain.onError
 import com.example.tasky.core.domain.onSuccess
 import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
@@ -77,7 +78,7 @@ class AgendaDetailViewModel @Inject constructor(
         _state.update {
             when (action) {
                 is AgendaDetailStateUpdate.UpdateDate -> it.copy(
-                    date = action.date.localDateToStringMMMdyyyyFormat(),
+                    date = action.date,
                     isDateSelectedFromDatePicker = false
                 )
 
@@ -96,12 +97,12 @@ class AgendaDetailViewModel @Inject constructor(
                                 time = updateTime
                             )
                         )
-
-                        null -> TODO()
+                        else -> it
                     }
                 }
 
                 is AgendaDetailStateUpdate.UpdateEventSecondRowTime -> {
+                    Log.d("DDD - UpdateEventSecondRowTime", "${action.hour} | ${action.minute}")
                     val updateTime = LocalTime.of(action.hour, action.minute).toMillis()
                     it.copy(event = it.event.copy(to = updateTime))
                 }
@@ -114,8 +115,6 @@ class AgendaDetailViewModel @Inject constructor(
                     shouldShowSecondRowDatePicker = action.shouldShowSecondRowDatePicker
                 )
 
-                is AgendaDetailStateUpdate.UpdateMonth -> it.copy(month = action.month)
-                is AgendaDetailStateUpdate.UpdateEventSecondRowMonth -> it.copy(eventSecondRowMonth = action.month)
                 is AgendaDetailStateUpdate.UpdateShouldShowTimePicker -> it.copy(
                     shouldShowTimePicker = action.shouldShowTimePicker
                 )
@@ -142,8 +141,7 @@ class AgendaDetailViewModel @Inject constructor(
                                 reminderDescription = action.description
                             )
                         )
-
-                        null -> TODO()
+                        else -> it
                     }
 
                 is AgendaDetailStateUpdate.UpdateTitle ->
@@ -151,7 +149,7 @@ class AgendaDetailViewModel @Inject constructor(
                         is AgendaItem.Task -> it.copy(task = it.task.copy(taskTitle = action.title))
                         is AgendaItem.Event -> it.copy(event = it.event.copy(eventTitle = action.title))
                         is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(reminderTitle = action.title))
-                        null -> TODO()
+                        else -> it
                     }
 
                 is AgendaDetailStateUpdate.UpdateIsReadOnly -> it.copy(isReadOnly = action.isReadOnly)
@@ -178,8 +176,21 @@ class AgendaDetailViewModel @Inject constructor(
                         is AgendaItem.Task -> it.copy(task = it.task.copy(remindAtTime = action.remindAtTime))
                         is AgendaItem.Event -> it.copy(event = it.event.copy(remindAtTime = action.remindAtTime))
                         is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(remindAtTime = action.remindAtTime))
-                        null -> TODO()
+                        else -> it
                     }
+                }
+
+                is AgendaDetailStateUpdate.UpdateSortDate -> {
+                    when (it.selectedAgendaItem) {
+                        is AgendaItem.Task -> it.copy(task = it.task.copy(time = action.sortDate))
+                        is AgendaItem.Event -> it.copy(event = it.event.copy(from = action.sortDate))
+                        is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(time = action.sortDate))
+                        else -> it
+                    }
+                }
+
+                is AgendaDetailStateUpdate.UpdateSecondRowToDate -> {
+                    it.copy(event = it.event.copy(to = action.toDate))
                 }
             }
         }
@@ -247,13 +258,20 @@ class AgendaDetailViewModel @Inject constructor(
                 }
 
                 is Error -> {
+                    val message = if ( result.error == TaskyError.NetworkError.IMAGE_TOO_LARGE) {
+                        UiText.StringResource(
+                            R.string.Image_too_large
+                        )
+                    } else {
+                        UiText.StringResource(
+                            R.string.Something_went_wrong
+                        )
+                    }
                     _uiState.update { AgendaDetailUiState.None }
                     _dialogState.update { DialogState.ShowError }
                     _errorDialogState.update {
                         ErrorDialogState.AgendaItemError(
-                            UiText.StringResource(
-                                R.string.Something_went_wrong
-                            )
+                            message
                         )
                     }
 
@@ -347,7 +365,7 @@ class AgendaDetailViewModel @Inject constructor(
             to = currentState.to,
             photos = (agendaItem.photos + currentState.photos).distinctBy { it.key },
             attendees = (agendaItem.attendees + currentState.attendees).distinctBy { it.userId },
-            remindAtTime = currentState.remindAtTime
+            remindAtTime = currentState.remindAtTime,
         )
         return Pair(photos, newEvent)
     }
@@ -363,7 +381,7 @@ class AgendaDetailViewModel @Inject constructor(
 
             result.onSuccess {
                 //Maybe some success message here
-//                    _uiState.update { AgendaDetailUiState.Error(R.string.Agenda_item_was_succesfully_deleted) }
+//                    _uiState.update { AgendaDetailUiState.Error(R.string.Agenda_item_was_successfully_deleted) }
 
             }.onError {
                 _dialogState.update { DialogState.ShowError }

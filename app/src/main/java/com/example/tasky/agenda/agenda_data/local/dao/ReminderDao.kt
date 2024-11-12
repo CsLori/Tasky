@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ReminderDao {
-    @Query("SELECT * FROM reminders")
-    fun getAllReminders(): Flow<List<ReminderEntity>>
+    @Query("SELECT * FROM reminders WHERE remindAt BETWEEN :startOfDay AND :endOfDay")
+    fun getAllReminders(startOfDay: Long, endOfDay: Long): Flow<List<ReminderEntity>>
 
     @Query("SELECT * FROM reminders WHERE id = :reminderId")
     suspend fun getReminderById(reminderId: String): ReminderEntity

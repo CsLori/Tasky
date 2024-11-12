@@ -5,7 +5,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -36,22 +35,16 @@ object DateUtils {
         }
     }
 
-    fun longToLocalDate(date: Long) = LocalDateTime.ofEpochSecond(date / 1000, 0, ZoneOffset.UTC)
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate()
+    fun longToLocalDate(date: Long): LocalDate {
+        return Instant.ofEpochMilli(date)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+    }
+
 
     fun convertMillisToLocalDate(millis: Long): ZonedDateTime {
-        // Interpret the milliseconds as the start of the day in UTC, then convert to Los Angeles time
-        val utcDateAtStartOfDay = Instant
-            .ofEpochMilli(millis)
-            .atZone(ZoneOffset.UTC)
-            .toLocalDate()
-
-        // Convert to the same instant in Local time zone
-        val localDate = utcDateAtStartOfDay.atStartOfDay(ZoneId.systemDefault())
-
-        return localDate
-
+        return Instant.ofEpochMilli(millis)
+            .atZone(ZoneId.systemDefault())
     }
 
     fun getCurrentMonth(): String = LocalDate.now().month.toString()
@@ -63,7 +56,8 @@ object DateUtils {
     }
 
     fun LocalDate.localDateToStringMMMdyyyyFormat(): String {
-        return this.format(DateTimeFormatter.ofPattern("MMM d yyyy"))
+        val localDateTime = this.atStartOfDay(ZoneId.systemDefault()).toLocalDateTime()
+        return localDateTime.format(DateTimeFormatter.ofPattern("MMM d yyyy"))
     }
 
     // Output 15:00
@@ -80,7 +74,8 @@ object DateUtils {
 
     // Output Jul 15, 2024
     fun Long.toLocalizedDateFormat(): String {
-        val localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
+        val localDateTime =
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
         val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
 
         return localDateTime.format(formatter)
@@ -94,11 +89,15 @@ object DateUtils {
             .format(formatter)
     }
 
-    fun Long.toLocalDateTime(): LocalDateTime {
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
+    fun Long.toLocalDate(): LocalDate {
+        return Instant.ofEpochMilli(this)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
     }
 
-    fun LocalDateTime.toLong(): Long {
-        return this.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    fun LocalDate.toLong(): Long {
+        return this.atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
     }
 }

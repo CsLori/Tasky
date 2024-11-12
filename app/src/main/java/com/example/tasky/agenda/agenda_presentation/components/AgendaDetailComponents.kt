@@ -50,6 +50,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetail
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.RemindBeforeDuration
 import com.example.tasky.core.presentation.DateUtils
+import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
 import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.ReminderDropdown
@@ -272,7 +273,7 @@ fun TimeAndDateRow(
                 }
             }
 
-            if (state.shouldShowTimePicker) {
+            if (state.shouldShowTimePicker && !isSecondRow) {
                 TimePickerDialog(
                     onDismissRequest = {
                         onUpdateState(
@@ -398,7 +399,7 @@ fun TimeAndDateRow(
             Text(
                 modifier = Modifier
                     .padding(start = dimensions.default16dp),
-                text = if (isSecondRow) state.secondRowDate else state.date,
+                text = if (isSecondRow) state.secondRowDate else state.date.localDateToStringMMMdyyyyFormat(), //Lori this looks ok!
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
             if (!state.isReadOnly) {
@@ -414,12 +415,6 @@ fun TimeAndDateRow(
                 onDateSelected = { date ->
                     date?.let { safeDate ->
                         val result = DateUtils.convertMillisToLocalDate(safeDate)
-
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateMonth(
-                                result.month.name
-                            )
-                        )
 
                         onUpdateState(
                             AgendaDetailStateUpdate.UpdateDate(
@@ -458,12 +453,6 @@ fun TimeAndDateRow(
                 onDateSelected = { date ->
                     date?.let { safeDate ->
                         val result = DateUtils.convertMillisToLocalDate(safeDate)
-
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateEventSecondRowMonth(
-                                result.month.name
-                            )
-                        )
 
                         onUpdateState(
                             AgendaDetailStateUpdate.UpdateEventSecondRowDate(
@@ -543,26 +532,48 @@ fun AddPhotosSection(
                     )
                 }
             }
-            item {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp))
-                        .clickable {
-                            if (photos.size < MAX_NUMBER_OF_PHOTOS) {
-                                onAddPhotos()
-                            } else {
-                                showToast(context, R.string.max_number_of_photos)
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Add photos",
-                        tint = colors.lightBlue
-                    )
+            if (photos.isEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .clickable { onAddPhotos() }
+                            .padding(vertical = dimensions.default16dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add photos",
+                            tint = colors.gray
+                        )
+                        Spacer(modifier = Modifier.width(dimensions.small8dp))
+                        Text(stringResource(R.string.Add_photos), color = colors.gray)
+                    }
+                }
+            } else {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp))
+                            .clickable {
+                                if (photos.size < MAX_NUMBER_OF_PHOTOS) {
+                                    onAddPhotos()
+                                } else {
+                                    showToast(context, R.string.max_number_of_photos)
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Add photos",
+                            tint = colors.lightBlue
+                        )
+                    }
                 }
             }
         } else {

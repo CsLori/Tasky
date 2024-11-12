@@ -55,7 +55,9 @@
     <string name="Add">ADD</string>
     <string name="Add_photos">Add Photos</string>
     <string name="Could_not_delete_agenda_item">Could not delete agenda item!</string>
-    <string name="Agenda_item_was_succesfully_deleted">Agenda item was succesfully deleted!</string>
+    <string name="Agenda_item_was_successfully_deleted">Agenda item was successfully deleted!</string>
     <string name="Agenda_item_failed">Failed to load agenda item!</string>
     <string name="Save">Save</string>
+    <string name="Today">Today</string>
+    <string name="Image_too_large">Image was skipped due to being too large</string>>
 </resources>

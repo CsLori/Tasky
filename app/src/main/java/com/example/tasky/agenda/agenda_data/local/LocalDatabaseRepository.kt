@@ -9,10 +9,12 @@ import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaItemsRepository
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
+
 
 class LocalDatabaseRepository @Inject constructor(
     private val taskDao: TaskDao,
@@ -20,8 +22,8 @@ class LocalDatabaseRepository @Inject constructor(
     private val reminderDao: ReminderDao
 ) : AgendaItemsRepository {
 
-    override fun getAllTasks(): Flow<List<TaskEntity>> {
-        return taskDao.getAllTasks()
+    override fun getAllTasks(startOfDay: Long, endOfDay: Long): Flow<List<TaskEntity>> {
+        return taskDao.getAllTasks(startOfDay, endOfDay)
     }
 
     override suspend fun getTaskById(taskId: String): TaskEntity {
@@ -36,8 +38,8 @@ class LocalDatabaseRepository @Inject constructor(
         return taskDao.deleteTask(taskEntity)
     }
 
-    override fun getAllEvents(): Flow<List<EventEntity>> {
-        return eventDao.getAllEvents()
+    override fun getAllEvents(startOfDay: Long, endOfDay: Long): Flow<List<EventEntity>> {
+        return eventDao.getAllEvents(startOfDay, endOfDay)
     }
 
     override suspend fun getEventById(eventId: String): EventEntity {
@@ -52,8 +54,8 @@ class LocalDatabaseRepository @Inject constructor(
         return eventDao.deleteEvent(eventEntity)
     }
 
-    override fun getAllReminders(): Flow<List<ReminderEntity>> {
-        return reminderDao.getAllReminders()
+    override fun getAllReminders(startOfDay: Long, endOfDay: Long): Flow<List<ReminderEntity>> {
+        return reminderDao.getAllReminders(startOfDay, endOfDay)
     }
 
     override suspend fun getReminderById(reminderId: String): ReminderEntity {
@@ -68,11 +70,14 @@ class LocalDatabaseRepository @Inject constructor(
         return reminderDao.deleteReminder(reminderEntity)
     }
 
-    override fun getAllAgendaItems(): Flow<List<AgendaItem>> {
+    override fun getAllAgendaItems(selectedDate: LocalDate): Flow<List<AgendaItem>> {
+        val startOfDay = selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val endOfDay = selectedDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
         return combine(
-            taskDao.getAllTasks(),
-            reminderDao.getAllReminders(),
-            eventDao.getAllEvents()
+            taskDao.getAllTasks(startOfDay, endOfDay),
+            reminderDao.getAllReminders(startOfDay, endOfDay),
+            eventDao.getAllEvents(startOfDay, endOfDay)
         ) { tasks, reminders, events ->
             val combinedList = mutableListOf<AgendaItem>()
             combinedList.addAll(tasks.map { it.toAgendaItem() })

@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface EventDao {
-    @Query("SELECT * FROM events")
-    fun getAllEvents(): Flow<List<EventEntity>>
+    @Query("SELECT * FROM events WHERE `from` BETWEEN :startOfDay AND :endOfDay")
+    fun getAllEvents(startOfDay: Long, endOfDay: Long): Flow<List<EventEntity>>
 
     @Query("SELECT * FROM events WHERE id = :eventId")
     suspend fun getEventById(eventId: String): EventEntity

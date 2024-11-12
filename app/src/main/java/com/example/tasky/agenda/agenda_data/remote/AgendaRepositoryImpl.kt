@@ -3,6 +3,7 @@ package com.example.tasky.agenda.agenda_data.remote
 import com.example.tasky.agenda.agenda_data.createMultipartEventRequest
 import com.example.tasky.agenda.agenda_data.createPhotoPart
 import com.example.tasky.agenda.agenda_data.dto_mappers.toEventRequest
+import com.example.tasky.agenda.agenda_data.dto_mappers.toEventUpdate
 import com.example.tasky.agenda.agenda_data.dto_mappers.toSerializedReminder
 import com.example.tasky.agenda.agenda_data.dto_mappers.toSerializedTask
 import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
@@ -21,6 +22,8 @@ import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.core.domain.asResult
 import com.example.tasky.core.domain.mapToTaskyError
+import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.util.concurrent.CancellationException
 
 class AgendaRepositoryImpl(
@@ -114,6 +117,8 @@ class AgendaRepositoryImpl(
     override suspend fun getEventById(eventId: String): Result<AgendaItem.Event, TaskyError> {
         return try {
             val result = localDatabaseRepository.getEventById(eventId).toAgendaItem()
+//            Log.d("DDD - entity:","${ localDatabaseRepository.getEventById(eventId) }")
+//            Log.d("DDD - agendaItem:","agendaItem: $result")
             Result.Success(result)
 
         } catch (e: Exception) {
@@ -129,7 +134,7 @@ class AgendaRepositoryImpl(
         event: AgendaItem.Event,
         photos: List<ByteArray>
     ): Result<EventResponse, TaskyError> {
-        val eventPart = createMultipartEventRequest(event.toEventRequest())
+        val eventPart = createMultipartEventRequest(event.toEventUpdate())
         val photosPart = photos.mapIndexed { index, photo -> createPhotoPart(photo, index) }
 
         return try {
@@ -257,5 +262,26 @@ class AgendaRepositoryImpl(
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
+    }
+
+    override suspend fun getAllAgendaItems(selectedDate: LocalDate): Result<Flow<List<AgendaItem>>, TaskyError> {
+        return try {
+            val localItems = localDatabaseRepository.getAllAgendaItems(selectedDate)
+            Result.Success(localItems)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+            e.printStackTrace()
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
+    }
+
+    override suspend fun syncAgenda(
+        eventIds: List<String>,
+        taskIds: List<String>,
+        reminderIds: List<String>
+    ): Result<Unit, TaskyError> {
+        TODO("Not yet implemented")
     }
 }

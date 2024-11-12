@@ -5,10 +5,11 @@ import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 interface AgendaItemsRepository {
 
-    fun getAllTasks(): Flow<List<TaskEntity>>
+    fun getAllTasks(startOfDay: Long, endOfDay: Long): Flow<List<TaskEntity>>
 
     suspend fun getTaskById(taskId: String): TaskEntity
 
@@ -16,7 +17,7 @@ interface AgendaItemsRepository {
 
     suspend fun deleteTask(taskEntity: TaskEntity)
 
-    fun getAllEvents(): Flow<List<EventEntity>>
+    fun getAllEvents(startOfDay: Long, endOfDay: Long): Flow<List<EventEntity>>
 
     suspend fun getEventById(eventId: String): EventEntity
 
@@ -24,7 +25,7 @@ interface AgendaItemsRepository {
 
     suspend fun deleteEvent(eventEntity: EventEntity)
 
-    fun getAllReminders(): Flow<List<ReminderEntity>>
+    fun getAllReminders(startOfDay: Long, endOfDay: Long): Flow<List<ReminderEntity>>
 
     suspend fun getReminderById(reminderId: String): ReminderEntity
 
@@ -32,5 +33,5 @@ interface AgendaItemsRepository {
 
     suspend fun deleteReminder(reminderEntity: ReminderEntity)
 
-    fun getAllAgendaItems(): Flow<List<AgendaItem>>
+    fun getAllAgendaItems(selectedDate: LocalDate): Flow<List<AgendaItem>?>
 }

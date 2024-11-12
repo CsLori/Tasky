@@ -7,4 +7,5 @@ sealed interface AgendaAction {
     data object OnLogout: AgendaAction
     data object OnFabItemPressed: AgendaAction
     data class OnOpenPressed(val agendaItem: AgendaItem): AgendaAction
+    data class OnFilterAgendaItems(val filterDate: Long): AgendaAction
 }

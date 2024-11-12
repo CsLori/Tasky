@@ -4,6 +4,7 @@ import com.example.tasky.agenda.agenda_data.remote.dto.AgendaResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.ReminderSerialized
+import com.example.tasky.agenda.agenda_data.remote.dto.SyncAgendaRequest
 import com.example.tasky.agenda.agenda_data.remote.dto.TaskSerialized
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginRequest
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginUserResponse
@@ -36,6 +37,9 @@ interface TaskyApi {
     @GET("/agenda")
     suspend fun getAgenda(@Query("time") time: Long): AgendaResponse
 
+    @POST("/syncAgenda")
+    suspend fun syncAgenda(@Body syncAgendaBody: SyncAgendaRequest)
+
     @Multipart
     @POST("/event")
     suspend fun addEvent(
@@ -43,9 +47,10 @@ interface TaskyApi {
         @Part photos: List<MultipartBody.Part>
     ): EventResponse
 
+    @Multipart
     @PUT("/event")
     suspend fun updateEvent(
-        @Part("create_event_request") createEventRequest: RequestBody,
+        @Part("update_event_request") updateEventRequest: RequestBody,
         @Part photos: List<MultipartBody.Part>
     ): EventResponse
 
