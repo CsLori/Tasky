@@ -97,7 +97,7 @@ class AgendaDetailViewModel @Inject constructor(
                                 time = updateTime
                             )
                         )
-                        null -> TODO()
+                        else -> it
                     }
                 }
 
@@ -141,8 +141,7 @@ class AgendaDetailViewModel @Inject constructor(
                                 reminderDescription = action.description
                             )
                         )
-
-                        null -> TODO()
+                        else -> it
                     }
 
                 is AgendaDetailStateUpdate.UpdateTitle ->
@@ -150,7 +149,7 @@ class AgendaDetailViewModel @Inject constructor(
                         is AgendaItem.Task -> it.copy(task = it.task.copy(taskTitle = action.title))
                         is AgendaItem.Event -> it.copy(event = it.event.copy(eventTitle = action.title))
                         is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(reminderTitle = action.title))
-                        null -> TODO()
+                        else -> it
                     }
 
                 is AgendaDetailStateUpdate.UpdateIsReadOnly -> it.copy(isReadOnly = action.isReadOnly)
@@ -177,7 +176,7 @@ class AgendaDetailViewModel @Inject constructor(
                         is AgendaItem.Task -> it.copy(task = it.task.copy(remindAtTime = action.remindAtTime))
                         is AgendaItem.Event -> it.copy(event = it.event.copy(remindAtTime = action.remindAtTime))
                         is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(remindAtTime = action.remindAtTime))
-                        null -> TODO()
+                        else -> it
                     }
                 }
 
@@ -186,7 +185,7 @@ class AgendaDetailViewModel @Inject constructor(
                         is AgendaItem.Task -> it.copy(task = it.task.copy(time = action.sortDate))
                         is AgendaItem.Event -> it.copy(event = it.event.copy(from = action.sortDate))
                         is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(time = action.sortDate))
-                        null -> TODO()
+                        else -> it
                     }
                 }
 
@@ -272,9 +271,7 @@ class AgendaDetailViewModel @Inject constructor(
                     _dialogState.update { DialogState.ShowError }
                     _errorDialogState.update {
                         ErrorDialogState.AgendaItemError(
-                            UiText.StringResource(
-                                R.string.Something_went_wrong
-                            )
+                            message
                         )
                     }
 
