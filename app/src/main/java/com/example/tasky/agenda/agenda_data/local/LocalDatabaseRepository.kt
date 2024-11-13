@@ -3,11 +3,14 @@ package com.example.tasky.agenda.agenda_data.local
 import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.local.dao.EventDao
 import com.example.tasky.agenda.agenda_data.local.dao.ReminderDao
+import com.example.tasky.agenda.agenda_data.local.dao.SyncAgendaItemsDao
 import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
+import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletion
 import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.repository.AgendaItemsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -19,7 +22,8 @@ import javax.inject.Inject
 class LocalDatabaseRepository @Inject constructor(
     private val taskDao: TaskDao,
     private val eventDao: EventDao,
-    private val reminderDao: ReminderDao
+    private val reminderDao: ReminderDao,
+    private val syncAgendaItemsDao: SyncAgendaItemsDao
 ) : AgendaItemsRepository {
 
     override fun getAllTasks(startOfDay: Long, endOfDay: Long): Flow<List<TaskEntity>> {
@@ -85,5 +89,13 @@ class LocalDatabaseRepository @Inject constructor(
             combinedList.addAll(events.map { it.toAgendaItem() })
             combinedList
         }
+    }
+
+    override suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletion) {
+        return syncAgendaItemsDao.insertDeletedItem(itemForDeletion)
+    }
+
+    override fun getDeletedItemsByType(type: AgendaOption): Flow<List<AgendaItemForDeletion>> {
+        return syncAgendaItemsDao.getDeletedItemsByType(type)
     }
 }

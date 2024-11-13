@@ -13,11 +13,12 @@ import com.example.tasky.R
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletion
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.Result.Error
@@ -568,6 +569,17 @@ class AgendaDetailViewModel @Inject constructor(
         val updatedPhotos = _state.value.event.photos.filterNot { it.key == photoKey }
         _state.update { currentState ->
             currentState.copy(event = currentState.event.copy(photos = updatedPhotos))
+        }
+    }
+
+    //Used for caching the deleted agenda item for when the devices is online again
+    fun saveDeletedAgendaItemsWhenUserIsOffline(agendaItemForDeletion: AgendaItemForDeletion) {
+        if (networkStatus.value == NetworkStatus.Disconnected) {
+            viewModelScope.launch {
+                agendaRepository.insertDeletedAgendaItem(agendaItemForDeletion)
+                    .onSuccess {  }
+                    .onError {  }
+            }
         }
     }
 

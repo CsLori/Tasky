@@ -1,5 +1,6 @@
 package com.example.tasky.agenda.agenda_domain.repository
 
+import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletion
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
@@ -46,6 +47,7 @@ interface AgendaRepository {
 
     suspend fun getFullAgenda(): Result<AgendaItems,TaskyError>
 
-    suspend fun syncAgenda(eventIds: List<String>, taskIds: List<String>, reminderIds: List<String>): Result<Unit, TaskyError>
+    suspend fun syncAgenda(): Result<Unit, TaskyError>
 
+    suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletion): Result<Unit, TaskyError>
 }

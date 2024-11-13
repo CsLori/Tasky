@@ -1,6 +1,6 @@
 package com.example.tasky
 
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
 import kotlinx.serialization.Serializable
 

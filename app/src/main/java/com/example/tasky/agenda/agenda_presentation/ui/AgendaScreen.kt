@@ -51,7 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaAction

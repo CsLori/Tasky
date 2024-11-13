@@ -5,15 +5,16 @@ import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
 import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletion
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
+import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface DeletedAgendaItemsDao {
+interface SyncAgendaItemsDao {
     @Upsert
     suspend fun insertDeletedItem(deletedItem: AgendaItemForDeletion)
 
     @Query("SELECT * FROM agenda_items_for_deletion WHERE type = :type")
-    suspend fun getDeletedItemsByType(type: AgendaOption): List<AgendaItemForDeletion>
+    fun getDeletedItemsByType(type: AgendaOption): Flow<List<AgendaItemForDeletion>>
 
     @Delete
     suspend fun deleteDeletedItem(deletedItem: AgendaItemForDeletion)

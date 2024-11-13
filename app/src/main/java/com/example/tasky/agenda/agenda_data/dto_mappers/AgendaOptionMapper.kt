@@ -1,7 +1,7 @@
 package com.example.tasky.agenda.agenda_data.dto_mappers
 
 import com.example.tasky.agenda.agenda_data.local.dto.AgendaOptionDto
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 
 fun AgendaOptionDto.toAgendaOption(): AgendaOption = when (displayName) {
     "Event" -> AgendaOption.EVENT
