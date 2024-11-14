@@ -71,27 +71,8 @@ class LoginViewModel @Inject constructor(
                         // Update auth related tokens
                         updateTokens(result, email.value)
 
-                        // 1. Sync agenda with deleted items
-//                        agendaRepository.syncAgenda(localDatabaseRepository.getLocallyDeleteItems())
-
-                        // 2. Get full agenda
+                        // Get full agenda for local b sync
 //                        agendaRepository.getFullAgenda()
-
-                        // 3 .Compare backend and local db:
-                        // Identify New Items: Items in the backend response that aren’t in the local database should be added.
-                        // Identify Updated Items: Items with the same IDs but different data should be updated in the local database.
-                        // Confirm Deletions: Since deletions were synced in step 1, items that no longer appear in
-                        //  /fullAgenda can be safely removed from the local database if they aren’t marked as locally deleted.
-
-                        // 4. Handle locally created and updated items
-                        // New Items: Send POST requests to the specific endpoints for events, tasks, or reminders.
-                        // Updated Items: Send PUT requests to update items with their latest local changes.
-
-                        // 5. Save everything in the local db
-                        // After the sync is complete, update the local database
-                        // Clear any locally deleted or updated flags or data
-
-
                     }
 
                     is Result.Error -> {
