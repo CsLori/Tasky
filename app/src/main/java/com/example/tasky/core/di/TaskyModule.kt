@@ -9,6 +9,7 @@ import com.example.tasky.agenda.agenda_data.local.AgendaDatabase
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_data.local.dao.EventDao
 import com.example.tasky.agenda.agenda_data.local.dao.ReminderDao
+import com.example.tasky.agenda.agenda_data.local.dao.SyncAgendaItemsDao
 import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
 import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
 import com.example.tasky.agenda.agenda_data.remote.AuthTokenInterceptor
@@ -89,8 +90,14 @@ object TaskyModule {
 
     @Provides
     @Singleton
+    fun provideSyncAgendaItemsDao(database: AgendaDatabase): SyncAgendaItemsDao {
+        return database.syncAgendaItemsDao
+    }
+
+    @Provides
+    @Singleton
     fun provideLocalDatabaseRepository(db: AgendaDatabase): AgendaItemsRepository {
-        return LocalDatabaseRepository(db.taskDao, db.eventDao, db.reminderDao)
+        return LocalDatabaseRepository(db.taskDao, db.eventDao, db.reminderDao, db.syncAgendaItemsDao)
     }
 
     @Provides

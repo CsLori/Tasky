@@ -11,7 +11,7 @@ import com.example.tasky.agenda.agenda_data.entity_mappers.toEventEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toReminderEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletion
+import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.SyncAgendaRequest
@@ -311,7 +311,7 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletion): Result<Unit, TaskyError> {
+    override suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.insertDeletedAgendaItem(itemForDeletion)
             Result.Success(Unit)

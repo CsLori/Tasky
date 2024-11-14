@@ -5,7 +5,7 @@ import com.example.tasky.agenda.agenda_data.local.dao.EventDao
 import com.example.tasky.agenda.agenda_data.local.dao.ReminderDao
 import com.example.tasky.agenda.agenda_data.local.dao.SyncAgendaItemsDao
 import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
-import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletion
+import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
@@ -91,11 +91,11 @@ class LocalDatabaseRepository @Inject constructor(
         }
     }
 
-    override suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletion) {
+    override suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity) {
         return syncAgendaItemsDao.insertDeletedItem(itemForDeletion)
     }
 
-    override fun getDeletedItemsByType(type: AgendaOption): Flow<List<AgendaItemForDeletion>> {
+    override fun getDeletedItemsByType(type: AgendaOption): Flow<List<AgendaItemForDeletionEntity>> {
         return syncAgendaItemsDao.getDeletedItemsByType(type)
     }
 }

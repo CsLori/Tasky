@@ -1,6 +1,6 @@
 package com.example.tasky.agenda.agenda_domain.repository
 
-import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletion
+import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
@@ -38,7 +38,7 @@ interface AgendaItemsRepository {
     fun getAllAgendaItems(selectedDate: LocalDate): Flow<List<AgendaItem>?>
 
     //Sync agenda functions
-    suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletion)
+    suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity)
 
-    fun getDeletedItemsByType(type: AgendaOption): Flow<List<AgendaItemForDeletion>>
+    fun getDeletedItemsByType(type: AgendaOption): Flow<List<AgendaItemForDeletionEntity>>
 }

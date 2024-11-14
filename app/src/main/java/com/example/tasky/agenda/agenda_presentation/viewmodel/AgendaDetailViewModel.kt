@@ -13,12 +13,12 @@ import com.example.tasky.R
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletion
+import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
-import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.Result.Error
@@ -298,7 +298,7 @@ class AgendaDetailViewModel @Inject constructor(
         val newTask = _state.value.task.copy(
             taskTitle = currentState.taskTitle,
             taskDescription = currentState.taskDescription,
-            time = currentState.time,
+            time = currentState.sortDate,
             isDone = currentState.isDone,
             remindAtTime = currentState.remindAtTime
         )
@@ -310,7 +310,7 @@ class AgendaDetailViewModel @Inject constructor(
         val newReminder = _state.value.reminder.copy(
             reminderTitle = currentState.reminderTitle,
             reminderDescription = currentState.reminderDescription,
-            time = currentState.time,
+            time = currentState.sortDate,
             remindAtTime = currentState.remindAtTime
         )
         return newReminder
@@ -352,7 +352,7 @@ class AgendaDetailViewModel @Inject constructor(
             eventId = eventId,
             eventTitle = currentState.eventTitle,
             eventDescription = currentState.eventDescription,
-            from = currentState.from,
+            from = currentState.sortDate,
             to = currentState.to,
             photos = currentState.photos,
             attendees = currentState.attendees + listOfNotNull(loggedInAttendee),
@@ -373,7 +373,7 @@ class AgendaDetailViewModel @Inject constructor(
         val newEvent = _state.value.event.copy(
             eventTitle = currentState.title,
             eventDescription = currentState.description,
-            from = currentState.from,
+            from = currentState.sortDate,
             to = currentState.to,
             photos = (agendaItem.photos + currentState.photos).distinctBy { it.key },
             attendees = (agendaItem.attendees + currentState.attendees).distinctBy { it.userId },
@@ -573,7 +573,7 @@ class AgendaDetailViewModel @Inject constructor(
     }
 
     //Used for caching the deleted agenda item for when the devices is online again
-    fun saveDeletedAgendaItemsWhenUserIsOffline(agendaItemForDeletion: AgendaItemForDeletion) {
+    fun saveDeletedAgendaItemsWhenUserIsOffline(agendaItemForDeletion: AgendaItemForDeletionEntity) {
         if (networkStatus.value == NetworkStatus.Disconnected) {
             viewModelScope.launch {
                 agendaRepository.insertDeletedAgendaItem(agendaItemForDeletion)

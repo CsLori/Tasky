@@ -37,10 +37,6 @@ class AgendaViewModel @Inject constructor(
 
     private var selectedDate = MutableStateFlow(LocalDate.now())
 
-    init {
-        getAgendaItems(selectedDate.asStateFlow().value)
-    }
-
     fun getAgendaItems(filterDate: LocalDate) {
         selectedDate.value = filterDate
     }
@@ -48,8 +44,7 @@ class AgendaViewModel @Inject constructor(
     val agendaItems = selectedDate
         .onEach { _state.update { it.copy(isLoading = true) } }
         .flatMapLatest { date ->
-            val result = agendaRepository.getAllAgendaItems(date)
-            when (result) {
+            when (val result = agendaRepository.getAllAgendaItems(date)) {
                 is Success -> result.data
                 is Error -> emptyFlow()
             }.onEach { agendaItems ->
