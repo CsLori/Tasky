@@ -27,16 +27,10 @@ import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.core.domain.asResult
 import com.example.tasky.core.domain.mapToTaskyError
-import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.util.Logger
 import com.example.tasky.util.NetworkStatus
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.concurrent.CancellationException
 
@@ -45,8 +39,6 @@ class AgendaRepositoryImpl(
     private val userPrefsRepository: ProtoUserPrefsRepository,
     private val localDatabaseRepository: LocalDatabaseRepository,
 ) : AgendaRepository {
-
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override suspend fun addTask(
         task: AgendaItem.Task
@@ -284,19 +276,23 @@ class AgendaRepositoryImpl(
         return try {
             val localItems = localDatabaseRepository.getAllAgendaItems(selectedDate)
 
-            scope.launch(NonCancellable) {
-                val remoteItems = api.getAgenda(selectedDate.toLong())
 
-                if (remoteItems is Result.Success) {
-                    upsertAgendaItems(remoteItems.data.toAgendaItems())
-                }
-            }
+            // Something is broken here, i get an infinite loading with this api call
+//            val remoteItems = api.getAgenda(selectedDate.toLong())
+//
+//            if (remoteItems is Result.Success) {
+//                upsertAgendaItems(remoteItems.data.toAgendaItems())
+//            }
 
             Result.Success(localItems)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            Logger.e(e, "An error occurred while trying to fetch agenda items for agenda screen: %s", e.message)
+            Logger.e(
+                e,
+                "An error occurred while trying to fetch agenda items for agenda screen: %s",
+                e.message
+            )
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -313,7 +309,11 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            Logger.e(e, "An error occurred while trying to get full agenda for syncing local db: %s", e.message)
+            Logger.e(
+                e,
+                "An error occurred while trying to get full agenda for syncing local db: %s",
+                e.message
+            )
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -344,7 +344,10 @@ class AgendaRepositoryImpl(
     }
 
     //Used for caching the deleted agenda item for when the devices is online again
-    override suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity, networkStatus: NetworkStatus): Result<Unit, TaskyError> {
+    override suspend fun insertDeletedAgendaItem(
+        itemForDeletion: AgendaItemForDeletionEntity,
+        networkStatus: NetworkStatus
+    ): Result<Unit, TaskyError> {
         return try {
             if (networkStatus == NetworkStatus.Disconnected) {
                 localDatabaseRepository.insertDeletedAgendaItem(itemForDeletion)
@@ -353,7 +356,11 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            Logger.e(e, "An error occurred while trying to insert deleted agenda items: %s", e.message)
+            Logger.e(
+                e,
+                "An error occurred while trying to insert deleted agenda items: %s",
+                e.message
+            )
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }

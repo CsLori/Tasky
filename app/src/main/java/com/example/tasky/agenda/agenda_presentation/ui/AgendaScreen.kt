@@ -97,9 +97,7 @@ internal fun AgendaScreen(
 
     LaunchedEffect(syncResult) {
         when (syncResult) {
-            is Result.Success -> {
-                showToast(context, (R.string.Agenda_successfully_synced))
-            }
+            is Result.Success -> {}
             is Result.Error -> {
                 showToast(context, (R.string.Failed_to_sync_agenda))
             }
@@ -525,14 +523,7 @@ fun AgendaItem(
             Text(
                 text = when (agendaItem) {
                     is AgendaItem.Task -> agendaItem.sortDate.toMMMdHHmmFormat()
-                    is AgendaItem.Event -> {
-                        Log.d(
-                            "DDD - Event",
-                            "AgendaItem: ${agendaItem.sortDate.toMMMdHHmmFormat()} | ${agendaItem.to.toMMMdHHmmFormat()} "
-                        )
-                        "${agendaItem.sortDate.toMMMdHHmmFormat()} - ${agendaItem.to.toMMMdHHmmFormat()}"
-                    }
-
+                    is AgendaItem.Event -> "${agendaItem.sortDate.toMMMdHHmmFormat()} - ${agendaItem.to.toMMMdHHmmFormat()}"
                     is AgendaItem.Reminder -> agendaItem.sortDate.toMMMdHHmmFormat()
                 },
                 style = TextStyle(color = textColor)
