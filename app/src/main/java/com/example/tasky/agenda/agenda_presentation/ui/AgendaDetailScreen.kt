@@ -58,13 +58,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_presentation.components.AddPhotosSection
 import com.example.tasky.agenda.agenda_presentation.components.AgendaItemDescription
 import com.example.tasky.agenda.agenda_presentation.components.AgendaItemMainHeader
 import com.example.tasky.agenda.agenda_presentation.components.AgendaItemTitle
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.SetReminderRow
 import com.example.tasky.agenda.agenda_presentation.components.TimeAndDateRow
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
@@ -102,6 +102,8 @@ internal fun AgendaDetailScreen(
     val dialogState = agendaDetailViewModel.dialogState.collectAsStateWithLifecycle().value
     val errorDialogState =
         agendaDetailViewModel.errorDialogState.collectAsStateWithLifecycle().value
+
+    val networkStatus by agendaDetailViewModel.networkStatus.collectAsStateWithLifecycle()
 
     LaunchedEffect(agendaItemId) {
         if (agendaItemId == null) {

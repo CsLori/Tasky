@@ -13,11 +13,12 @@ import com.example.tasky.R
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.Result.Error
@@ -31,14 +32,18 @@ import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.util.CredentialsValidator
+import com.example.tasky.util.NetworkConnectivityService
+import com.example.tasky.util.NetworkStatus
 import com.example.tasky.util.PhotoCompressor
 import com.example.tasky.util.PhotoConverter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalTime
@@ -51,7 +56,8 @@ class AgendaDetailViewModel @Inject constructor(
     private val localDatabaseRepository: LocalDatabaseRepository,
     private val savedStateHandle: SavedStateHandle,
     private val photoCompressor: PhotoCompressor,
-    private val photoConverter: PhotoConverter
+    private val photoConverter: PhotoConverter,
+    private val networkConnectivityService: NetworkConnectivityService
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaDetailState())
@@ -68,6 +74,12 @@ class AgendaDetailViewModel @Inject constructor(
 
     val agendaOption = savedStateHandle.toRoute<Screen.AgendaDetail>().agendaOption
     private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
+
+    val networkStatus: StateFlow<NetworkStatus> = networkConnectivityService.networkStatus.stateIn(
+        initialValue = NetworkStatus.Unknown,
+        scope = viewModelScope,
+        started = WhileSubscribed(5000)
+    )
 
     init {
         updateState(AgendaDetailStateUpdate.UpdateIsReadOnly(isReadOnly))
@@ -286,7 +298,7 @@ class AgendaDetailViewModel @Inject constructor(
         val newTask = _state.value.task.copy(
             taskTitle = currentState.taskTitle,
             taskDescription = currentState.taskDescription,
-            time = currentState.time,
+            time = currentState.sortDate,
             isDone = currentState.isDone,
             remindAtTime = currentState.remindAtTime
         )
@@ -298,7 +310,7 @@ class AgendaDetailViewModel @Inject constructor(
         val newReminder = _state.value.reminder.copy(
             reminderTitle = currentState.reminderTitle,
             reminderDescription = currentState.reminderDescription,
-            time = currentState.time,
+            time = currentState.sortDate,
             remindAtTime = currentState.remindAtTime
         )
         return newReminder
@@ -340,7 +352,7 @@ class AgendaDetailViewModel @Inject constructor(
             eventId = eventId,
             eventTitle = currentState.eventTitle,
             eventDescription = currentState.eventDescription,
-            from = currentState.from,
+            from = currentState.sortDate,
             to = currentState.to,
             photos = currentState.photos,
             attendees = currentState.attendees + listOfNotNull(loggedInAttendee),
@@ -361,7 +373,7 @@ class AgendaDetailViewModel @Inject constructor(
         val newEvent = _state.value.event.copy(
             eventTitle = currentState.title,
             eventDescription = currentState.description,
-            from = currentState.from,
+            from = currentState.sortDate,
             to = currentState.to,
             photos = (agendaItem.photos + currentState.photos).distinctBy { it.key },
             attendees = (agendaItem.attendees + currentState.attendees).distinctBy { it.userId },
@@ -557,6 +569,17 @@ class AgendaDetailViewModel @Inject constructor(
         val updatedPhotos = _state.value.event.photos.filterNot { it.key == photoKey }
         _state.update { currentState ->
             currentState.copy(event = currentState.event.copy(photos = updatedPhotos))
+        }
+    }
+
+    //Used for caching the deleted agenda item for when the devices is online again
+    fun saveDeletedAgendaItemsWhenUserIsOffline(agendaItemForDeletion: AgendaItemForDeletionEntity) {
+        if (networkStatus.value == NetworkStatus.Disconnected) {
+            viewModelScope.launch {
+                agendaRepository.insertDeletedAgendaItem(agendaItemForDeletion)
+                    .onSuccess {  }
+                    .onError {  }
+            }
         }
     }
 

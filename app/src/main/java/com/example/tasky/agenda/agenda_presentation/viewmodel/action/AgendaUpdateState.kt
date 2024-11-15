@@ -1,7 +1,7 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel.action
 
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import java.time.LocalDate
 
 sealed interface AgendaUpdateState {

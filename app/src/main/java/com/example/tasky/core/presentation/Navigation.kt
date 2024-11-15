@@ -15,7 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.tasky.Screen
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaItemEditScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen

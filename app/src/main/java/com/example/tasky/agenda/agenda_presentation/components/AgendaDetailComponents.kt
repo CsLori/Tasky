@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState

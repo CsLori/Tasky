@@ -2,20 +2,22 @@ package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
-import com.example.tasky.core.domain.onError
-import com.example.tasky.core.domain.onSuccess
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -25,7 +27,6 @@ import javax.inject.Inject
 class AgendaViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
     private val defaultUserRepository: DefaultUserRepository,
-    private val localDatabaseRepository: LocalDatabaseRepository
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaState())
@@ -34,35 +35,33 @@ class AgendaViewModel @Inject constructor(
     private var _uiState = MutableStateFlow<AgendaUiState>(AgendaUiState.None)
     val uiState: StateFlow<AgendaUiState> = _uiState.asStateFlow()
 
-    init {
-        getAgendaItems(state.value.selectedDate)
-    }
+    private var selectedDate = MutableStateFlow(LocalDate.now())
 
     fun getAgendaItems(filterDate: LocalDate) {
-        _state.update { it.copy(isLoading = true) }
-        viewModelScope.launch {
-            agendaRepository.getAllAgendaItems(filterDate)
-                .onSuccess { flowItems ->
-                    flowItems.collect { agendaItems ->
-                        _state.update {
-                            it.copy(
-                                agendaItems = agendaItems ?: emptyList(),
-                                isLoading = false
-                            )
-                        }
-                    }
-                }
-                .onError {
-                    _uiState.update { AgendaUiState.None }
-                }
-            _state.update { it.copy(isLoading = false) }
-        }
+        selectedDate.value = filterDate
     }
+
+    val agendaItems = selectedDate
+        .onEach { _state.update { it.copy(isLoading = true) } }
+        .flatMapLatest { date ->
+            when (val result = agendaRepository.getAllAgendaItems(date)) {
+                is Success -> result.data
+                is Error -> emptyFlow()
+            }.onEach { agendaItems ->
+                _state.update { agendaState ->
+                    agendaState.copy(
+                        agendaItems = agendaItems,
+                        isLoading = false
+                    )
+                }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
 
     fun deleteAgendaItem(agendaItem: AgendaItem) {
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            val existingAgendaItem = state.value.agendaItems.find { it.id == agendaItem.id }
+            val existingAgendaItem =
+                state.value.agendaItems.find { it.id == agendaItem.id }
 
             existingAgendaItem?.let { safeAgendaItem ->
                 when (agendaItem) {
@@ -90,7 +89,6 @@ class AgendaViewModel @Inject constructor(
         _state.update {
             when (action) {
                 is AgendaUpdateState.UpdateSelectedDate -> it.copy(selectedDate = action.newDate)
-//                is AgendaUpdateState.UpdateFilterDate -> it.copy(filterDate = action.newDate)
                 is AgendaUpdateState.UpdateSelectedOption -> it.copy(agendaOption = action.item)
                 is AgendaUpdateState.UpdateVisibility -> it.copy(isVisible = action.visible)
                 is AgendaUpdateState.UpdateIsDateSelectedFromDatePicker -> it.copy(
@@ -98,7 +96,10 @@ class AgendaViewModel @Inject constructor(
                 )
 
                 is AgendaUpdateState.UpdateMonth -> it.copy(month = action.month)
-                is AgendaUpdateState.UpdateShouldShowDatePicker -> it.copy(shouldShowDatePicker = action.shouldShowDatePicker)
+                is AgendaUpdateState.UpdateShouldShowDatePicker -> it.copy(
+                    shouldShowDatePicker = action.shouldShowDatePicker
+                )
+
                 is AgendaUpdateState.UpdateSelectedIndex -> it.copy(
                     selectedIndex = action.selectedIndex,
                     isDateSelectedFromDatePicker = false

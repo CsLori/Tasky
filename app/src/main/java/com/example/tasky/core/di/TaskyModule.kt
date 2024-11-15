@@ -9,6 +9,7 @@ import com.example.tasky.agenda.agenda_data.local.AgendaDatabase
 import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_data.local.dao.EventDao
 import com.example.tasky.agenda.agenda_data.local.dao.ReminderDao
+import com.example.tasky.agenda.agenda_data.local.dao.SyncAgendaItemsDao
 import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
 import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
 import com.example.tasky.agenda.agenda_data.remote.AuthTokenInterceptor
@@ -17,6 +18,7 @@ import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
+import com.example.tasky.util.NetworkConnectivityService
 import com.example.tasky.util.PhotoCompressor
 import com.example.tasky.util.PhotoConverter
 import dagger.Module
@@ -88,8 +90,14 @@ object TaskyModule {
 
     @Provides
     @Singleton
+    fun provideSyncAgendaItemsDao(database: AgendaDatabase): SyncAgendaItemsDao {
+        return database.syncAgendaItemsDao
+    }
+
+    @Provides
+    @Singleton
     fun provideLocalDatabaseRepository(db: AgendaDatabase): AgendaItemsRepository {
-        return LocalDatabaseRepository(db.taskDao, db.eventDao, db.reminderDao)
+        return LocalDatabaseRepository(db.taskDao, db.eventDao, db.reminderDao, db.syncAgendaItemsDao)
     }
 
     @Provides
@@ -128,5 +136,11 @@ object TaskyModule {
     @Singleton
     fun providePhotoConverter(@ApplicationContext context: Context): PhotoConverter {
         return PhotoConverter(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNetworkConnectivityService(@ApplicationContext context: Context) : NetworkConnectivityService {
+        return NetworkConnectivityService(context)
     }
 }

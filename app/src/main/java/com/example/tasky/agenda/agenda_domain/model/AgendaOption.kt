@@ -1,4 +1,4 @@
-package com.example.tasky.agenda.agenda_presentation.components
+package com.example.tasky.agenda.agenda_domain.model
 
 enum class AgendaOption(val displayName: String) {
     EVENT("Event"),

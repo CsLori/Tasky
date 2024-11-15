@@ -31,7 +31,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,10 +47,11 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
-import com.example.tasky.agenda.agenda_presentation.components.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaAction
@@ -84,11 +84,13 @@ internal fun AgendaScreen(
     onFabItemPressed: () -> Unit,
     onOpenPressed: (AgendaItem) -> Unit
 ) {
-    val state = agendaViewModel.state.collectAsState().value
-    val uiState = agendaViewModel.uiState.collectAsState().value
+    val state = agendaViewModel.state.collectAsStateWithLifecycle().value
+    val uiState = agendaViewModel.uiState.collectAsStateWithLifecycle().value
+    val agendaItems = agendaViewModel.agendaItems.collectAsStateWithLifecycle().value // change here
 
     AgendaContent(
         state = state,
+        agendaItems = agendaItems, // change here
         uiState = uiState,
         onEditPressed = { action -> onEditPressed(action) },
         onUpdateState = { action -> agendaViewModel.updateState(action) },
@@ -117,6 +119,7 @@ internal fun AgendaScreen(
 @Composable
 private fun AgendaContent(
     state: AgendaState,
+    agendaItems: List<AgendaItem>, // change here
     uiState: AgendaViewModel.AgendaUiState,
     onEditPressed: (AgendaItem) -> Unit,
     onUpdateState: (AgendaUpdateState) -> Unit,
@@ -287,7 +290,7 @@ private fun AgendaContent(
 
                             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                                 items(
-                                    items = state.agendaItems,
+                                    items = agendaItems, // change here
                                     key = { it.id }) { agendaItem ->
                                     when (agendaItem) {
                                         is AgendaItem.Task -> {
@@ -673,7 +676,49 @@ fun AgendaContentPreview() {
             onEditPressed = {},
             onUpdateState = {},
             onAction = { },
-            uiState = AgendaViewModel.AgendaUiState.None
+            uiState = AgendaViewModel.AgendaUiState.None,
+            agendaItems = listOf(
+                AgendaItem.Task(
+                    taskId = "12345",
+                    taskTitle = "facilisi",
+                    taskDescription = "sapien",
+                    time = 1701,
+                    remindAtTime = 7947,
+                    isDone = true,
+                ),
+                AgendaItem.Task(
+                    taskId = "1234",
+                    taskTitle = "facilisi",
+                    taskDescription = "sapien",
+                    time = 1701,
+                    remindAtTime = 7947,
+                    isDone = false,
+                ),
+                AgendaItem.Event(
+                    eventId = "334",
+                    eventTitle = "imperdiet",
+                    eventDescription = null,
+                    from = 4415,
+                    to = 2349,
+                    photos = listOf(),
+                    attendees = listOf(),
+                    isUserEventCreator = false,
+                    host = null,
+                    remindAtTime = 9459
+                ),
+                AgendaItem.Event(
+                    eventId = "545",
+                    eventTitle = "imperdiet",
+                    eventDescription = null,
+                    from = 4415,
+                    to = 2349,
+                    photos = listOf(),
+                    attendees = listOf(),
+                    isUserEventCreator = false,
+                    host = null,
+                    remindAtTime = 9459
+                )
+            ),
         )
     }
 }

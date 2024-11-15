@@ -3,6 +3,8 @@ package com.example.tasky.onboarding.onboarding.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
+import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
@@ -24,7 +26,9 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val defaultUserRepository: DefaultUserRepository,
-    private val userPrefsRepository: ProtoUserPrefsRepository
+    private val userPrefsRepository: ProtoUserPrefsRepository,
+    private val localDatabaseRepository: LocalDatabaseRepository,
+    private val agendaRepository: AgendaRepository
 ) : ViewModel() {
 
     private var _uiState = MutableStateFlow<LoginUiState>(LoginUiState.None)
@@ -66,6 +70,9 @@ class LoginViewModel @Inject constructor(
                         _uiState.update { LoginUiState.Success }
                         // Update auth related tokens
                         updateTokens(result, email.value)
+
+                        // Get full agenda for local b sync
+//                        agendaRepository.getFullAgenda()
                     }
 
                     is Result.Error -> {

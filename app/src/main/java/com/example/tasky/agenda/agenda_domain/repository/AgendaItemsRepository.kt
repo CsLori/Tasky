@@ -1,9 +1,11 @@
 package com.example.tasky.agenda.agenda_domain.repository
 
+import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
@@ -34,4 +36,9 @@ interface AgendaItemsRepository {
     suspend fun deleteReminder(reminderEntity: ReminderEntity)
 
     fun getAllAgendaItems(selectedDate: LocalDate): Flow<List<AgendaItem>?>
+
+    //Sync agenda functions
+    suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity)
+
+    fun getDeletedItemsByType(type: AgendaOption): Flow<List<AgendaItemForDeletionEntity>>
 }
