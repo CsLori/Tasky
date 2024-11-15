@@ -1,5 +1,6 @@
 package com.example.tasky.core.domain
 
+import android.util.Log
 import retrofit2.HttpException
 import java.io.IOException
 
@@ -14,6 +15,9 @@ fun mapToTaskyError(e: Exception): TaskyError {
             else -> TaskyError.NetworkError.GENERAL_ERROR
         }
         is IOException -> TaskyError.NetworkError.NO_INTERNET
-        else -> TaskyError.NetworkError.SERVER_ERROR
+        else -> {
+            Log.e("TaskyError", "Unexpected error: ${e.message}", e)
+            TaskyError.NetworkError.SERVER_ERROR
+        }
     }
 }

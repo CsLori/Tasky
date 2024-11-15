@@ -1,12 +1,13 @@
 package com.example.tasky.core.data.remote
 
-import com.example.tasky.agenda.agenda_data.remote.dto.AgendaItemsSerialized
 import com.example.tasky.agenda.agenda_data.remote.dto.AgendaResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.ReminderSerialized
 import com.example.tasky.agenda.agenda_data.remote.dto.SyncAgendaRequest
 import com.example.tasky.agenda.agenda_data.remote.dto.TaskSerialized
+import com.example.tasky.core.domain.Result
+import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginRequest
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginUserResponse
 import com.example.tasky.onboarding.onboarding_data.remote.dto.RegisterRequest
@@ -36,10 +37,10 @@ interface TaskyApi {
     suspend fun authenticateUser()
 
     @GET("/agenda")
-    suspend fun getAgenda(@Query("time") time: Long): AgendaResponse
+    suspend fun getAgenda(@Query("time") time: Long): Result<AgendaResponse, TaskyError>
 
     @GET("/fullAgenda")
-    suspend fun getFullAgenda(@Body agendaItems: AgendaItemsSerialized): AgendaResponse
+    suspend fun getFullAgenda(): AgendaResponse
 
     @POST("/syncAgenda")
     suspend fun syncAgenda(@Body syncAgendaBody: SyncAgendaRequest)

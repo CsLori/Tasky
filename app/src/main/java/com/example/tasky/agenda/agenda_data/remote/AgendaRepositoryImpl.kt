@@ -2,10 +2,14 @@ package com.example.tasky.agenda.agenda_data.remote
 
 import com.example.tasky.agenda.agenda_data.createMultipartEventRequest
 import com.example.tasky.agenda.agenda_data.createPhotoPart
+import com.example.tasky.agenda.agenda_data.dto_mappers.toAgendaItems
+import com.example.tasky.agenda.agenda_data.dto_mappers.toEvent
 import com.example.tasky.agenda.agenda_data.dto_mappers.toEventRequest
 import com.example.tasky.agenda.agenda_data.dto_mappers.toEventUpdate
+import com.example.tasky.agenda.agenda_data.dto_mappers.toReminder
 import com.example.tasky.agenda.agenda_data.dto_mappers.toSerializedReminder
 import com.example.tasky.agenda.agenda_data.dto_mappers.toSerializedTask
+import com.example.tasky.agenda.agenda_data.dto_mappers.toTask
 import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.entity_mappers.toEventEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toReminderEntity
@@ -16,7 +20,6 @@ import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.SyncAgendaRequest
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
-import com.example.tasky.agenda.agenda_domain.model.AgendaItems
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.AttendeeMinimal
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
@@ -26,16 +29,26 @@ import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.core.domain.asResult
 import com.example.tasky.core.domain.mapToTaskyError
+import com.example.tasky.core.presentation.DateUtils.toLong
+import com.example.tasky.util.NetworkStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.concurrent.CancellationException
 
 class AgendaRepositoryImpl(
     private val api: TaskyApi,
     private val userPrefsRepository: ProtoUserPrefsRepository,
-    private val localDatabaseRepository: LocalDatabaseRepository
+    private val localDatabaseRepository: LocalDatabaseRepository,
 ) : AgendaRepository {
+
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     override suspend fun addTask(
         task: AgendaItem.Task
     ): Result<Unit, TaskyError> {
@@ -271,6 +284,23 @@ class AgendaRepositoryImpl(
     override suspend fun getAllAgendaItems(selectedDate: LocalDate): Result<Flow<List<AgendaItem>>, TaskyError> {
         return try {
             val localItems = localDatabaseRepository.getAllAgendaItems(selectedDate)
+
+            scope.launch(NonCancellable) {
+                val remoteItems = api.getAgenda(selectedDate.toLong())
+
+                if (remoteItems is Result.Success) {
+                    val taskEntities = remoteItems.data.tasks.map { it.toTask().toTaskEntity() }
+                    localDatabaseRepository.upsertTasks(taskEntities)
+
+                    val eventEntities = remoteItems.data.events.map { it.toEvent().toEventEntity() }
+                    localDatabaseRepository.upsertEvents(eventEntities)
+
+                    val reminderEntities =
+                        remoteItems.data.reminders.map { it.toReminder().toReminderEntity() }
+                    localDatabaseRepository.upsertReminders(reminderEntities)
+                }
+            }
+
             Result.Success(localItems)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
@@ -283,8 +313,26 @@ class AgendaRepositoryImpl(
 
     //This should be called when the user logs in and we want to get
     //the full agenda for local cache
-    override suspend fun getFullAgenda(): Result<AgendaItems, TaskyError> {
-        TODO("Not yet implemented")
+    override suspend fun getFullAgenda(): Result<Unit, TaskyError> {
+        return try {
+            val remoteItems = api.getFullAgenda()
+            val localItems = remoteItems.toAgendaItems()
+            val eventEntities = localItems.events.map { it.toEventEntity() }
+            val taskEntities = localItems.tasks.map { it.toTaskEntity() }
+            val reminderEntities = localItems.reminders.map { it.toReminderEntity() }
+
+            localDatabaseRepository.upsertEvents(eventEntities)
+            localDatabaseRepository.upsertTasks(taskEntities)
+            localDatabaseRepository.upsertReminders(reminderEntities)
+
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+            e.printStackTrace()
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
     }
 
     //This should be called when the device is online again
@@ -311,9 +359,12 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity): Result<Unit, TaskyError> {
+    //Used for caching the deleted agenda item for when the devices is online again
+    override suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity, networkStatus: NetworkStatus): Result<Unit, TaskyError> {
         return try {
-            localDatabaseRepository.insertDeletedAgendaItem(itemForDeletion)
+            if (networkStatus == NetworkStatus.Disconnected) {
+                localDatabaseRepository.insertDeletedAgendaItem(itemForDeletion)
+            }
             Result.Success(Unit)
         } catch (e: Exception) {
             if (e is CancellationException) throw e

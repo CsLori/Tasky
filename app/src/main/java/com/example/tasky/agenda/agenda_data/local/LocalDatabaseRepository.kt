@@ -38,6 +38,10 @@ class LocalDatabaseRepository @Inject constructor(
         return taskDao.upsertTask(taskEntity)
     }
 
+    override suspend fun upsertTasks(taskEntities: List<TaskEntity>) {
+        return taskDao.upsertTasks(taskEntities)
+    }
+
     override suspend fun deleteTask(taskEntity: TaskEntity) {
         return taskDao.deleteTask(taskEntity)
     }
@@ -54,6 +58,10 @@ class LocalDatabaseRepository @Inject constructor(
         return eventDao.upsertEvent(eventEntity)
     }
 
+    override suspend fun upsertEvents(eventEntities: List<EventEntity>) {
+        return eventDao.upsertEvents(eventEntities)
+    }
+
     override suspend fun deleteEvent(eventEntity: EventEntity) {
         return eventDao.deleteEvent(eventEntity)
     }
@@ -68,6 +76,10 @@ class LocalDatabaseRepository @Inject constructor(
 
     override suspend fun upsertReminder(reminderEntity: ReminderEntity) {
         return reminderDao.upsertReminder(reminderEntity)
+    }
+
+    override suspend fun upsertReminders(reminderEntities: List<ReminderEntity>) {
+        return reminderDao.upsertReminders(reminderEntities)
     }
 
     override suspend fun deleteReminder(reminderEntity: ReminderEntity) {

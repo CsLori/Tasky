@@ -17,6 +17,8 @@ interface AgendaItemsRepository {
 
     suspend fun upsertTask(taskEntity: TaskEntity)
 
+    suspend fun upsertTasks(taskEntities: List<TaskEntity>)
+
     suspend fun deleteTask(taskEntity: TaskEntity)
 
     fun getAllEvents(startOfDay: Long, endOfDay: Long): Flow<List<EventEntity>>
@@ -25,6 +27,8 @@ interface AgendaItemsRepository {
 
     suspend fun upsertEvent(eventEntity: EventEntity)
 
+    suspend fun upsertEvents(eventEntities: List<EventEntity>)
+
     suspend fun deleteEvent(eventEntity: EventEntity)
 
     fun getAllReminders(startOfDay: Long, endOfDay: Long): Flow<List<ReminderEntity>>
@@ -32,6 +36,8 @@ interface AgendaItemsRepository {
     suspend fun getReminderById(reminderId: String): ReminderEntity
 
     suspend fun upsertReminder(reminderEntity: ReminderEntity)
+
+    suspend fun upsertReminders(reminderEntities: List<ReminderEntity>)
 
     suspend fun deleteReminder(reminderEntity: ReminderEntity)
 
