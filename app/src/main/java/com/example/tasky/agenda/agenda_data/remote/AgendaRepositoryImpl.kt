@@ -27,13 +27,13 @@ import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.core.domain.asResult
 import com.example.tasky.core.domain.mapToTaskyError
-import com.example.tasky.core.domain.onSuccess
 import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.util.Logger
 import com.example.tasky.util.NetworkStatus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import timber.log.Timber
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.concurrent.CancellationException
@@ -283,19 +283,11 @@ class AgendaRepositoryImpl(
             //This request requires UTC
             val timeStamp = selectedDate.toLong(ZoneOffset.UTC)
             // Something is broken here, i get an infinite loading with this api call
-            try {
-                val remoteItems = api.getAgenda(timeStamp)
-                remoteItems.onSuccess {
-                    Timber.d("Remote items: $it")
-                }
+            val remoteItems = api.getAgenda(timeStamp)
 
-            } catch (e: Exception) {
-                Timber.d("Remote items: ${e.message}")
+            withContext(Dispatchers.IO) {
+                upsertAgendaItems(remoteItems.toAgendaItems())
             }
-//
-//            if (remoteItems is Result.Success) {
-//                upsertAgendaItems(remoteItems.data.toAgendaItems())
-//            }
 
             Result.Success(localItems)
         } catch (e: Exception) {

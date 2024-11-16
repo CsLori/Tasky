@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -69,11 +69,7 @@ class AgendaViewModel @Inject constructor(
 
     val syncResult = networkStatus
         .filter { it == NetworkStatus.Connected }
-        .flatMapLatest {
-            flow {
-                emit(agendaRepository.syncAgenda())
-            }
-        }
+        .mapLatest { agendaRepository.syncAgenda() }
         .onEach { result ->
             when (result) {
                 is Result.Success -> {
@@ -114,37 +110,34 @@ class AgendaViewModel @Inject constructor(
     fun deleteAgendaItem(agendaItem: AgendaItem) {
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            try {
-                val existingAgendaItem =
-                    state.value.agendaItems.find { it.id == agendaItem.id }
+            val existingAgendaItem =
+                state.value.agendaItems.find { it.id == agendaItem.id }
 
-                existingAgendaItem?.let { safeAgendaItem ->
-                    when (agendaItem) {
-                        is AgendaItem.Task -> {
-                            val task = safeAgendaItem as AgendaItem.Task
-                            agendaRepository.deleteTask(task)
-                        }
-
-                        is AgendaItem.Event -> {
-                            val event = safeAgendaItem as AgendaItem.Event
-                            agendaRepository.deleteEvent(event)
-                        }
-
-                        is AgendaItem.Reminder -> {
-                            val reminder = safeAgendaItem as AgendaItem.Reminder
-                            agendaRepository.deleteReminder(reminder)
-                        }
+            existingAgendaItem?.let { safeAgendaItem ->
+                when (agendaItem) {
+                    is AgendaItem.Task -> {
+                        val task = safeAgendaItem as AgendaItem.Task
+                        agendaRepository.deleteTask(task)
                     }
-                } ?: throw IllegalArgumentException("Agenda item not found.")
-            } catch (e: Exception) {
-                _dialogState.update { DialogState.ShowError }
-                _errorDialogState.update {
-                    ErrorDialogState.AgendaItemDeletionError(
-                        UiText.StringResource(
-                            R.string.Could_not_delete_agenda_item
-                        )
-                    )
+
+                    is AgendaItem.Event -> {
+                        val event = safeAgendaItem as AgendaItem.Event
+                        agendaRepository.deleteEvent(event)
+                    }
+
+                    is AgendaItem.Reminder -> {
+                        val reminder = safeAgendaItem as AgendaItem.Reminder
+                        agendaRepository.deleteReminder(reminder)
+                    }
                 }
+            }
+            _dialogState.update { DialogState.ShowError }
+            _errorDialogState.update {
+                ErrorDialogState.AgendaItemDeletionError(
+                    UiText.StringResource(
+                        R.string.Could_not_delete_agenda_item
+                    )
+                )
             }
             _state.update { it.copy(isLoading = false) }
         }

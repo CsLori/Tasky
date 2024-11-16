@@ -6,8 +6,6 @@ import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.ReminderSerialized
 import com.example.tasky.agenda.agenda_data.remote.dto.SyncAgendaRequest
 import com.example.tasky.agenda.agenda_data.remote.dto.TaskSerialized
-import com.example.tasky.core.domain.Result
-import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginRequest
 import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginUserResponse
 import com.example.tasky.onboarding.onboarding_data.remote.dto.RegisterRequest
@@ -37,7 +35,7 @@ interface TaskyApi {
     suspend fun authenticateUser()
 
     @GET("/agenda")
-    suspend fun getAgenda(@Query("time") time: Long): Result<AgendaResponse, TaskyError>
+    suspend fun getAgenda(@Query("time") time: Long): AgendaResponse
 
     @GET("/fullAgenda")
     suspend fun getFullAgenda(): AgendaResponse
