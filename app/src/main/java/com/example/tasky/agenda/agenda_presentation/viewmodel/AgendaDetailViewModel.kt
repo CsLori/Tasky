@@ -114,7 +114,6 @@ class AgendaDetailViewModel @Inject constructor(
                 }
 
                 is AgendaDetailStateUpdate.UpdateEventSecondRowTime -> {
-                    Log.d("DDD - UpdateEventSecondRowTime", "${action.hour} | ${action.minute}")
                     val updateTime = LocalTime.of(action.hour, action.minute).toMillis()
                     it.copy(event = it.event.copy(to = updateTime))
                 }

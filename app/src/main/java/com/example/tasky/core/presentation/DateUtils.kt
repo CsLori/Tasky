@@ -5,6 +5,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -95,7 +96,7 @@ object DateUtils {
             .toLocalDate()
     }
 
-    fun LocalDate.toLong(): Long {
+    fun LocalDate.toLong(timeZone: ZoneId = ZoneId.systemDefault()): Long {
         return this.atStartOfDay(ZoneId.systemDefault())
             .toInstant()
             .toEpochMilli()
