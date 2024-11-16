@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -50,8 +52,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
-import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
+import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaAction
@@ -73,6 +75,8 @@ import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 import java.time.LocalDate
 import java.time.ZoneId
+import com.example.tasky.core.domain.Result
+import com.example.tasky.core.presentation.components.showToast
 
 const val NUMBER_OF_DAYS_TO_SHOW = 5
 
@@ -86,7 +90,20 @@ internal fun AgendaScreen(
 ) {
     val state = agendaViewModel.state.collectAsStateWithLifecycle().value
     val uiState = agendaViewModel.uiState.collectAsStateWithLifecycle().value
-    val agendaItems = agendaViewModel.agendaItems.collectAsStateWithLifecycle().value // change here
+    val agendaItems = agendaViewModel.agendaItems.collectAsStateWithLifecycle().value
+    val syncResult = agendaViewModel.syncResult.collectAsStateWithLifecycle().value
+
+    val context = LocalContext.current
+
+    LaunchedEffect(syncResult) {
+        when (syncResult) {
+            is Result.Success -> {}
+            is Result.Error -> {
+                showToast(context, (R.string.Failed_to_sync_agenda))
+            }
+            else -> { /* Do nothing */ }
+        }
+    }
 
     AgendaContent(
         state = state,
@@ -506,14 +523,7 @@ fun AgendaItem(
             Text(
                 text = when (agendaItem) {
                     is AgendaItem.Task -> agendaItem.sortDate.toMMMdHHmmFormat()
-                    is AgendaItem.Event -> {
-                        Log.d(
-                            "DDD - Event",
-                            "AgendaItem: ${agendaItem.sortDate.toMMMdHHmmFormat()} | ${agendaItem.to.toMMMdHHmmFormat()} "
-                        )
-                        "${agendaItem.sortDate.toMMMdHHmmFormat()} - ${agendaItem.to.toMMMdHHmmFormat()}"
-                    }
-
+                    is AgendaItem.Event -> "${agendaItem.sortDate.toMMMdHHmmFormat()} - ${agendaItem.to.toMMMdHHmmFormat()}"
                     is AgendaItem.Reminder -> agendaItem.sortDate.toMMMdHHmmFormat()
                 },
                 style = TextStyle(color = textColor)

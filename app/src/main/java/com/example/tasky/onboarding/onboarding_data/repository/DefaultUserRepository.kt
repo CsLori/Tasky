@@ -11,6 +11,7 @@ import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginRequest
 import com.example.tasky.onboarding.onboarding_data.remote.dto.RegisterRequest
 import com.example.tasky.onboarding.onboarding_domain.UserRepository
 import com.example.tasky.onboarding.onboarding_domain.model.LoginUser
+import com.example.tasky.util.Logger
 import java.util.concurrent.CancellationException
 
 class DefaultUserRepository(
@@ -32,13 +33,10 @@ class DefaultUserRepository(
             )
             Result.Success(Unit)
         } catch (e: Exception) {
-            if (e is CancellationException) {
-                throw e
-            }
-            e.printStackTrace()
+            if (e is CancellationException) throw e
 
+            Logger.e(e, "An error occurred while trying to register a user: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
-
             Result.Error(error)
         }
     }
@@ -51,13 +49,10 @@ class DefaultUserRepository(
             val result = api.login(LoginRequest(email, password))
             Result.Success(result.toLoginUser().copy(email = email))
         } catch (e: Exception) {
-            if (e is CancellationException) {
-                throw e
-            }
-            e.printStackTrace()
+            if (e is CancellationException) throw e
 
+            Logger.e(e, "An error occurred while trying to login a user: %s", e.message)
             val error= e.asResult(::mapToTaskyError).error
-
             Result.Error(error)
         }
     }
@@ -68,12 +63,10 @@ class DefaultUserRepository(
             api.logout()
             Result.Success(Unit)
         } catch (e: Exception) {
-            if (e is CancellationException) {
-                throw e
-            }
-            e.printStackTrace()
+            if (e is CancellationException) throw e
 
-            val error = e.asResult(::mapToTaskyError).error
+            Logger.e(e, "An error occurred while trying to logout a user: %s", e.message)
+            val error= e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
     }
@@ -83,13 +76,10 @@ class DefaultUserRepository(
             val result = api.authenticateUser()
             Result.Success(result)
         } catch (e: Exception) {
-            if (e is CancellationException) {
-                throw e
-            }
-            e.printStackTrace()
+            if (e is CancellationException) throw e
 
+            Logger.e(e, "An error occurred while trying to authenticate a user: %s", e.message)
             val error= e.asResult(::mapToTaskyError).error
-
             Result.Error(error)
         }
     }

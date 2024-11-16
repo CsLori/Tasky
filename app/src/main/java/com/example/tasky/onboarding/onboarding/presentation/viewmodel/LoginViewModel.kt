@@ -71,8 +71,8 @@ class LoginViewModel @Inject constructor(
                         // Update auth related tokens
                         updateTokens(result, email.value)
 
-                        // Get full agenda for local b sync
-//                        agendaRepository.getFullAgenda()
+                        // Get full agenda for local db sync
+                        agendaRepository.getFullAgenda()
                     }
 
                     is Result.Error -> {

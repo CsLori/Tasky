@@ -29,7 +29,7 @@ fun AttendeeDto.toAttendee(): Attendee {
     return Attendee(
         userId = userId,
         email = email,
-        name = name,
+        name = fullName,
         eventId = eventId,
         isGoing = true,
         remindAt = remindAt,
@@ -45,7 +45,7 @@ fun Attendee.toAttendeeDto(): AttendeeDto {
     return AttendeeDto(
         userId = userId,
         email = email,
-        name = name,
+        fullName = name,
         eventId = eventId,
         isGoing = true,
         remindAt = remindAt,

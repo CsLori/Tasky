@@ -114,7 +114,6 @@ class AgendaDetailViewModel @Inject constructor(
                 }
 
                 is AgendaDetailStateUpdate.UpdateEventSecondRowTime -> {
-                    Log.d("DDD - UpdateEventSecondRowTime", "${action.hour} | ${action.minute}")
                     val updateTime = LocalTime.of(action.hour, action.minute).toMillis()
                     it.copy(event = it.event.copy(to = updateTime))
                 }
@@ -153,6 +152,7 @@ class AgendaDetailViewModel @Inject constructor(
                                 reminderDescription = action.description
                             )
                         )
+
                         else -> it
                     }
 
@@ -270,7 +270,7 @@ class AgendaDetailViewModel @Inject constructor(
                 }
 
                 is Error -> {
-                    val message = if ( result.error == TaskyError.NetworkError.IMAGE_TOO_LARGE) {
+                    val message = if (result.error == TaskyError.NetworkError.IMAGE_TOO_LARGE) {
                         UiText.StringResource(
                             R.string.Image_too_large
                         )
@@ -396,6 +396,19 @@ class AgendaDetailViewModel @Inject constructor(
 //                    _uiState.update { AgendaDetailUiState.Error(R.string.Agenda_item_was_successfully_deleted) }
 
             }.onError {
+                val type = when (agendaItem) {
+                    is AgendaItem.Task -> AgendaOption.TASK
+                    is AgendaItem.Event -> AgendaOption.EVENT
+                    is AgendaItem.Reminder -> AgendaOption.REMINDER
+                }
+
+                agendaRepository.insertDeletedAgendaItem(
+                    itemForDeletion = AgendaItemForDeletionEntity(
+                        id = agendaItem.id,
+                        type = type
+                    ), networkStatus = networkStatus.value
+                )
+
                 _dialogState.update { DialogState.ShowError }
                 _errorDialogState.update {
                     ErrorDialogState.AgendaItemError(
@@ -569,17 +582,6 @@ class AgendaDetailViewModel @Inject constructor(
         val updatedPhotos = _state.value.event.photos.filterNot { it.key == photoKey }
         _state.update { currentState ->
             currentState.copy(event = currentState.event.copy(photos = updatedPhotos))
-        }
-    }
-
-    //Used for caching the deleted agenda item for when the devices is online again
-    fun saveDeletedAgendaItemsWhenUserIsOffline(agendaItemForDeletion: AgendaItemForDeletionEntity) {
-        if (networkStatus.value == NetworkStatus.Disconnected) {
-            viewModelScope.launch {
-                agendaRepository.insertDeletedAgendaItem(agendaItemForDeletion)
-                    .onSuccess {  }
-                    .onError {  }
-            }
         }
     }
 

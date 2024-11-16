@@ -21,6 +21,9 @@ interface ReminderDao {
     @Upsert
     suspend fun upsertReminder(reminder: ReminderEntity)
 
+    @Upsert
+    suspend fun upsertReminders(reminder: List<ReminderEntity>)
+
     @Delete
     suspend fun deleteReminder(reminder: ReminderEntity)
 }

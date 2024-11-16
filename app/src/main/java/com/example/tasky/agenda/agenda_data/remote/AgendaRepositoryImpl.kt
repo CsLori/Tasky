@@ -2,6 +2,7 @@ package com.example.tasky.agenda.agenda_data.remote
 
 import com.example.tasky.agenda.agenda_data.createMultipartEventRequest
 import com.example.tasky.agenda.agenda_data.createPhotoPart
+import com.example.tasky.agenda.agenda_data.dto_mappers.toAgendaItems
 import com.example.tasky.agenda.agenda_data.dto_mappers.toEventRequest
 import com.example.tasky.agenda.agenda_data.dto_mappers.toEventUpdate
 import com.example.tasky.agenda.agenda_data.dto_mappers.toSerializedReminder
@@ -26,16 +27,23 @@ import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.core.domain.asResult
 import com.example.tasky.core.domain.mapToTaskyError
+import com.example.tasky.core.presentation.DateUtils.toLong
+import com.example.tasky.util.Logger
+import com.example.tasky.util.NetworkStatus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.concurrent.CancellationException
 
 class AgendaRepositoryImpl(
     private val api: TaskyApi,
     private val userPrefsRepository: ProtoUserPrefsRepository,
-    private val localDatabaseRepository: LocalDatabaseRepository
+    private val localDatabaseRepository: LocalDatabaseRepository,
 ) : AgendaRepository {
+
     override suspend fun addTask(
         task: AgendaItem.Task
     ): Result<Unit, TaskyError> {
@@ -47,7 +55,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to create a task: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -61,7 +69,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to fetch a task: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -77,7 +85,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to update a task: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -92,7 +100,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to delete a task: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -113,7 +121,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to create an event: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -127,7 +135,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to fetch an event: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -148,7 +156,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to update an event: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -162,7 +170,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to delete an event: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -176,7 +184,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to create a reminder: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -190,7 +198,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to fetch a reminder: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -205,7 +213,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to update a reminder: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -219,7 +227,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to delete a reminder: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -232,7 +240,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to fetch attendee: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -245,7 +253,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to delete attendee: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -262,7 +270,7 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to fetch user details: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -271,11 +279,25 @@ class AgendaRepositoryImpl(
     override suspend fun getAllAgendaItems(selectedDate: LocalDate): Result<Flow<List<AgendaItem>>, TaskyError> {
         return try {
             val localItems = localDatabaseRepository.getAllAgendaItems(selectedDate)
+
+            //This request requires UTC
+            val timeStamp = selectedDate.toLong(ZoneOffset.UTC)
+            // Something is broken here, i get an infinite loading with this api call
+            val remoteItems = api.getAgenda(timeStamp)
+
+            withContext(Dispatchers.IO) {
+                upsertAgendaItems(remoteItems.toAgendaItems())
+            }
+
             Result.Success(localItems)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(
+                e,
+                "An error occurred while trying to fetch agenda items for agenda screen: %s",
+                e.message
+            )
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
@@ -283,8 +305,23 @@ class AgendaRepositoryImpl(
 
     //This should be called when the user logs in and we want to get
     //the full agenda for local cache
-    override suspend fun getFullAgenda(): Result<AgendaItems, TaskyError> {
-        TODO("Not yet implemented")
+    override suspend fun getFullAgenda(): Result<Unit, TaskyError> {
+        return try {
+            val remoteItems = api.getFullAgenda()
+            upsertAgendaItems(remoteItems.toAgendaItems())
+
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+
+            Logger.e(
+                e,
+                "An error occurred while trying to get full agenda for syncing local db: %s",
+                e.message
+            )
+            val error = e.asResult(::mapToTaskyError).error
+            Result.Error(error)
+        }
     }
 
     //This should be called when the device is online again
@@ -305,22 +342,42 @@ class AgendaRepositoryImpl(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(e, "An error occurred while trying to send sync agenda items: %s", e.message)
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
     }
 
-    override suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity): Result<Unit, TaskyError> {
+    //Used for caching the deleted agenda item for when the devices is online again
+    override suspend fun insertDeletedAgendaItem(
+        itemForDeletion: AgendaItemForDeletionEntity,
+        networkStatus: NetworkStatus
+    ): Result<Unit, TaskyError> {
         return try {
-            localDatabaseRepository.insertDeletedAgendaItem(itemForDeletion)
+            if (networkStatus == NetworkStatus.Disconnected) {
+                localDatabaseRepository.insertDeletedAgendaItem(itemForDeletion)
+            }
             Result.Success(Unit)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
-            e.printStackTrace()
+            Logger.e(
+                e,
+                "An error occurred while trying to insert deleted agenda items: %s",
+                e.message
+            )
             val error = e.asResult(::mapToTaskyError).error
             Result.Error(error)
         }
+    }
+
+    private suspend fun upsertAgendaItems(localItems: AgendaItems) {
+        val eventEntities = localItems.events.map { it.toEventEntity() }
+        val taskEntities = localItems.tasks.map { it.toTaskEntity() }
+        val reminderEntities = localItems.reminders.map { it.toReminderEntity() }
+
+        localDatabaseRepository.upsertEvents(eventEntities)
+        localDatabaseRepository.upsertTasks(taskEntities)
+        localDatabaseRepository.upsertReminders(reminderEntities)
     }
 }

@@ -29,6 +29,7 @@ dataStore = "1.1.1"
 protobuf = "0.9.4"
 roomCompiler = "2.6.1"
 ksp = "2.0.20-1.0.24"
+timber = "5.0.1"
 
 [libraries]
 androidx-activity-compose-v160alpha03 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -73,6 +74,7 @@ protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 datastore = { module = "androidx.datastore:datastore", version.ref = "dataStore" }
 datastore-core = { module = "androidx.datastore:datastore-core", version.ref = "dataStore" }
+timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
