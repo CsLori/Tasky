@@ -62,5 +62,6 @@
     <string name="Image_too_large">Image was skipped due to being too large</string>
     <string name="Could_not_sync_agenda_items">Could not sync agenda items</string>
     <string name="Agenda_successfully_synced">Agenda successfully synced!</string>
-    <string name="Failed_to_sync_agenda">Failed to sync agenda.</string>>
+    <string name="Failed_to_sync_agenda">Failed to sync agenda.</string>
+    <string name="Item_not_found">Agenda item not found</string>>
 </resources>

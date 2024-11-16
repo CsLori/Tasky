@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
-import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel.ErrorDialogState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.domain.Result
@@ -116,30 +115,64 @@ class AgendaViewModel @Inject constructor(
             existingAgendaItem?.let { safeAgendaItem ->
                 when (agendaItem) {
                     is AgendaItem.Task -> {
-                        val task = safeAgendaItem as AgendaItem.Task
-                        agendaRepository.deleteTask(task)
+                        val task = safeAgendaItem as? AgendaItem.Task
+                        if (task != null) {
+                            agendaRepository.deleteTask(task)
+
+                        } else {
+                            handleItemMismatch()
+                            return@launch
+                        }
+
                     }
 
                     is AgendaItem.Event -> {
-                        val event = safeAgendaItem as AgendaItem.Event
-                        agendaRepository.deleteEvent(event)
+                        val event = safeAgendaItem as? AgendaItem.Event
+                        if (event != null) {
+                            agendaRepository.deleteEvent(event)
+
+                        } else {
+                            handleItemMismatch()
+                            return@launch
+                        }
                     }
 
                     is AgendaItem.Reminder -> {
-                        val reminder = safeAgendaItem as AgendaItem.Reminder
-                        agendaRepository.deleteReminder(reminder)
+                        val reminder = safeAgendaItem as? AgendaItem.Reminder
+                        if (reminder != null) {
+                            agendaRepository.deleteReminder(reminder)
+
+                        } else {
+                            handleItemMismatch()
+                            return@launch
+                        }
                     }
                 }
             }
-            _dialogState.update { DialogState.ShowError }
-            _errorDialogState.update {
-                ErrorDialogState.AgendaItemDeletionError(
-                    UiText.StringResource(
-                        R.string.Could_not_delete_agenda_item
-                    )
-                )
-            }
+            handleAgendaItemNotFound()
             _state.update { it.copy(isLoading = false) }
+        }
+    }
+
+    private fun handleAgendaItemNotFound() {
+        _dialogState.update { DialogState.ShowError }
+        _errorDialogState.update {
+            ErrorDialogState.AgendaItemDeletionError(
+                UiText.StringResource(
+                    R.string.Item_not_found
+                )
+            )
+        }
+    }
+
+    private fun handleItemMismatch() {
+        _dialogState.update { DialogState.ShowError }
+        _errorDialogState.update {
+            ErrorDialogState.ItemNotFound(
+                UiText.StringResource(
+                    R.string.Could_not_delete_agenda_item
+                )
+            )
         }
     }
 
@@ -169,8 +202,8 @@ class AgendaViewModel @Inject constructor(
     }
 
     fun logout() {
+        _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
             when (defaultUserRepository.logout()) {
                 is Success -> _uiState.update { AgendaUiState.Success }
                 is Error -> _uiState.update { AgendaUiState.None }
@@ -185,6 +218,7 @@ class AgendaViewModel @Inject constructor(
 
     sealed class ErrorDialogState {
         data object None : ErrorDialogState()
+        data class ItemNotFound(val uiText: UiText) : ErrorDialogState()
         data class AgendaItemDeletionError(val uiText: UiText) : ErrorDialogState()
     }
 

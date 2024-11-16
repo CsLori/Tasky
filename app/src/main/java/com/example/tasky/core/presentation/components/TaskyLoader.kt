@@ -10,9 +10,9 @@ import androidx.compose.ui.Modifier
 @Composable
 fun TaskyLoader() {
     Box(
-    modifier = Modifier
-    .fillMaxSize(),
-    contentAlignment = Alignment.Center
+        modifier = Modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
         CircularProgressIndicator()
     }
