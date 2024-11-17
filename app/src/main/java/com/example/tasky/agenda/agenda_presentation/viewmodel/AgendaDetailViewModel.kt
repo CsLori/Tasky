@@ -456,7 +456,7 @@ class AgendaDetailViewModel @Inject constructor(
         viewModelScope.launch {
             agendaRepository.deleteAttendee(attendee.eventId)
                 .onSuccess {
-
+                    state.value.selectedAgendaItem?.let { safeAgendaItem -> deleteAgendaItem(safeAgendaItem) }
                 }
                 .onError {
                     _dialogState.update { DialogState.ShowError }

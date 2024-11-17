@@ -183,6 +183,7 @@ internal fun AgendaDetailScreen(
 
                 is AgendaDetailAction.OnDeleteAttendee -> {
                     agendaDetailViewModel.deleteAttendee(action.attendee)
+                    onNavigateToAgendaScreen()
                 }
             }
         },
