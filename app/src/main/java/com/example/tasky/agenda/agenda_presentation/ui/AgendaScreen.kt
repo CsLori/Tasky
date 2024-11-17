@@ -130,9 +130,6 @@ internal fun AgendaScreen(
                 }
 
                 is AgendaAction.OnFilterAgendaItems -> agendaViewModel.getAgendaItems(action.filterDate.toLocalDate())
-//                is AgendaAction.OnCompletePressed -> agendaViewModel.updateState(
-//                    AgendaUpdateState.UpdateIsDone(action.isDone)
-//                )
             }
         },
         onComplete = {
@@ -354,10 +351,10 @@ private fun AgendaContent(
                                                     onUpdateState(
                                                         AgendaUpdateState.UpdateIsDone(
                                                             !agendaItem.isDone
+
                                                         )
                                                     )
                                                 },
-                                                isDone = agendaItem.isDone
                                             )
                                         }
 
@@ -444,7 +441,6 @@ fun AgendaItem(
     onEditPressed: () -> Unit,
     onOpenPressed: () -> Unit,
     onComplete: () -> Unit,
-    isDone: Boolean = false
 ) {
 
     Column(
@@ -466,7 +462,7 @@ fun AgendaItem(
             ) {
                 Icon(
                     imageVector = when (agendaItem) {
-                        is AgendaItem.Task -> if (isDone) Icons.Outlined.CheckCircle else Icons.Outlined.Circle
+                        is AgendaItem.Task -> if (agendaItem.isDone) Icons.Outlined.CheckCircle else Icons.Outlined.Circle
                         else -> Icons.Outlined.Circle
                     },
                     contentDescription = "Icon checked",
@@ -488,7 +484,7 @@ fun AgendaItem(
                             fontSize = 20.sp,
                             color = textColor,
                         ), textDecoration = when (agendaItem) {
-                            is AgendaItem.Task -> if (isDone) TextDecoration.LineThrough else TextDecoration.None
+                            is AgendaItem.Task -> if (agendaItem.isDone) TextDecoration.LineThrough else TextDecoration.None
                             else -> TextDecoration.None
                         }
                     )

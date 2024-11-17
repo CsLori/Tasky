@@ -111,13 +111,13 @@ fun AgendaItemTitle(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = dimensions.default16dp)
-            .then(if (state.isReadOnly) {
-                Modifier
-            } else {
+            .then(if (!state.isReadOnly && state.event.isUserEventCreator) {
                 Modifier.clickable {
                     onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.TITLE))
                     onAction(AgendaDetailAction.OnEditRowPressed)
                 }
+            } else {
+                Modifier
             }),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
@@ -140,7 +140,7 @@ fun AgendaItemTitle(
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
-        if (!state.isReadOnly) {
+        if (!state.isReadOnly && state.event.isUserEventCreator) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"
@@ -162,13 +162,13 @@ fun AgendaItemDescription(
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
             .then(
-                if (state.isReadOnly) {
-                    Modifier
-                } else {
+                if (!state.isReadOnly && state.event.isUserEventCreator) {
                     Modifier.clickable {
                         onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.DESCRIPTION))
                         onAction(AgendaDetailAction.OnEditRowPressed)
                     }
+                } else {
+                    Modifier
                 }
             ),
         verticalAlignment = Alignment.CenterVertically,
@@ -183,7 +183,7 @@ fun AgendaItemDescription(
             },
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
-        if (!state.isReadOnly) {
+        if (!state.isReadOnly && state.event.isUserEventCreator) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"
@@ -215,9 +215,7 @@ fun TimeAndDateRow(
                 .width(120.dp)
                 .weight(1f)
                 .then(
-                    if (state.isReadOnly) {
-                        Modifier
-                    } else {
+                    if (!state.isReadOnly && state.event.isUserEventCreator) {
                         Modifier.clickable {
                             if (isSecondRow) {
                                 onUpdateState(
@@ -233,6 +231,8 @@ fun TimeAndDateRow(
                                 )
                             }
                         }
+                    } else {
+                        Modifier
                     }
                 ),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -265,7 +265,7 @@ fun TimeAndDateRow(
                     )
                 )
 
-                if (!state.isReadOnly) {
+                if (!state.isReadOnly && state.event.isUserEventCreator) {
                     Icon(
                         modifier = Modifier.padding(end = dimensions.default16dp),
                         imageVector = Icons.AutoMirrored.Filled.NavigateNext,
@@ -374,9 +374,7 @@ fun TimeAndDateRow(
             modifier = Modifier
                 .weight(1f)
                 .then(
-                    if (state.isReadOnly) {
-                        Modifier
-                    } else {
+                    if (!state.isReadOnly && state.event.isUserEventCreator) {
                         Modifier.clickable {
                             if (isSecondRow) {
                                 onUpdateState(
@@ -392,6 +390,8 @@ fun TimeAndDateRow(
                                 )
                             }
                         }
+                    } else {
+                        Modifier
                     }
                 ),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -403,7 +403,7 @@ fun TimeAndDateRow(
                 text = if (isSecondRow) state.secondRowDate else state.date.localDateToStringMMMdyyyyFormat(), //Lori this looks ok!
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
-            if (!state.isReadOnly) {
+            if (!state.isReadOnly && state.event.isUserEventCreator) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                     contentDescription = "Navigate next"
@@ -490,6 +490,7 @@ fun AddPhotosSection(
     selectedImageUri: Uri?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
+    isEventCreator: Boolean
 ) {
 
     val context = LocalContext.current
@@ -554,26 +555,28 @@ fun AddPhotosSection(
                     }
                 }
             } else {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp))
-                            .clickable {
-                                if (photos.size < MAX_NUMBER_OF_PHOTOS) {
-                                    onAddPhotos()
-                                } else {
-                                    showToast(context, R.string.max_number_of_photos)
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Add photos",
-                            tint = colors.lightBlue
-                        )
+                if (isEventCreator) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp))
+                                .clickable {
+                                    if (photos.size < MAX_NUMBER_OF_PHOTOS) {
+                                        onAddPhotos()
+                                    } else {
+                                        showToast(context, R.string.max_number_of_photos)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Add photos",
+                                tint = colors.lightBlue
+                            )
+                        }
                     }
                 }
             }
@@ -694,7 +697,8 @@ fun AddPhotosSectionEditablePreview() {
                 Photo("dfdff", "https://picsum.photos/200"),
                 Photo("fdfdffeferf", "https://picsum.photos/200")
             ),
-            onAction = {}
+            onAction = {},
+            isEventCreator = false
         )
     }
 }
@@ -709,7 +713,8 @@ fun AddPhotosSectionReadOnlyPreview() {
             isReadOnly = true,
             onUpdateState = {},
             photos = emptyList(),
-            onAction = {}
+            onAction = {},
+            isEventCreator = false
         )
     }
 }

@@ -351,7 +351,6 @@ fun MainContent(
                 text = stringResource(R.string.from),
                 onUpdateState = onUpdateState,
                 state = state,
-
                 )
 
             DefaultHorizontalDivider()
@@ -383,7 +382,8 @@ fun MainContent(
                 selectedImageUri = selectedImageUri,
                 onUpdateState = onUpdateState,
                 photos = state.event.photos,
-                onAction = onAction
+                onAction = onAction,
+                isEventCreator = state.event.isUserEventCreator
             )
         }
     }
@@ -409,7 +409,8 @@ fun MainContent(
                 onUpdateState = onUpdateState,
                 onAction = onAction,
                 visitorFilter = state.visitorFilter,
-                isReadOnly = state.isReadOnly
+                isReadOnly = state.isReadOnly,
+                isEventCreator = state.event.isUserEventCreator
             )
         }
         Box(
@@ -440,7 +441,7 @@ fun MainContent(
                     text = when (agendaItem) {
                         is AgendaItem.Task -> stringResource(R.string.Delete_task)
                         is AgendaItem.Reminder -> stringResource(R.string.Delete_reminder)
-                        is AgendaItem.Event -> stringResource(R.string.Delete_event)
+                        is AgendaItem.Event -> if (agendaItem.isUserEventCreator) stringResource(R.string.Delete_event) else stringResource(R.string.Leave_event)
                         null -> stringResource(R.string.Delete_event)
                     },
                     style = typography.bodyLarge.copy(fontWeight = FontWeight.W600),
@@ -465,6 +466,7 @@ private fun VisitorsSection(
     onAction: (AgendaDetailAction) -> Unit,
     visitorFilter: VisitorFilter,
     isReadOnly: Boolean,
+    isEventCreator: Boolean
 ) {
 
     Column(modifier = Modifier.padding(top = dimensions.large32dp)) {
@@ -475,7 +477,7 @@ private fun VisitorsSection(
                 fontSize = 20.sp
             )
 
-            if (!isReadOnly) {
+            if (!isReadOnly && isEventCreator) {
                 Spacer(modifier = Modifier.width(dimensions.small8dp))
                 Box(
                     modifier = Modifier
@@ -563,6 +565,7 @@ private fun VisitorsSection(
 
             visitors.forEach { visitor ->
                 VisitorItem(
+                    isEventCreator = isEventCreator,
                     visitor = visitor,
                     onDeleteAttendee = { onAction(AgendaDetailAction.OnDeleteAttendee(it)) }
                 )
@@ -586,6 +589,7 @@ private fun VisitorsSection(
 
             emptyList<Attendee>().forEach { visitor ->
                 VisitorItem(
+                    isEventCreator = isEventCreator,
                     visitor = visitor,
                     onDeleteAttendee = { onAction(AgendaDetailAction.OnDeleteAttendee(visitor)) }
                 )
@@ -611,6 +615,7 @@ private fun VisitorsSection(
 
 @Composable
 private fun VisitorItem(
+    isEventCreator: Boolean,
     visitor: Attendee,
     onDeleteAttendee: (Attendee) -> Unit
 ) {
@@ -653,7 +658,7 @@ private fun VisitorItem(
 
                 Text(text = visitor.name, style = typography.bodySmall.copy(color = colors.black))
             }
-            if (visitor.isCreator) {
+            if (isEventCreator) {
                 Text(
                     text = stringResource(R.string.creator),
                     style = typography.bodyMedium.copy(
