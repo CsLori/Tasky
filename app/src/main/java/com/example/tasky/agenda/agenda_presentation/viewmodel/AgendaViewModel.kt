@@ -197,6 +197,19 @@ class AgendaViewModel @Inject constructor(
                 )
 
                 is AgendaUpdateState.UpdateSelectedItem -> it.copy(selectedItem = action.agendaItem)
+                is AgendaUpdateState.UpdateIsDone -> {
+                    if (it.selectedItem is AgendaItem.Task) {
+                        val updatedTask = (it.selectedItem as AgendaItem.Task).copy(isDone = action.isDone)
+                        it.copy(
+                            selectedItem = updatedTask,
+                            agendaItems = it.agendaItems.map { item ->
+                                if (item.id == updatedTask.id) updatedTask else item
+                            }
+                        )
+                    } else {
+                        it
+                    }
+                }
             }
         }
     }

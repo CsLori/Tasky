@@ -43,9 +43,9 @@ class LoginViewModel @Inject constructor(
     private val _sessionState = MutableStateFlow<SessionState?>(null)
     val sessionState: StateFlow<SessionState?> = _sessionState.asStateFlow()
 
-    init {
-        login(FieldInput("lori123@boohoo.com"),FieldInput("Orlando123") )
-    }
+//    init {
+//        login(FieldInput("lori123@boohoo.com"),FieldInput("Orlando123") )
+//    }
 
     fun login(email: FieldInput, password: FieldInput) {
         val emailErrorStatus = CredentialsValidator.validateEmail(email.value)

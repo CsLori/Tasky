@@ -3,7 +3,6 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -32,6 +31,7 @@ import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.util.CredentialsValidator
+import com.example.tasky.util.Logger
 import com.example.tasky.util.NetworkConnectivityService
 import com.example.tasky.util.NetworkStatus
 import com.example.tasky.util.PhotoCompressor
@@ -213,13 +213,19 @@ class AgendaDetailViewModel @Inject constructor(
 
         viewModelScope.launch {
             val result = when (agendaItem) {
-                is AgendaItem.Task -> agendaRepository.addTask(agendaItem)
+                is AgendaItem.Task -> {
+                    val newTask = createTask()
+                    agendaRepository.addTask(newTask)
+                }
                 is AgendaItem.Event -> {
                     val (photos, newAgendaItem) = createNewEvent()
                     agendaRepository.addEvent(newAgendaItem, photos)
                 }
 
-                is AgendaItem.Reminder -> agendaRepository.addReminder(agendaItem)
+                is AgendaItem.Reminder -> {
+                    val newReminder = createReminder()
+                    agendaRepository.addReminder(newReminder)
+                }
             }
 
             when (result) {
@@ -293,6 +299,29 @@ class AgendaDetailViewModel @Inject constructor(
         }
     }
 
+    private fun createTask(): AgendaItem.Task {
+        val currentState = state.value.task
+        return AgendaItem.Task(
+            taskId = currentState.taskId,
+            taskTitle = currentState.taskTitle,
+            taskDescription = currentState.taskDescription,
+            time = currentState.sortDate,
+            isDone = currentState.isDone,
+            remindAtTime = currentState.remindAtTime
+        )
+    }
+
+    private fun createReminder(): AgendaItem.Reminder {
+        val currentState = state.value.reminder
+        return AgendaItem.Reminder(
+            reminderId = currentState.reminderId,
+            reminderTitle = currentState.reminderTitle,
+            reminderDescription = currentState.reminderDescription,
+            time = currentState.sortDate,
+            remindAtTime = currentState.remindAtTime
+        )
+    }
+
     private fun prepareUpdatedTask(agendaItem: AgendaItem.Task): AgendaItem.Task {
         val currentState = state.value.task
         val newTask = _state.value.task.copy(
@@ -340,7 +369,7 @@ class AgendaDetailViewModel @Inject constructor(
             }
 
             is Error -> {
-                Log.d(
+                Logger.d(
                     "LoadingUserError",
                     "Error fetching user details: ${loggedInUserResult.error}"
                 )

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -109,6 +110,7 @@ private fun AgendaItemEditContent(
                     )
                 },
                 textValue = state.title,
+                maxLines = 2
             )
 
         } else {
@@ -119,6 +121,7 @@ private fun AgendaItemEditContent(
                     )
                 },
                 textValue = state.description,
+                maxLines = 2
             )
         }
 
@@ -195,19 +198,21 @@ fun Textarea(
     ),
     textStyle: TextStyle = typography.title.copy(
         fontWeight = FontWeight.W400,
-        fontSize = 26.sp,
-        lineHeight = 12.sp
+        fontSize = 18.sp,
+        lineHeight = 28.sp
     ),
     onUpdate: (String) -> Unit,
     textValue: String,
+    maxLines: Int
 ) {
     TextField(
         value = textValue,
         onValueChange = { newValue -> onUpdate(newValue) },
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .heightIn(100.dp, 200.dp),
         colors = colors,
-        maxLines = 3,
+        maxLines = maxLines,
         textStyle = textStyle,
     )
 }
@@ -219,7 +224,7 @@ fun Textarea(
 fun AgendaItemEditPreview() {
     AppTheme {
         AgendaItemEditContent(
-            state = AgendaItemEditState("Title", "Edit this title"),
+            state = AgendaItemEditState("Titlevcvcvcvcvcvvcvcvcvcvcvcvcvcvcvcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", "Edit this title"),
             editType = EditType.TITLE,
             onAction = {},
             onUpdate = {}

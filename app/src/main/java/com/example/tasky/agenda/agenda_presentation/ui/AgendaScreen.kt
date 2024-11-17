@@ -1,6 +1,5 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -59,6 +59,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
+import com.example.tasky.core.domain.Result
 import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.getDaysWithDates
 import com.example.tasky.core.presentation.DateUtils.localDateToStringddMMMMyyyyFormat
@@ -69,14 +70,13 @@ import com.example.tasky.core.presentation.components.AgendaDetailDropdown
 import com.example.tasky.core.presentation.components.AgendaDropdown
 import com.example.tasky.core.presentation.components.LogoutDropdown
 import com.example.tasky.core.presentation.components.TaskyLoader
+import com.example.tasky.core.presentation.components.showToast
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 import java.time.LocalDate
 import java.time.ZoneId
-import com.example.tasky.core.domain.Result
-import com.example.tasky.core.presentation.components.showToast
 
 const val NUMBER_OF_DAYS_TO_SHOW = 5
 
@@ -101,7 +101,9 @@ internal fun AgendaScreen(
             is Result.Error -> {
                 showToast(context, (R.string.Failed_to_sync_agenda))
             }
-            else -> { /* Do nothing */ }
+
+            else -> { /* Do nothing */
+            }
         }
     }
 
@@ -128,8 +130,14 @@ internal fun AgendaScreen(
                 }
 
                 is AgendaAction.OnFilterAgendaItems -> agendaViewModel.getAgendaItems(action.filterDate.toLocalDate())
+//                is AgendaAction.OnCompletePressed -> agendaViewModel.updateState(
+//                    AgendaUpdateState.UpdateIsDone(action.isDone)
+//                )
             }
         },
+        onComplete = {
+            agendaViewModel.updateState(AgendaUpdateState.UpdateIsDone(it))
+        }
     )
 }
 
@@ -140,7 +148,8 @@ private fun AgendaContent(
     uiState: AgendaViewModel.AgendaUiState,
     onEditPressed: (AgendaItem) -> Unit,
     onUpdateState: (AgendaUpdateState) -> Unit,
-    onAction: (AgendaAction) -> Unit
+    onAction: (AgendaAction) -> Unit,
+    onComplete: (Boolean) -> Unit
 ) {
     if (state.isLoading) {
         TaskyLoader()
@@ -307,7 +316,7 @@ private fun AgendaContent(
 
                             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                                 items(
-                                    items = agendaItems, // change here
+                                    items = agendaItems,
                                     key = { it.id }) { agendaItem ->
                                     when (agendaItem) {
                                         is AgendaItem.Task -> {
@@ -341,6 +350,14 @@ private fun AgendaContent(
                                                         )
                                                     )
                                                 },
+                                                onComplete = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateIsDone(
+                                                            !agendaItem.isDone
+                                                        )
+                                                    )
+                                                },
+                                                isDone = agendaItem.isDone
                                             )
                                         }
 
@@ -371,6 +388,7 @@ private fun AgendaContent(
                                                     )
                                                     onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
+                                                onComplete = {}
                                             )
                                         }
 
@@ -401,6 +419,7 @@ private fun AgendaContent(
                                                     )
                                                     onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
+                                                onComplete = {}
                                             )
                                         }
                                     }
@@ -424,7 +443,10 @@ fun AgendaItem(
     onDelete: (String) -> Unit,
     onEditPressed: () -> Unit,
     onOpenPressed: () -> Unit,
+    onComplete: () -> Unit,
+    isDone: Boolean = false
 ) {
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -441,32 +463,52 @@ fun AgendaItem(
             Row(
                 modifier = Modifier
                     .padding(dimensions.default16dp),
-                verticalAlignment = Alignment.CenterVertically
-
             ) {
                 Icon(
                     imageVector = when (agendaItem) {
-                        is AgendaItem.Task -> if (agendaItem.isDone) Icons.Outlined.CheckCircle else Icons.Outlined.Circle
+                        is AgendaItem.Task -> if (isDone) Icons.Outlined.CheckCircle else Icons.Outlined.Circle
                         else -> Icons.Outlined.Circle
                     },
                     contentDescription = "Icon checked",
-                    tint = textColor
+                    tint = textColor,
+                    modifier = Modifier.clickable {
+                        onComplete()
+                    }
                 )
 
                 Spacer(Modifier.width(dimensions.small8dp))
 
-                Text(
-                    text = agendaItem.title,
-                    style = typography.title.copy(
-                        lineHeight = 16.sp,
-                        fontSize = 20.sp,
-                        color = textColor
-                    ), textDecoration = when (agendaItem) {
-                        is AgendaItem.Task -> if (agendaItem.isDone) TextDecoration.LineThrough else TextDecoration.None
-                        else -> TextDecoration.None
-                    }
-                )
+                Column {
+                    Text(
+                        text = agendaItem.title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = typography.title.copy(
+                            lineHeight = 16.sp,
+                            fontSize = 20.sp,
+                            color = textColor,
+                        ), textDecoration = when (agendaItem) {
+                            is AgendaItem.Task -> if (isDone) TextDecoration.LineThrough else TextDecoration.None
+                            else -> TextDecoration.None
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(dimensions.default16dp))
+
+                    Text(
+                        text = when (agendaItem) {
+                            is AgendaItem.Task -> agendaItem.taskDescription ?: ""
+                            is AgendaItem.Event -> agendaItem.eventDescription ?: ""
+                            is AgendaItem.Reminder -> agendaItem.reminderDescription ?: ""
+                        },
+                        style = TextStyle(color = textColor),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
+
+            Spacer(modifier = Modifier.width(dimensions.default16dp))
 
             Box {
                 Icon(
@@ -505,15 +547,7 @@ fun AgendaItem(
                 }
             }
         }
-        Text(
-            text = when (agendaItem) {
-                is AgendaItem.Task -> agendaItem.taskDescription ?: ""
-                is AgendaItem.Event -> agendaItem.eventDescription ?: ""
-                is AgendaItem.Reminder -> agendaItem.reminderDescription ?: ""
-            },
-            style = TextStyle(color = textColor),
-            modifier = Modifier.padding(start = 44.dp)
-        )
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -643,7 +677,7 @@ fun AgendaContentPreview() {
                 agendaItems = listOf(
                     AgendaItem.Task(
                         taskId = "12345",
-                        taskTitle = "facilisi",
+                        taskTitle = "Titlevcvcvcvcvcvvcvcvcvcvcvcvcvcvcvcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
                         taskDescription = "sapien",
                         time = 1701,
                         remindAtTime = 7947,
@@ -729,6 +763,7 @@ fun AgendaContentPreview() {
                     remindAtTime = 9459
                 )
             ),
+            onComplete = {}
         )
     }
 }
