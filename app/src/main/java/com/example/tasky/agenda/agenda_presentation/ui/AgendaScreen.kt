@@ -92,24 +92,27 @@ internal fun AgendaScreen(
     val uiState = agendaViewModel.uiState.collectAsStateWithLifecycle().value
     val agendaItems = agendaViewModel.agendaItems.collectAsStateWithLifecycle().value
     val syncResult = agendaViewModel.syncResult.collectAsStateWithLifecycle().value
+    val numberOfSyncItems = agendaViewModel.numberOfSyncItems.collectAsStateWithLifecycle().value
 
     val context = LocalContext.current
 
     LaunchedEffect(syncResult) {
-        when (syncResult) {
-            is Result.Success -> {}
-            is Result.Error -> {
-                showToast(context, (R.string.Failed_to_sync_agenda))
-            }
+        if (numberOfSyncItems > 0) {
+            when (syncResult) {
+                is Result.Success -> {}
+                is Result.Error -> {
+                    //                showToast(context, (R.string.Failed_to_sync_agenda))
+                }
 
-            else -> { /* Do nothing */
+                else -> { /* Do nothing */
+                }
             }
         }
     }
 
     AgendaContent(
         state = state,
-        agendaItems = agendaItems, // change here
+        agendaItems = agendaItems,
         uiState = uiState,
         onEditPressed = { action -> onEditPressed(action) },
         onUpdateState = { action -> agendaViewModel.updateState(action) },
@@ -141,7 +144,7 @@ internal fun AgendaScreen(
 @Composable
 private fun AgendaContent(
     state: AgendaState,
-    agendaItems: List<AgendaItem>, // change here
+    agendaItems: List<AgendaItem>,
     uiState: AgendaViewModel.AgendaUiState,
     onEditPressed: (AgendaItem) -> Unit,
     onUpdateState: (AgendaUpdateState) -> Unit,
@@ -305,8 +308,10 @@ private fun AgendaContent(
                                     onAction(AgendaAction.OnFilterAgendaItems(date))
                                 })
 
+                            val rowSelectedDate =
+                                state.selectedDate.plusDays(state.selectedIndex.toLong())
                             Text(
-                                if (state.selectedDate == LocalDate.now()) stringResource(R.string.Today) else state.selectedDate.localDateToStringddMMMMyyyyFormat(),
+                                if (rowSelectedDate == LocalDate.now()) stringResource(R.string.Today) else rowSelectedDate.localDateToStringddMMMMyyyyFormat(),
                                 style = typography.calendarTitle,
                                 modifier = Modifier.padding(vertical = dimensions.default16dp)
                             )
@@ -570,7 +575,7 @@ fun CalendarDays(
     isDateSelectedFromDatePicker: Boolean,
     onSelectedIndexChanged: (Int, Long) -> Unit,
 ) {
-    val days = getDaysWithDates(date, NUMBER_OF_DAYS_TO_SHOW)
+    val days = remember(date) { getDaysWithDates(date, NUMBER_OF_DAYS_TO_SHOW) }
 
     Row(
         modifier = Modifier
@@ -587,8 +592,8 @@ fun CalendarDays(
                     dayNumber = dayNumber.toString(),
                     isSelected = isSelected,
                     onClick = {
-                        val selectedDate = date.plusDays(index.toLong())
-                        onSelectedIndexChanged(index, selectedDate.toLong())
+                        val clickedDate = date.plusDays(index.toLong())
+                        onSelectedIndexChanged(index, clickedDate.toLong())
                     }
                 )
             }

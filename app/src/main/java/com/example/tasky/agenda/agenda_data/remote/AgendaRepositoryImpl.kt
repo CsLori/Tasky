@@ -338,7 +338,8 @@ class AgendaRepositoryImpl(
                 .map { it.id }
 
             val result = api.syncAgenda(SyncAgendaRequest(eventIds, taskIds, reminderIds))
-            Result.Success(result)
+            localDatabaseRepository.deleteAllSyncedAgendaItems()
+            Result.Success(Unit)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 

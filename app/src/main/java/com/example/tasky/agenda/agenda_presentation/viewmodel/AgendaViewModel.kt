@@ -3,7 +3,10 @@ package com.example.tasky.agenda.agenda_presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
+import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
@@ -25,6 +28,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -38,6 +42,7 @@ import javax.inject.Inject
 class AgendaViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
     private val defaultUserRepository: DefaultUserRepository,
+    private val localDatabaseRepository: LocalDatabaseRepository,
     private val networkConnectivityService: NetworkConnectivityService
 ) : ViewModel() {
 
@@ -90,6 +95,13 @@ class AgendaViewModel @Inject constructor(
             Result.Success(NetworkStatus.Unknown)
         )
 
+    val numberOfSyncItems: StateFlow<Int> =
+        localDatabaseRepository.getDeletedItemsForSync().map { it.size }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000L),
+            0
+        )
+
     val agendaItems = selectedDate
         .onEach { _state.update { it.copy(isLoading = true) } }
         .flatMapLatest { date ->
@@ -120,6 +132,7 @@ class AgendaViewModel @Inject constructor(
                             agendaRepository.deleteTask(task)
 
                         } else {
+                            insertAgendaItemWhenDeviceIsOffline(agendaItem)
                             handleItemMismatch()
                             return@launch
                         }
@@ -132,6 +145,7 @@ class AgendaViewModel @Inject constructor(
                             agendaRepository.deleteEvent(event)
 
                         } else {
+                            insertAgendaItemWhenDeviceIsOffline(agendaItem)
                             handleItemMismatch()
                             return@launch
                         }
@@ -143,6 +157,7 @@ class AgendaViewModel @Inject constructor(
                             agendaRepository.deleteReminder(reminder)
 
                         } else {
+                            insertAgendaItemWhenDeviceIsOffline(agendaItem)
                             handleItemMismatch()
                             return@launch
                         }
@@ -153,6 +168,22 @@ class AgendaViewModel @Inject constructor(
             _state.update { it.copy(isLoading = false) }
         }
     }
+
+    private suspend fun insertAgendaItemWhenDeviceIsOffline(agendaItem: AgendaItem) {
+        val type = when (agendaItem) {
+            is AgendaItem.Task -> AgendaOption.TASK
+            is AgendaItem.Event -> AgendaOption.EVENT
+            is AgendaItem.Reminder -> AgendaOption.REMINDER
+        }
+
+        agendaRepository.insertDeletedAgendaItem(
+            itemForDeletion = AgendaItemForDeletionEntity(
+                id = agendaItem.id,
+                type = type
+            ), networkStatus = networkStatus.value
+        )
+    }
+
 
     private fun handleAgendaItemNotFound() {
         _dialogState.update { DialogState.ShowError }
@@ -199,7 +230,8 @@ class AgendaViewModel @Inject constructor(
                 is AgendaUpdateState.UpdateSelectedItem -> it.copy(selectedItem = action.agendaItem)
                 is AgendaUpdateState.UpdateIsDone -> {
                     if (it.selectedItem is AgendaItem.Task) {
-                        val updatedTask = (it.selectedItem as AgendaItem.Task).copy(isDone = action.isDone)
+                        val updatedTask =
+                            (it.selectedItem as AgendaItem.Task).copy(isDone = action.isDone)
                         it.copy(selectedItem = updatedTask)
                     } else {
                         it

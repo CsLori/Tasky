@@ -110,4 +110,12 @@ class LocalDatabaseRepository @Inject constructor(
     override fun getDeletedItemsByType(type: AgendaOption): Flow<List<AgendaItemForDeletionEntity>> {
         return syncAgendaItemsDao.getDeletedItemsByType(type)
     }
+
+    override suspend fun deleteAllSyncedAgendaItems() {
+        return syncAgendaItemsDao.clearAllDeletedItems()
+    }
+
+    override fun getDeletedItemsForSync(): Flow<List<AgendaItemForDeletionEntity>> {
+        return syncAgendaItemsDao.getAllDeletedItems()
+    }
 }

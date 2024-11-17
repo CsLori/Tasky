@@ -47,4 +47,8 @@ interface AgendaItemsRepository {
     suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity)
 
     fun getDeletedItemsByType(type: AgendaOption): Flow<List<AgendaItemForDeletionEntity>>
+
+    suspend fun deleteAllSyncedAgendaItems()
+
+    fun getDeletedItemsForSync(): Flow<List<AgendaItemForDeletionEntity>>
 }

@@ -139,15 +139,13 @@ internal fun AgendaDetailScreen(
                     val time = LocalTime.of(state.fromAtTime.hour, state.fromAtTime.minute)
                     val dateTime = LocalDateTime.of(state.date, time)
                     val timestamp = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    //Lori this one looks good now
                     agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdateSortDate(timestamp))
 
                     val secondRowTime = LocalTime.of(state.toTime.hour, state.toTime.minute)
-                    val secondRowDateTime = LocalDateTime.of(state.date, time)
-                    val secondRowTimestamp = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    val secondRowDateTime = LocalDateTime.of(state.date, secondRowTime)
+                    val secondRowTimestamp = secondRowDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-                    agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdateSecondRowToDate(timestamp))
-                    //Lori
+                    agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdateSecondRowToDate(secondRowTimestamp))
                     if (agendaItemId == null) {
                         state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {

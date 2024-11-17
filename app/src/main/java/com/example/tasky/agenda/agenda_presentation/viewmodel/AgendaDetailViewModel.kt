@@ -456,6 +456,8 @@ class AgendaDetailViewModel @Inject constructor(
         viewModelScope.launch {
             agendaRepository.deleteAttendee(attendee.eventId)
                 .onSuccess {
+                    //If the visitor can successfully him/herself from the visitor's list,
+                    //delete the event for the visitor
                     state.value.selectedAgendaItem?.let { safeAgendaItem -> deleteAgendaItem(safeAgendaItem) }
                 }
                 .onError {
