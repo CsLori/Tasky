@@ -70,11 +70,11 @@ import com.example.tasky.core.presentation.components.AgendaDetailDropdown
 import com.example.tasky.core.presentation.components.AgendaDropdown
 import com.example.tasky.core.presentation.components.LogoutDropdown
 import com.example.tasky.core.presentation.components.TaskyLoader
-import com.example.tasky.core.presentation.components.showToast
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
+import timber.log.Timber
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -88,11 +88,12 @@ internal fun AgendaScreen(
     onFabItemPressed: () -> Unit,
     onOpenPressed: (AgendaItem) -> Unit
 ) {
-    val state = agendaViewModel.state.collectAsStateWithLifecycle().value
-    val uiState = agendaViewModel.uiState.collectAsStateWithLifecycle().value
-    val agendaItems = agendaViewModel.agendaItems.collectAsStateWithLifecycle().value
-    val syncResult = agendaViewModel.syncResult.collectAsStateWithLifecycle().value
-    val numberOfSyncItems = agendaViewModel.numberOfSyncItems.collectAsStateWithLifecycle().value
+    val state by agendaViewModel.state.collectAsStateWithLifecycle()
+    val uiState by agendaViewModel.uiState.collectAsStateWithLifecycle()
+    val agendaItems by agendaViewModel.agendaItems.collectAsStateWithLifecycle()
+    val syncResult by agendaViewModel.syncResult.collectAsStateWithLifecycle()
+    val numberOfSyncItems by agendaViewModel.numberOfSyncItems.collectAsStateWithLifecycle()
+    val userInitials = agendaViewModel.userInitials
 
     val context = LocalContext.current
 
@@ -113,6 +114,7 @@ internal fun AgendaScreen(
     AgendaContent(
         state = state,
         agendaItems = agendaItems,
+        userInitials = userInitials,
         uiState = uiState,
         onEditPressed = { action -> onEditPressed(action) },
         onUpdateState = { action -> agendaViewModel.updateState(action) },
@@ -145,15 +147,13 @@ internal fun AgendaScreen(
 private fun AgendaContent(
     state: AgendaState,
     agendaItems: List<AgendaItem>,
+    userInitials: String,
     uiState: AgendaViewModel.AgendaUiState,
     onEditPressed: (AgendaItem) -> Unit,
     onUpdateState: (AgendaUpdateState) -> Unit,
     onAction: (AgendaAction) -> Unit,
     onComplete: (Boolean) -> Unit
 ) {
-    if (state.isLoading) {
-        TaskyLoader()
-    }
     when (uiState) {
         AgendaViewModel.AgendaUiState.None -> {
             Scaffold(floatingActionButton = {
@@ -270,6 +270,7 @@ private fun AgendaContent(
                                 )
                             }
                             UserInitialsButton(
+                                userInitials = userInitials,
                                 state = state,
                                 onUpdateState = onUpdateState,
                                 onAction = onAction
@@ -316,113 +317,118 @@ private fun AgendaContent(
                             modifier = Modifier.padding(vertical = dimensions.default16dp)
                         )
 
-                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                            items(
-                                items = agendaItems,
-                                key = { it.id }) { agendaItem ->
-                                when (agendaItem) {
-                                    is AgendaItem.Task -> {
-                                        AgendaItem(
-                                            agendaItem = agendaItem,
-                                            backgroundColor = colors.green,
-                                            onDelete = {
-                                                onAction(
-                                                    AgendaAction.OnDeleteAgendaItem(
-                                                        agendaItem
-                                                    )
-                                                )
-                                            },
-                                            onEditPressed = {
-                                                onUpdateState(
-                                                    AgendaUpdateState.UpdateSelectedOption(
-                                                        AgendaOption.TASK
-                                                    )
-                                                )
-                                                onEditPressed(agendaItem)
-                                            },
-                                            onOpenPressed = {
-                                                onUpdateState(
-                                                    AgendaUpdateState.UpdateSelectedOption(
-                                                        AgendaOption.TASK
-                                                    )
-                                                )
-                                                onAction(
-                                                    AgendaAction.OnOpenPressed(
-                                                        agendaItem
-                                                    )
-                                                )
-                                            },
-                                            onComplete = {
-                                                onUpdateState(
-                                                    AgendaUpdateState.UpdateIsDone(
-                                                        !agendaItem.isDone
+                        if (state.isLoading) {
+                            TaskyLoader()
+                        } else {
 
+                            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                                items(
+                                    items = agendaItems,
+                                    key = { it.id }) { agendaItem ->
+                                    when (agendaItem) {
+                                        is AgendaItem.Task -> {
+                                            AgendaItem(
+                                                agendaItem = agendaItem,
+                                                backgroundColor = colors.green,
+                                                onDelete = {
+                                                    onAction(
+                                                        AgendaAction.OnDeleteAgendaItem(
+                                                            agendaItem
+                                                        )
                                                     )
-                                                )
-                                            },
-                                        )
-                                    }
+                                                },
+                                                onEditPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.TASK
+                                                        )
+                                                    )
+                                                    onEditPressed(agendaItem)
+                                                },
+                                                onOpenPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.TASK
+                                                        )
+                                                    )
+                                                    onAction(
+                                                        AgendaAction.OnOpenPressed(
+                                                            agendaItem
+                                                        )
+                                                    )
+                                                },
+                                                onComplete = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateIsDone(
+                                                            !agendaItem.isDone
 
-                                    is AgendaItem.Event -> {
-                                        AgendaItem(
-                                            agendaItem = agendaItem,
-                                            backgroundColor = colors.lightGreen,
-                                            onDelete = { agendaItemId ->
-                                                onAction(
-                                                    AgendaAction.OnDeleteAgendaItem(
-                                                        agendaItem
+                                                        )
                                                     )
-                                                )
-                                            },
-                                            onEditPressed = {
-                                                onUpdateState(
-                                                    AgendaUpdateState.UpdateSelectedOption(
-                                                        AgendaOption.EVENT
-                                                    )
-                                                )
-                                                onEditPressed(agendaItem)
-                                            },
-                                            onOpenPressed = {
-                                                onUpdateState(
-                                                    AgendaUpdateState.UpdateSelectedOption(
-                                                        AgendaOption.EVENT
-                                                    )
-                                                )
-                                                onAction(AgendaAction.OnOpenPressed(agendaItem))
-                                            },
-                                            onComplete = {}
-                                        )
-                                    }
+                                                },
+                                            )
+                                        }
 
-                                    is AgendaItem.Reminder -> {
-                                        AgendaItem(
-                                            agendaItem = agendaItem,
-                                            backgroundColor = colors.light2,
-                                            onDelete = {
-                                                onAction(
-                                                    AgendaAction.OnDeleteAgendaItem(
-                                                        agendaItem
+                                        is AgendaItem.Event -> {
+                                            AgendaItem(
+                                                agendaItem = agendaItem,
+                                                backgroundColor = colors.lightGreen,
+                                                onDelete = { agendaItemId ->
+                                                    onAction(
+                                                        AgendaAction.OnDeleteAgendaItem(
+                                                            agendaItem
+                                                        )
                                                     )
-                                                )
-                                            },
-                                            onEditPressed = {
-                                                onUpdateState(
-                                                    AgendaUpdateState.UpdateSelectedOption(
-                                                        AgendaOption.REMINDER
+                                                },
+                                                onEditPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.EVENT
+                                                        )
                                                     )
-                                                )
-                                                onEditPressed(agendaItem)
-                                            },
-                                            onOpenPressed = {
-                                                onUpdateState(
-                                                    AgendaUpdateState.UpdateSelectedOption(
-                                                        AgendaOption.REMINDER
+                                                    onEditPressed(agendaItem)
+                                                },
+                                                onOpenPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.EVENT
+                                                        )
                                                     )
-                                                )
-                                                onAction(AgendaAction.OnOpenPressed(agendaItem))
-                                            },
-                                            onComplete = {}
-                                        )
+                                                    onAction(AgendaAction.OnOpenPressed(agendaItem))
+                                                },
+                                                onComplete = {}
+                                            )
+                                        }
+
+                                        is AgendaItem.Reminder -> {
+                                            AgendaItem(
+                                                agendaItem = agendaItem,
+                                                backgroundColor = colors.light2,
+                                                onDelete = {
+                                                    onAction(
+                                                        AgendaAction.OnDeleteAgendaItem(
+                                                            agendaItem
+                                                        )
+                                                    )
+                                                },
+                                                onEditPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.REMINDER
+                                                        )
+                                                    )
+                                                    onEditPressed(agendaItem)
+                                                },
+                                                onOpenPressed = {
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateSelectedOption(
+                                                            AgendaOption.REMINDER
+                                                        )
+                                                    )
+                                                    onAction(AgendaAction.OnOpenPressed(agendaItem))
+                                                },
+                                                onComplete = {}
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -631,6 +637,7 @@ private fun CalendarComponent(
 
 @Composable
 fun UserInitialsButton(
+    userInitials: String,
     state: AgendaState,
     onUpdateState: (AgendaUpdateState) -> Unit,
     onAction: (AgendaAction) -> Unit
@@ -649,7 +656,7 @@ fun UserInitialsButton(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "LC",
+                text = userInitials,
                 color = colors.lightBlue,
                 style = typography.userButton
             )
@@ -763,7 +770,8 @@ fun AgendaContentPreview() {
                     remindAtTime = 9459
                 )
             ),
-            onComplete = {}
+            onComplete = {},
+            userInitials = "Lorant Csuhai"
         )
     }
 }

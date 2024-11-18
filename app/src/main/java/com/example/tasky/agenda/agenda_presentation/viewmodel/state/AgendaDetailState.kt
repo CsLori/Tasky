@@ -76,6 +76,7 @@ data class AgendaDetailState(
     val addVisitorEmail: FieldInput? = null,
     val emailErrorStatus: ErrorStatus? = null,
     val visitorFilter: VisitorFilter = VisitorFilter.ALL,
+    val hasDeviceBeenOffline: Boolean = false
 )
 
 enum class RemindBeforeDuration(val duration: Duration) {

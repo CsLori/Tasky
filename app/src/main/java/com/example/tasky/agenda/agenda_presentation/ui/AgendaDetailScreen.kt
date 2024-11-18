@@ -204,7 +204,7 @@ internal fun AgendaDetailScreen(
         onDialogDismiss = { agendaDetailViewModel.hideAddVisitorDialog() },
         onErrorDialogDismiss = { agendaDetailViewModel.hideErrorDialog() },
         dialogState = dialogState,
-        errorDialogState = errorDialogState
+        errorDialogState = errorDialogState,
     )
 }
 
@@ -222,7 +222,7 @@ private fun AgendaDetailContent(
     onDialogDismiss: () -> Unit,
     dialogState: DialogState,
     errorDialogState: AgendaDetailViewModel.ErrorDialogState,
-    onErrorDialogDismiss: () -> Unit
+    onErrorDialogDismiss: () -> Unit,
 ) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val getContent =
@@ -281,7 +281,7 @@ private fun AgendaDetailContent(
                     onClosePressed = { onAction(AgendaDetailAction.OnClosePressed) },
                     onEnableEditPressed = { onAction(AgendaDetailAction.OnEnableEditPressed) },
                     agendaItemId = agendaItemId,
-                    isReadOnly = state.isReadOnly
+                    isReadOnly = state.isReadOnly,
                 )
             }
 
@@ -482,7 +482,7 @@ private fun VisitorsSection(
                 fontSize = 20.sp
             )
 
-            if (!isReadOnly && isEventCreator) {
+            if (!isReadOnly) {
                 Spacer(modifier = Modifier.width(dimensions.small8dp))
                 Box(
                     modifier = Modifier
@@ -797,17 +797,13 @@ fun AgendaDetailEditablePreview() {
             onAction = {},
             onUpdateState = {},
             agendaItemId = "12345",
-            agendaItem = AgendaItem.Event(
-                eventId = "12345",
-                eventTitle = "ridens",
-                eventDescription = null,
-                from = 1221,
-                to = 4855,
-                photos = listOf(),
-                attendees = listOf(),
-                isUserEventCreator = false,
-                host = null,
-                remindAtTime = 4626,
+            agendaItem = AgendaItem.Task(
+                taskId = "regione",
+                taskTitle = "vero",
+                taskDescription = null,
+                time = 5082,
+                isDone = false,
+                remindAtTime = 1844
             ),
             onUpdatePhotos = {},
             onShowDialog = {},

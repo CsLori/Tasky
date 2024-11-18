@@ -143,9 +143,10 @@ class AgendaRepositoryImpl(
 
     override suspend fun updateEvent(
         event: AgendaItem.Event,
-        photos: List<ByteArray>
+        photos: List<ByteArray>,
+        photosToDelete: List<String>
     ): Result<EventResponse, TaskyError> {
-        val eventPart = createMultipartEventRequest(event.toEventUpdate())
+        val eventPart = createMultipartEventRequest(event.toEventUpdate(photosToDelete))
         val photosPart = photos.mapIndexed { index, photo -> createPhotoPart(photo, index) }
 
         return try {
@@ -353,12 +354,14 @@ class AgendaRepositoryImpl(
     override suspend fun insertDeletedAgendaItem(
         itemForDeletion: AgendaItemForDeletionEntity,
         networkStatus: NetworkStatus
-    ): Result<Unit, TaskyError> {
+    ): Result<Boolean, TaskyError> {
         return try {
             if (networkStatus == NetworkStatus.Disconnected) {
                 localDatabaseRepository.insertDeletedAgendaItem(itemForDeletion)
+                // Mark it with true as the device was offline and there is a deleted item
+                Result.Success(true)
             }
-            Result.Success(Unit)
+            Result.Success(false)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 

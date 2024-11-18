@@ -15,7 +15,7 @@ import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 
 @Database(
     entities = [TaskEntity::class, ReminderEntity::class, EventEntity::class, AgendaItemForDeletionEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
