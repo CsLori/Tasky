@@ -111,7 +111,7 @@ fun AgendaItemTitle(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = dimensions.default16dp)
-            .then(if (!state.isReadOnly && state.event.isUserEventCreator) {
+            .then(if (!state.isReadOnly && (state.event.isUserEventCreator || agendaItem !is AgendaItem.Event)) {
                 Modifier.clickable {
                     onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.TITLE))
                     onAction(AgendaDetailAction.OnEditRowPressed)
@@ -140,7 +140,7 @@ fun AgendaItemTitle(
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
-        if (!state.isReadOnly && state.event.isUserEventCreator) {
+        if (!state.isReadOnly && (state.event.isUserEventCreator || agendaItem !is AgendaItem.Event)) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"
@@ -162,7 +162,7 @@ fun AgendaItemDescription(
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
             .then(
-                if (!state.isReadOnly && state.event.isUserEventCreator) {
+                if (!state.isReadOnly && (state.event.isUserEventCreator || agendaItem !is AgendaItem.Event)) {
                     Modifier.clickable {
                         onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.DESCRIPTION))
                         onAction(AgendaDetailAction.OnEditRowPressed)
@@ -183,7 +183,7 @@ fun AgendaItemDescription(
             },
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
-        if (!state.isReadOnly && state.event.isUserEventCreator) {
+        if (!state.isReadOnly && (state.event.isUserEventCreator || agendaItem !is AgendaItem.Event)) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"
@@ -215,7 +215,7 @@ fun TimeAndDateRow(
                 .width(120.dp)
                 .weight(1f)
                 .then(
-                    if (!state.isReadOnly && state.event.isUserEventCreator) {
+                    if (!state.isReadOnly && (state.event.isUserEventCreator || agendaItem !is AgendaItem.Event)) {
                         Modifier.clickable {
                             if (isSecondRow) {
                                 onUpdateState(
@@ -265,7 +265,7 @@ fun TimeAndDateRow(
                     )
                 )
 
-                if (!state.isReadOnly && state.event.isUserEventCreator) {
+                if (!state.isReadOnly && (state.event.isUserEventCreator || agendaItem !is AgendaItem.Event)) {
                     Icon(
                         modifier = Modifier.padding(end = dimensions.default16dp),
                         imageVector = Icons.AutoMirrored.Filled.NavigateNext,
@@ -374,7 +374,7 @@ fun TimeAndDateRow(
             modifier = Modifier
                 .weight(1f)
                 .then(
-                    if (!state.isReadOnly && state.event.isUserEventCreator) {
+                    if (!state.isReadOnly && (state.event.isUserEventCreator && agendaItem is AgendaItem.Event)) {
                         Modifier.clickable {
                             if (isSecondRow) {
                                 onUpdateState(
@@ -403,7 +403,7 @@ fun TimeAndDateRow(
                 text = if (isSecondRow) state.secondRowDate else state.date.localDateToStringMMMdyyyyFormat(), //Lori this looks ok!
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
-            if (!state.isReadOnly && state.event.isUserEventCreator) {
+            if (!state.isReadOnly && (state.event.isUserEventCreator || agendaItem !is AgendaItem.Event)) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                     contentDescription = "Navigate next"
