@@ -14,6 +14,7 @@ import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
+import com.example.tasky.core.domain.onSuccess
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
@@ -85,12 +86,13 @@ class AgendaViewModel @Inject constructor(
     }
 
     val syncResult = networkStatus
-        .filter { it == NetworkStatus.Connected }
+        .filter { it == NetworkStatus.Connected && state.value.hasDeviceBeenOffline}
         .mapLatest { agendaRepository.syncAgenda() }
         .onEach { result ->
             when (result) {
                 is Result.Success -> {
                     _uiState.update { AgendaUiState.None }
+                    _state.update { it.copy(hasDeviceBeenOffline = false) }
                 }
 
                 is Result.Error -> {
@@ -192,7 +194,9 @@ class AgendaViewModel @Inject constructor(
                 id = agendaItem.id,
                 type = type
             ), networkStatus = networkStatus.value
-        )
+        ).onSuccess { hasBeenOffline ->
+            _state.value = state.value.copy(hasDeviceBeenOffline = hasBeenOffline)
+        }
     }
 
 

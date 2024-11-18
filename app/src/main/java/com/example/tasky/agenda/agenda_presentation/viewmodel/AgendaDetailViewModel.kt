@@ -75,6 +75,8 @@ class AgendaDetailViewModel @Inject constructor(
     val agendaOption = savedStateHandle.toRoute<Screen.AgendaDetail>().agendaOption
     private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
 
+    private var deletedPhotos: MutableList<String> = mutableListOf()
+
     val networkStatus: StateFlow<NetworkStatus> = networkConnectivityService.networkStatus.stateIn(
         initialValue = NetworkStatus.Unknown,
         scope = viewModelScope,
@@ -261,7 +263,7 @@ class AgendaDetailViewModel @Inject constructor(
 
                 is AgendaItem.Event -> {
                     val (photos, newEvent) = prepareUpdatedEvent(agendaItem)
-                    agendaRepository.updateEvent(newEvent, photos)
+                    agendaRepository.updateEvent(newEvent, photos, deletedPhotos.toList())
                 }
 
                 is AgendaItem.Reminder -> {
@@ -436,7 +438,9 @@ class AgendaDetailViewModel @Inject constructor(
                         id = agendaItem.id,
                         type = type
                     ), networkStatus = networkStatus.value
-                )
+                ).onSuccess { hasBeenOffline ->
+                    _state.value = state.value.copy(hasDeviceBeenOffline = hasBeenOffline)
+                }
 
                 _dialogState.update { DialogState.ShowError }
                 _errorDialogState.update {
@@ -611,6 +615,8 @@ class AgendaDetailViewModel @Inject constructor(
 
     fun deletePhoto(photoKey: String) {
         val updatedPhotos = _state.value.event.photos.filterNot { it.key == photoKey }
+        val deletedPhoto = _state.value.event.photos.find { it.key == photoKey }
+        deletedPhotos.add(deletedPhoto?.key ?: "")
         _state.update { currentState ->
             currentState.copy(event = currentState.event.copy(photos = updatedPhotos))
         }

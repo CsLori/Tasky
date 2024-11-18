@@ -482,7 +482,7 @@ private fun VisitorsSection(
                 fontSize = 20.sp
             )
 
-            if (!isReadOnly && isEventCreator) {
+            if (!isReadOnly) {
                 Spacer(modifier = Modifier.width(dimensions.small8dp))
                 Box(
                     modifier = Modifier

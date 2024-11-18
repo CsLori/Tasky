@@ -24,7 +24,7 @@ interface AgendaRepository {
 
     suspend fun getEventById(eventId: String): Result<AgendaItem.Event, TaskyError>
 
-    suspend fun updateEvent(event: AgendaItem.Event, photos: List<ByteArray>): Result<EventResponse, TaskyError>
+    suspend fun updateEvent(event: AgendaItem.Event, photos: List<ByteArray>, photosToDelete: List<String>): Result<EventResponse, TaskyError>
 
     suspend fun deleteEvent(event: AgendaItem.Event): Result<Unit, TaskyError>
 
@@ -50,5 +50,5 @@ interface AgendaRepository {
 
     suspend fun syncAgenda(): Result<Unit, TaskyError>
 
-    suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity, networkStatus: NetworkStatus): Result<Unit, TaskyError>
+    suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity, networkStatus: NetworkStatus): Result<Boolean, TaskyError>
 }
