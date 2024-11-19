@@ -3,18 +3,15 @@ package com.example.tasky.agenda.agenda_presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
-import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
-import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
+import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
-import com.example.tasky.core.domain.onSuccess
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
@@ -32,7 +29,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -80,7 +76,6 @@ class AgendaViewModel @Inject constructor(
         }
     }
 
-
     fun getAgendaItems(filterDate: LocalDate) {
         selectedDate.value = filterDate
     }
@@ -108,13 +103,6 @@ class AgendaViewModel @Inject constructor(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000L),
             Result.Success(NetworkStatus.Unknown)
-        )
-
-    val numberOfSyncItems: StateFlow<Int> =
-        localDatabaseRepository.getDeletedItemsForSync().map { it.size }.stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5_000L),
-            0
         )
 
     val agendaItems = selectedDate
@@ -146,7 +134,6 @@ class AgendaViewModel @Inject constructor(
                             agendaRepository.deleteTask(task)
 
                         } else {
-                            insertAgendaItemWhenDeviceIsOffline(agendaItem)
                             handleItemMismatch()
                             return@launch
                         }
@@ -159,7 +146,6 @@ class AgendaViewModel @Inject constructor(
                             agendaRepository.deleteEvent(event)
 
                         } else {
-                            insertAgendaItemWhenDeviceIsOffline(agendaItem)
                             handleItemMismatch()
                             return@launch
                         }
@@ -171,7 +157,6 @@ class AgendaViewModel @Inject constructor(
                             agendaRepository.deleteReminder(reminder)
 
                         } else {
-                            insertAgendaItemWhenDeviceIsOffline(agendaItem)
                             handleItemMismatch()
                             return@launch
                         }
@@ -181,24 +166,6 @@ class AgendaViewModel @Inject constructor(
             handleAgendaItemNotFound()
         }
     }
-
-    private suspend fun insertAgendaItemWhenDeviceIsOffline(agendaItem: AgendaItem) {
-        val type = when (agendaItem) {
-            is AgendaItem.Task -> AgendaOption.TASK
-            is AgendaItem.Event -> AgendaOption.EVENT
-            is AgendaItem.Reminder -> AgendaOption.REMINDER
-        }
-
-        agendaRepository.insertDeletedAgendaItem(
-            itemForDeletion = AgendaItemForDeletionEntity(
-                id = agendaItem.id,
-                type = type
-            ), networkStatus = networkStatus.value
-        ).onSuccess { hasBeenOffline ->
-            _state.value = state.value.copy(hasDeviceBeenOffline = hasBeenOffline)
-        }
-    }
-
 
     private fun handleAgendaItemNotFound() {
         _dialogState.update { DialogState.ShowError }
@@ -276,6 +243,14 @@ class AgendaViewModel @Inject constructor(
             userPrefsRepository.getUserName()
         }
         return userNameDeferred.await()
+    }
+
+    fun getNumberOfDeletedItemsForSync(): Int? {
+        var numberOfSyncedItems: Int = 0
+        viewModelScope.launch {
+            numberOfSyncedItems = localDatabaseRepository.getDeletedItemsForSync().size
+        }
+        return numberOfSyncedItems
     }
 
 

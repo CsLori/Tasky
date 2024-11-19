@@ -11,8 +11,6 @@ import androidx.navigation.toRoute
 import com.example.tasky.R
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
-import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Attendee
@@ -53,7 +51,6 @@ import javax.inject.Inject
 @HiltViewModel
 class AgendaDetailViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
-    private val localDatabaseRepository: LocalDatabaseRepository,
     private val savedStateHandle: SavedStateHandle,
     private val photoCompressor: PhotoCompressor,
     private val photoConverter: PhotoConverter,
@@ -427,21 +424,6 @@ class AgendaDetailViewModel @Inject constructor(
 //                    _uiState.update { AgendaDetailUiState.Error(R.string.Agenda_item_was_successfully_deleted) }
 
             }.onError {
-                val type = when (agendaItem) {
-                    is AgendaItem.Task -> AgendaOption.TASK
-                    is AgendaItem.Event -> AgendaOption.EVENT
-                    is AgendaItem.Reminder -> AgendaOption.REMINDER
-                }
-
-                agendaRepository.insertDeletedAgendaItem(
-                    itemForDeletion = AgendaItemForDeletionEntity(
-                        id = agendaItem.id,
-                        type = type
-                    ), networkStatus = networkStatus.value
-                ).onSuccess { hasBeenOffline ->
-                    _state.value = state.value.copy(hasDeviceBeenOffline = hasBeenOffline)
-                }
-
                 _dialogState.update { DialogState.ShowError }
                 _errorDialogState.update {
                     ErrorDialogState.AgendaItemError(
@@ -460,9 +442,9 @@ class AgendaDetailViewModel @Inject constructor(
         viewModelScope.launch {
             agendaRepository.deleteAttendee(attendee.eventId)
                 .onSuccess {
-                    //If the visitor can successfully him/herself from the visitor's list,
-                    //delete the event for the visitor
-                    state.value.selectedAgendaItem?.let { safeAgendaItem -> deleteAgendaItem(safeAgendaItem) }
+                    if(attendee.isCreator) {
+                        state.value.selectedAgendaItem?.let { safeAgendaItem -> deleteAgendaItem(safeAgendaItem) }
+                    }
                 }
                 .onError {
                     _dialogState.update { DialogState.ShowError }

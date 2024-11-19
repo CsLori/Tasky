@@ -23,5 +23,5 @@ interface SyncAgendaItemsDao {
     suspend fun clearAllDeletedItems()
 
     @Query("SELECT * FROM agenda_items_for_deletion")
-    fun getAllDeletedItems(): Flow<List<AgendaItemForDeletionEntity>>
+    suspend fun getAllDeletedItems(): List<AgendaItemForDeletionEntity>
 }

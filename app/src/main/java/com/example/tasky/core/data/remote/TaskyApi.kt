@@ -11,6 +11,7 @@ import com.example.tasky.onboarding.onboarding_data.remote.dto.LoginUserResponse
 import com.example.tasky.onboarding.onboarding_data.remote.dto.RegisterRequest
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -41,7 +42,7 @@ interface TaskyApi {
     suspend fun getFullAgenda(): AgendaResponse
 
     @POST("/syncAgenda")
-    suspend fun syncAgenda(@Body syncAgendaBody: SyncAgendaRequest)
+    suspend fun syncAgenda(@Body syncAgendaBody: SyncAgendaRequest): Response
 
     @Multipart
     @POST("/event")
@@ -58,7 +59,7 @@ interface TaskyApi {
     ): EventResponse
 
     @DELETE("/event")
-    suspend fun deleteEventById(@Query("eventId") eventId: String)
+    suspend fun deleteEventById(@Query("eventId") eventId: String): Response
 
     @POST("/task")
     suspend fun addTask(@Body taskBody: TaskSerialized)
@@ -67,7 +68,7 @@ interface TaskyApi {
     suspend fun updateTask(@Body taskBody: TaskSerialized)
 
     @DELETE("/task")
-    suspend fun deleteTaskById(@Query("taskId") taskId: String)
+    suspend fun deleteTaskById(@Query("taskId") taskId: String): Response
 
     @POST("/reminder")
     suspend fun addReminder(@Body reminderBody: ReminderSerialized)
@@ -76,7 +77,7 @@ interface TaskyApi {
     suspend fun updateReminder(@Body reminderBody: ReminderSerialized)
 
     @DELETE("/reminder")
-    suspend fun deleteReminderById(@Query("reminderId") reminderId: String)
+    suspend fun deleteReminderById(@Query("reminderId") reminderId: String): Response
 
     @GET("/attendee")
     suspend fun getAttendee(@Query("email") email: String): AttendeeExistDto

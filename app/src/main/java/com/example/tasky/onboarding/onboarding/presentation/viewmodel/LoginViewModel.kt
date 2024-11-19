@@ -3,7 +3,7 @@ package com.example.tasky.onboarding.onboarding.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
-import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_data.local.LocalDataSource
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.domain.Result
@@ -27,7 +27,7 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val defaultUserRepository: DefaultUserRepository,
     private val userPrefsRepository: ProtoUserPrefsRepository,
-    private val localDatabaseRepository: LocalDatabaseRepository,
+    private val localDatabaseRepository: LocalDataSource,
     private val agendaRepository: AgendaRepository
 ) : ViewModel() {
 

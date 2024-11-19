@@ -74,7 +74,6 @@ import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import timber.log.Timber
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -92,7 +91,7 @@ internal fun AgendaScreen(
     val uiState by agendaViewModel.uiState.collectAsStateWithLifecycle()
     val agendaItems by agendaViewModel.agendaItems.collectAsStateWithLifecycle()
     val syncResult by agendaViewModel.syncResult.collectAsStateWithLifecycle()
-    val numberOfSyncItems by agendaViewModel.numberOfSyncItems.collectAsStateWithLifecycle()
+    val numberOfSyncItems = agendaViewModel.getNumberOfDeletedItemsForSync() ?: 0
     val userInitials = agendaViewModel.userInitials
 
     val context = LocalContext.current

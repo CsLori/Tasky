@@ -1,13 +1,11 @@
 package com.example.tasky.agenda.agenda_domain.repository
 
-import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AttendeeMinimal
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
-import com.example.tasky.util.NetworkStatus
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
@@ -49,6 +47,4 @@ interface AgendaRepository {
     suspend fun getFullAgenda(): Result<Unit,TaskyError>
 
     suspend fun syncAgenda(): Result<Unit, TaskyError>
-
-    suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity, networkStatus: NetworkStatus): Result<Boolean, TaskyError>
 }
