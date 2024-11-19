@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
+import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
+import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
@@ -15,8 +17,10 @@ import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
 import com.example.tasky.util.NetworkConnectivityService
 import com.example.tasky.util.NetworkStatus
+import com.example.tasky.util.getInitials
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
@@ -38,6 +42,8 @@ import javax.inject.Inject
 class AgendaViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
     private val defaultUserRepository: DefaultUserRepository,
+    private val localDatabaseRepository: LocalDatabaseRepository,
+    private val userPrefsRepository: ProtoUserPrefsRepository,
     private val networkConnectivityService: NetworkConnectivityService
 ) : ViewModel() {
 
@@ -62,17 +68,26 @@ class AgendaViewModel @Inject constructor(
 
     private var selectedDate = MutableStateFlow(LocalDate.now())
 
+    var userInitials: String = ""
+
+    init {
+        viewModelScope.launch {
+            userInitials = getInitials(getUserName())
+        }
+    }
+
     fun getAgendaItems(filterDate: LocalDate) {
         selectedDate.value = filterDate
     }
 
     val syncResult = networkStatus
-        .filter { it == NetworkStatus.Connected }
+        .filter { it == NetworkStatus.Connected && state.value.hasDeviceBeenOffline}
         .mapLatest { agendaRepository.syncAgenda() }
         .onEach { result ->
             when (result) {
                 is Result.Success -> {
                     _uiState.update { AgendaUiState.None }
+                    _state.update { it.copy(hasDeviceBeenOffline = false) }
                 }
 
                 is Result.Error -> {
@@ -107,7 +122,6 @@ class AgendaViewModel @Inject constructor(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
 
     fun deleteAgendaItem(agendaItem: AgendaItem) {
-        _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             val existingAgendaItem =
                 state.value.agendaItems.find { it.id == agendaItem.id }
@@ -150,7 +164,6 @@ class AgendaViewModel @Inject constructor(
                 }
             }
             handleAgendaItemNotFound()
-            _state.update { it.copy(isLoading = false) }
         }
     }
 
@@ -197,6 +210,15 @@ class AgendaViewModel @Inject constructor(
                 )
 
                 is AgendaUpdateState.UpdateSelectedItem -> it.copy(selectedItem = action.agendaItem)
+                is AgendaUpdateState.UpdateIsDone -> {
+                    if (it.selectedItem is AgendaItem.Task) {
+                        val updatedTask =
+                            (it.selectedItem as AgendaItem.Task).copy(isDone = action.isDone)
+                        it.copy(selectedItem = updatedTask)
+                    } else {
+                        it
+                    }
+                }
             }
         }
     }
@@ -215,6 +237,22 @@ class AgendaViewModel @Inject constructor(
     fun showErrorDialog() {
         _dialogState.update { DialogState.ShowError }
     }
+
+    private suspend fun getUserName(): String {
+        val userNameDeferred = viewModelScope.async {
+            userPrefsRepository.getUserName()
+        }
+        return userNameDeferred.await()
+    }
+
+    fun getNumberOfDeletedItemsForSync(): Int? {
+        var numberOfSyncedItems: Int = 0
+        viewModelScope.launch {
+            numberOfSyncedItems = localDatabaseRepository.getDeletedItemsForSync().size
+        }
+        return numberOfSyncedItems
+    }
+
 
     sealed class ErrorDialogState {
         data object None : ErrorDialogState()

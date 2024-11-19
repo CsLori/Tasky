@@ -3,7 +3,6 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -12,8 +11,6 @@ import androidx.navigation.toRoute
 import com.example.tasky.R
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
-import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Attendee
@@ -32,6 +29,7 @@ import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.util.CredentialsValidator
+import com.example.tasky.util.Logger
 import com.example.tasky.util.NetworkConnectivityService
 import com.example.tasky.util.NetworkStatus
 import com.example.tasky.util.PhotoCompressor
@@ -53,7 +51,6 @@ import javax.inject.Inject
 @HiltViewModel
 class AgendaDetailViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
-    private val localDatabaseRepository: LocalDatabaseRepository,
     private val savedStateHandle: SavedStateHandle,
     private val photoCompressor: PhotoCompressor,
     private val photoConverter: PhotoConverter,
@@ -74,6 +71,8 @@ class AgendaDetailViewModel @Inject constructor(
 
     val agendaOption = savedStateHandle.toRoute<Screen.AgendaDetail>().agendaOption
     private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
+
+    private var deletedPhotos: MutableList<String> = mutableListOf()
 
     val networkStatus: StateFlow<NetworkStatus> = networkConnectivityService.networkStatus.stateIn(
         initialValue = NetworkStatus.Unknown,
@@ -213,13 +212,19 @@ class AgendaDetailViewModel @Inject constructor(
 
         viewModelScope.launch {
             val result = when (agendaItem) {
-                is AgendaItem.Task -> agendaRepository.addTask(agendaItem)
+                is AgendaItem.Task -> {
+                    val newTask = createTask()
+                    agendaRepository.addTask(newTask)
+                }
                 is AgendaItem.Event -> {
                     val (photos, newAgendaItem) = createNewEvent()
                     agendaRepository.addEvent(newAgendaItem, photos)
                 }
 
-                is AgendaItem.Reminder -> agendaRepository.addReminder(agendaItem)
+                is AgendaItem.Reminder -> {
+                    val newReminder = createReminder()
+                    agendaRepository.addReminder(newReminder)
+                }
             }
 
             when (result) {
@@ -255,7 +260,7 @@ class AgendaDetailViewModel @Inject constructor(
 
                 is AgendaItem.Event -> {
                     val (photos, newEvent) = prepareUpdatedEvent(agendaItem)
-                    agendaRepository.updateEvent(newEvent, photos)
+                    agendaRepository.updateEvent(newEvent, photos, deletedPhotos.toList())
                 }
 
                 is AgendaItem.Reminder -> {
@@ -291,6 +296,29 @@ class AgendaDetailViewModel @Inject constructor(
             }
             _state.update { it.copy(isLoading = false) }
         }
+    }
+
+    private fun createTask(): AgendaItem.Task {
+        val currentState = state.value.task
+        return AgendaItem.Task(
+            taskId = currentState.taskId,
+            taskTitle = currentState.taskTitle,
+            taskDescription = currentState.taskDescription,
+            time = currentState.sortDate,
+            isDone = currentState.isDone,
+            remindAtTime = currentState.remindAtTime
+        )
+    }
+
+    private fun createReminder(): AgendaItem.Reminder {
+        val currentState = state.value.reminder
+        return AgendaItem.Reminder(
+            reminderId = currentState.reminderId,
+            reminderTitle = currentState.reminderTitle,
+            reminderDescription = currentState.reminderDescription,
+            time = currentState.sortDate,
+            remindAtTime = currentState.remindAtTime
+        )
     }
 
     private fun prepareUpdatedTask(agendaItem: AgendaItem.Task): AgendaItem.Task {
@@ -340,7 +368,7 @@ class AgendaDetailViewModel @Inject constructor(
             }
 
             is Error -> {
-                Log.d(
+                Logger.d(
                     "LoadingUserError",
                     "Error fetching user details: ${loggedInUserResult.error}"
                 )
@@ -396,19 +424,6 @@ class AgendaDetailViewModel @Inject constructor(
 //                    _uiState.update { AgendaDetailUiState.Error(R.string.Agenda_item_was_successfully_deleted) }
 
             }.onError {
-                val type = when (agendaItem) {
-                    is AgendaItem.Task -> AgendaOption.TASK
-                    is AgendaItem.Event -> AgendaOption.EVENT
-                    is AgendaItem.Reminder -> AgendaOption.REMINDER
-                }
-
-                agendaRepository.insertDeletedAgendaItem(
-                    itemForDeletion = AgendaItemForDeletionEntity(
-                        id = agendaItem.id,
-                        type = type
-                    ), networkStatus = networkStatus.value
-                )
-
                 _dialogState.update { DialogState.ShowError }
                 _errorDialogState.update {
                     ErrorDialogState.AgendaItemError(
@@ -427,7 +442,9 @@ class AgendaDetailViewModel @Inject constructor(
         viewModelScope.launch {
             agendaRepository.deleteAttendee(attendee.eventId)
                 .onSuccess {
-
+                    if(attendee.isCreator) {
+                        state.value.selectedAgendaItem?.let { safeAgendaItem -> deleteAgendaItem(safeAgendaItem) }
+                    }
                 }
                 .onError {
                     _dialogState.update { DialogState.ShowError }
@@ -580,6 +597,8 @@ class AgendaDetailViewModel @Inject constructor(
 
     fun deletePhoto(photoKey: String) {
         val updatedPhotos = _state.value.event.photos.filterNot { it.key == photoKey }
+        val deletedPhoto = _state.value.event.photos.find { it.key == photoKey }
+        deletedPhotos.add(deletedPhoto?.key ?: "")
         _state.update { currentState ->
             currentState.copy(event = currentState.event.copy(photos = updatedPhotos))
         }

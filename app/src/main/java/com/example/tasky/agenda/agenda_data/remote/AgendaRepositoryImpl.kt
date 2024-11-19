@@ -11,7 +11,7 @@ import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.entity_mappers.toEventEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toReminderEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
-import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_data.local.LocalDataSource
 import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
@@ -29,7 +29,6 @@ import com.example.tasky.core.domain.asResult
 import com.example.tasky.core.domain.mapToTaskyError
 import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.util.Logger
-import com.example.tasky.util.NetworkStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -41,7 +40,7 @@ import java.util.concurrent.CancellationException
 class AgendaRepositoryImpl(
     private val api: TaskyApi,
     private val userPrefsRepository: ProtoUserPrefsRepository,
-    private val localDatabaseRepository: LocalDatabaseRepository,
+    private val localDatabaseRepository: LocalDataSource,
 ) : AgendaRepository {
 
     override suspend fun addTask(
@@ -95,7 +94,13 @@ class AgendaRepositoryImpl(
     override suspend fun deleteTask(task: AgendaItem.Task): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.deleteTask(task.toTaskEntity())
-            api.deleteTaskById(task.id)
+            val remoteResult = api.deleteTaskById(task.id)
+
+
+            // If they api call fails, we would like to save the deleted task, event, reminder
+            if (!remoteResult.isSuccessful) {
+                insertDeletedAgendaItem(AgendaItemForDeletionEntity(task.taskId, AgendaOption.TASK))
+            }
             Result.Success(Unit)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
@@ -143,9 +148,10 @@ class AgendaRepositoryImpl(
 
     override suspend fun updateEvent(
         event: AgendaItem.Event,
-        photos: List<ByteArray>
+        photos: List<ByteArray>,
+        photosToDelete: List<String>
     ): Result<EventResponse, TaskyError> {
-        val eventPart = createMultipartEventRequest(event.toEventUpdate())
+        val eventPart = createMultipartEventRequest(event.toEventUpdate(photosToDelete))
         val photosPart = photos.mapIndexed { index, photo -> createPhotoPart(photo, index) }
 
         return try {
@@ -165,7 +171,11 @@ class AgendaRepositoryImpl(
     override suspend fun deleteEvent(event: AgendaItem.Event): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.deleteEvent(event.toEventEntity())
-            api.deleteEventById(event.eventId)
+            val remoteResult = api.deleteEventById(event.eventId)
+
+            if (!remoteResult.isSuccessful) {
+                insertDeletedAgendaItem(AgendaItemForDeletionEntity(event.eventId, AgendaOption.EVENT))
+            }
             Result.Success(Unit)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
@@ -222,7 +232,11 @@ class AgendaRepositoryImpl(
     override suspend fun deleteReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.deleteReminder(reminder.toReminderEntity())
-            api.deleteReminderById(reminder.reminderId)
+            val remoteResult = api.deleteReminderById(reminder.reminderId)
+
+            if (!remoteResult.isSuccessful) {
+                insertDeletedAgendaItem(AgendaItemForDeletionEntity(reminder.reminderId, AgendaOption.REMINDER))
+            }
             Result.Success(Unit)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
@@ -282,7 +296,6 @@ class AgendaRepositoryImpl(
 
             //This request requires UTC
             val timeStamp = selectedDate.toLong(ZoneOffset.UTC)
-            // Something is broken here, i get an infinite loading with this api call
             val remoteItems = api.getAgenda(timeStamp)
 
             withContext(Dispatchers.IO) {
@@ -338,7 +351,11 @@ class AgendaRepositoryImpl(
                 .map { it.id }
 
             val result = api.syncAgenda(SyncAgendaRequest(eventIds, taskIds, reminderIds))
-            Result.Success(result)
+
+            if (result.isSuccessful) {
+                localDatabaseRepository.deleteAllSyncedAgendaItems()
+            }
+            Result.Success(Unit)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
 
@@ -349,14 +366,11 @@ class AgendaRepositoryImpl(
     }
 
     //Used for caching the deleted agenda item for when the devices is online again
-    override suspend fun insertDeletedAgendaItem(
+    private suspend fun insertDeletedAgendaItem(
         itemForDeletion: AgendaItemForDeletionEntity,
-        networkStatus: NetworkStatus
     ): Result<Unit, TaskyError> {
         return try {
-            if (networkStatus == NetworkStatus.Disconnected) {
-                localDatabaseRepository.insertDeletedAgendaItem(itemForDeletion)
-            }
+            localDatabaseRepository.insertDeletedAgendaItem(itemForDeletion)
             Result.Success(Unit)
         } catch (e: Exception) {
             if (e is CancellationException) throw e

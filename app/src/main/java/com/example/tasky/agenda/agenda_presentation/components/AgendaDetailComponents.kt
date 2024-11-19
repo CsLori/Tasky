@@ -111,13 +111,13 @@ fun AgendaItemTitle(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = dimensions.default16dp)
-            .then(if (state.isReadOnly) {
-                Modifier
-            } else {
+            .then(if (!state.isReadOnly) {
                 Modifier.clickable {
                     onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.TITLE))
                     onAction(AgendaDetailAction.OnEditRowPressed)
                 }
+            } else {
+                Modifier
             }),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
@@ -162,13 +162,13 @@ fun AgendaItemDescription(
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
             .then(
-                if (state.isReadOnly) {
-                    Modifier
-                } else {
+                if (!state.isReadOnly) {
                     Modifier.clickable {
                         onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.DESCRIPTION))
                         onAction(AgendaDetailAction.OnEditRowPressed)
                     }
+                } else {
+                    Modifier
                 }
             ),
         verticalAlignment = Alignment.CenterVertically,
@@ -215,9 +215,7 @@ fun TimeAndDateRow(
                 .width(120.dp)
                 .weight(1f)
                 .then(
-                    if (state.isReadOnly) {
-                        Modifier
-                    } else {
+                    if (!state.isReadOnly) {
                         Modifier.clickable {
                             if (isSecondRow) {
                                 onUpdateState(
@@ -233,6 +231,8 @@ fun TimeAndDateRow(
                                 )
                             }
                         }
+                    } else {
+                        Modifier
                     }
                 ),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -374,9 +374,7 @@ fun TimeAndDateRow(
             modifier = Modifier
                 .weight(1f)
                 .then(
-                    if (state.isReadOnly) {
-                        Modifier
-                    } else {
+                    if (!state.isReadOnly) {
                         Modifier.clickable {
                             if (isSecondRow) {
                                 onUpdateState(
@@ -392,6 +390,8 @@ fun TimeAndDateRow(
                                 )
                             }
                         }
+                    } else {
+                        Modifier
                     }
                 ),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -490,6 +490,7 @@ fun AddPhotosSection(
     selectedImageUri: Uri?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
+    isEventCreator: Boolean
 ) {
 
     val context = LocalContext.current
@@ -694,7 +695,8 @@ fun AddPhotosSectionEditablePreview() {
                 Photo("dfdff", "https://picsum.photos/200"),
                 Photo("fdfdffeferf", "https://picsum.photos/200")
             ),
-            onAction = {}
+            onAction = {},
+            isEventCreator = false
         )
     }
 }
@@ -709,7 +711,8 @@ fun AddPhotosSectionReadOnlyPreview() {
             isReadOnly = true,
             onUpdateState = {},
             photos = emptyList(),
-            onAction = {}
+            onAction = {},
+            isEventCreator = false
         )
     }
 }

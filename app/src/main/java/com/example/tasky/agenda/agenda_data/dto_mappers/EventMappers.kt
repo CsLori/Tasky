@@ -32,7 +32,7 @@ fun AgendaItem.Event.toEventRequest(): EventRequest {
     )
 }
 
-fun AgendaItem.Event.toEventUpdate(): EventUpdate {
+fun AgendaItem.Event.toEventUpdate(deletedPhotoKeys: List<String>): EventUpdate {
     return EventUpdate(
         id = id,
         title = title,

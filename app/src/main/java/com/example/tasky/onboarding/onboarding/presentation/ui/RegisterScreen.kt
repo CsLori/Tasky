@@ -85,7 +85,7 @@ internal fun RegisterScreen(
                     onNavigateToLogin()
                 }
 
-                RegisterViewModel.RegisterAction.OnDismissDialog -> DialogState.Hide
+                RegisterViewModel.RegisterAction.OnDismissDialog -> registerViewModel.hideDialog()
 
             }
         }
@@ -109,7 +109,7 @@ private fun RegisterContent(
         when (uiState) {
 
             RegisterViewModel.RegisterUiState.Success -> {
-                RegisterViewModel.RegisterAction.OnNavigateToLogin
+                onAction(RegisterViewModel.RegisterAction.OnNavigateToLogin)
             }
 
             RegisterViewModel.RegisterUiState.None -> {

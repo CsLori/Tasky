@@ -6,15 +6,15 @@ import androidx.room.Room.databaseBuilder
 import com.example.tasky.Constants.BASE_URL
 import com.example.tasky.agenda.agenda_data.di.BasicOkHttpClient
 import com.example.tasky.agenda.agenda_data.local.AgendaDatabase
-import com.example.tasky.agenda.agenda_data.local.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_data.local.LocalDataSource
 import com.example.tasky.agenda.agenda_data.local.dao.EventDao
 import com.example.tasky.agenda.agenda_data.local.dao.ReminderDao
 import com.example.tasky.agenda.agenda_data.local.dao.SyncAgendaItemsDao
 import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
 import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
 import com.example.tasky.agenda.agenda_data.remote.AuthTokenInterceptor
-import com.example.tasky.agenda.agenda_domain.repository.AgendaItemsRepository
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
+import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
@@ -96,8 +96,8 @@ object TaskyModule {
 
     @Provides
     @Singleton
-    fun provideLocalDatabaseRepository(db: AgendaDatabase): AgendaItemsRepository {
-        return LocalDatabaseRepository(db.taskDao, db.eventDao, db.reminderDao, db.syncAgendaItemsDao)
+    fun provideLocalDatabaseRepository(db: AgendaDatabase): LocalDatabaseRepository {
+        return LocalDataSource(db.taskDao, db.eventDao, db.reminderDao, db.syncAgendaItemsDao)
     }
 
     @Provides
@@ -121,7 +121,7 @@ object TaskyModule {
     fun provideAgendaRepository(
         api: TaskyApi,
         userPrefsRepository: ProtoUserPrefsRepository,
-        localDatabaseRepository: LocalDatabaseRepository
+        localDatabaseRepository: LocalDataSource
     ): AgendaRepository {
         return AgendaRepositoryImpl(api, userPrefsRepository, localDatabaseRepository)
     }

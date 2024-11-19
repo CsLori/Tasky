@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -78,6 +77,7 @@ import com.example.tasky.core.presentation.components.AddVisitorDialog
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.presentation.components.ErrorDialog
+import com.example.tasky.core.presentation.components.TaskyLoader
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
@@ -138,16 +138,24 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnSavePressed -> {
                     val time = LocalTime.of(state.fromAtTime.hour, state.fromAtTime.minute)
                     val dateTime = LocalDateTime.of(state.date, time)
-                    val timestamp = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    //Lori this one looks good now
-                    agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdateSortDate(timestamp))
+                    val timestamp =
+                        dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    agendaDetailViewModel.updateState(
+                        AgendaDetailStateUpdate.UpdateSortDate(
+                            timestamp
+                        )
+                    )
 
                     val secondRowTime = LocalTime.of(state.toTime.hour, state.toTime.minute)
-                    val secondRowDateTime = LocalDateTime.of(state.date, time)
-                    val secondRowTimestamp = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    val secondRowDateTime = LocalDateTime.of(state.date, secondRowTime)
+                    val secondRowTimestamp =
+                        secondRowDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-                    agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdateSecondRowToDate(timestamp))
-                    //Lori
+                    agendaDetailViewModel.updateState(
+                        AgendaDetailStateUpdate.UpdateSecondRowToDate(
+                            secondRowTimestamp
+                        )
+                    )
                     if (agendaItemId == null) {
                         state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {
@@ -183,6 +191,7 @@ internal fun AgendaDetailScreen(
 
                 is AgendaDetailAction.OnDeleteAttendee -> {
                     agendaDetailViewModel.deleteAttendee(action.attendee)
+                    onNavigateToAgendaScreen()
                 }
             }
         },
@@ -195,7 +204,7 @@ internal fun AgendaDetailScreen(
         onDialogDismiss = { agendaDetailViewModel.hideAddVisitorDialog() },
         onErrorDialogDismiss = { agendaDetailViewModel.hideErrorDialog() },
         dialogState = dialogState,
-        errorDialogState = errorDialogState
+        errorDialogState = errorDialogState,
     )
 }
 
@@ -213,7 +222,7 @@ private fun AgendaDetailContent(
     onDialogDismiss: () -> Unit,
     dialogState: DialogState,
     errorDialogState: AgendaDetailViewModel.ErrorDialogState,
-    onErrorDialogDismiss: () -> Unit
+    onErrorDialogDismiss: () -> Unit,
 ) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val getContent =
@@ -223,99 +232,92 @@ private fun AgendaDetailContent(
     val context = LocalContext.current
 
     if (state.isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
+        TaskyLoader()
+    }
+    when (uiState) {
+        AgendaDetailViewModel.AgendaDetailUiState.Success -> {
+            onAction(AgendaDetailAction.OnCreateSuccess)
         }
-    } else {
-        when (uiState) {
-            AgendaDetailViewModel.AgendaDetailUiState.Success -> {
-                onAction(AgendaDetailAction.OnCreateSuccess)
+
+        AgendaDetailViewModel.AgendaDetailUiState.None -> {
+            if (dialogState is DialogState.ShowError) {
+                when (errorDialogState) {
+                    is AgendaDetailViewModel.ErrorDialogState.AgendaItemError -> {
+                        ErrorDialog(
+                            label = errorDialogState.message.asString() ?: "",
+                            displayCloseIcon = false,
+                            positiveButtonText = stringResource(R.string.OK),
+                            positiveOnClick = { onErrorDialogDismiss() },
+                        )
+                    }
+
+                    is AgendaDetailViewModel.ErrorDialogState.AttendeeError -> {
+                        ErrorDialog(
+                            label = errorDialogState.message.asString() ?: "",
+                            displayCloseIcon = false,
+                            positiveButtonText = stringResource(R.string.OK),
+                            positiveOnClick = { onErrorDialogDismiss() },
+                        )
+                    }
+
+                    is AgendaDetailViewModel.ErrorDialogState.GeneralError -> {
+                        ErrorDialog(
+                            label = errorDialogState.message.asString() ?: "",
+                            displayCloseIcon = false,
+                            positiveButtonText = stringResource(R.string.OK),
+                            positiveOnClick = { onErrorDialogDismiss() },
+                        )
+                    }
+
+                    AgendaDetailViewModel.ErrorDialogState.None -> {}
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+            ) {
+                Header(
+                    onSavePressed = { onAction(AgendaDetailAction.OnSavePressed) },
+                    onClosePressed = { onAction(AgendaDetailAction.OnClosePressed) },
+                    onEnableEditPressed = { onAction(AgendaDetailAction.OnEnableEditPressed) },
+                    agendaItemId = agendaItemId,
+                    isReadOnly = state.isReadOnly,
+                )
             }
 
-            AgendaDetailViewModel.AgendaDetailUiState.None -> {
-                if (dialogState is DialogState.ShowError) {
-                    when (errorDialogState) {
-                        is AgendaDetailViewModel.ErrorDialogState.AgendaItemError -> {
-                            ErrorDialog(
-                                label = errorDialogState.message.asString() ?: "",
-                                displayCloseIcon = false,
-                                positiveButtonText = stringResource(R.string.OK),
-                                positiveOnClick = { onErrorDialogDismiss() },
-                            )
-                        }
-
-                        is AgendaDetailViewModel.ErrorDialogState.AttendeeError -> {
-                            ErrorDialog(
-                                label = errorDialogState.message.asString() ?: "",
-                                displayCloseIcon = false,
-                                positiveButtonText = stringResource(R.string.OK),
-                                positiveOnClick = { onErrorDialogDismiss() },
-                            )
-                        }
-
-                        is AgendaDetailViewModel.ErrorDialogState.GeneralError -> {
-                            ErrorDialog(
-                                label = errorDialogState.message.asString() ?: "",
-                                displayCloseIcon = false,
-                                positiveButtonText = stringResource(R.string.OK),
-                                positiveOnClick = { onErrorDialogDismiss() },
-                            )
-                        }
-
-                        AgendaDetailViewModel.ErrorDialogState.None -> {}
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                ) {
-                    Header(
-                        onSavePressed = { onAction(AgendaDetailAction.OnSavePressed) },
-                        onClosePressed = { onAction(AgendaDetailAction.OnClosePressed) },
-                        onEnableEditPressed = { onAction(AgendaDetailAction.OnEnableEditPressed) },
-                        agendaItemId = agendaItemId,
-                        isReadOnly = state.isReadOnly
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(
-                        topStart = dimensions.cornerRadius30dp,
-                        topEnd = dimensions.cornerRadius30dp
-                    ),
-                    color = colors.white,
+            Surface(
+                shape = RoundedCornerShape(
+                    topStart = dimensions.cornerRadius30dp,
+                    topEnd = dimensions.cornerRadius30dp
+                ),
+                color = colors.white,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 70.dp)
+            ) {
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 70.dp)
+                        .padding(top = 40.dp)
+                        .verticalScroll(rememberScrollState())
+
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 40.dp)
-                            .verticalScroll(rememberScrollState())
+                    MainContent(
+                        state = state,
+                        agendaItem = agendaItem,
+                        onUpdateState = onUpdateState,
+                        onAction = onAction,
+                        onAddPhotosPressed = {
+                            if (!state.isReadOnly) {
+                                getContent.launch("image/*")
+                            }
+                        },
+                        selectedImageUri = selectedImageUri,
+                        onShowDialog = onShowDialog,
+                        onDialogDismiss = onDialogDismiss,
+                        dialogState = dialogState,
+                    )
 
-                    ) {
-                        MainContent(
-                            state = state,
-                            agendaItem = agendaItem,
-                            onUpdateState = onUpdateState,
-                            onAction = onAction,
-                            onAddPhotosPressed = {
-                                if (!state.isReadOnly) {
-                                    getContent.launch("image/*")
-                                }
-                            },
-                            selectedImageUri = selectedImageUri,
-                            onShowDialog = onShowDialog,
-                            onDialogDismiss = onDialogDismiss,
-                            dialogState = dialogState,
-                        )
-
-                    }
                 }
             }
         }
@@ -351,8 +353,7 @@ fun MainContent(
                 text = stringResource(R.string.from),
                 onUpdateState = onUpdateState,
                 state = state,
-
-                )
+            )
 
             DefaultHorizontalDivider()
 
@@ -383,7 +384,8 @@ fun MainContent(
                 selectedImageUri = selectedImageUri,
                 onUpdateState = onUpdateState,
                 photos = state.event.photos,
-                onAction = onAction
+                onAction = onAction,
+                isEventCreator = state.event.isUserEventCreator
             )
         }
     }
@@ -409,7 +411,8 @@ fun MainContent(
                 onUpdateState = onUpdateState,
                 onAction = onAction,
                 visitorFilter = state.visitorFilter,
-                isReadOnly = state.isReadOnly
+                isReadOnly = state.isReadOnly,
+                isEventCreator = state.event.isUserEventCreator
             )
         }
         Box(
@@ -440,7 +443,10 @@ fun MainContent(
                     text = when (agendaItem) {
                         is AgendaItem.Task -> stringResource(R.string.Delete_task)
                         is AgendaItem.Reminder -> stringResource(R.string.Delete_reminder)
-                        is AgendaItem.Event -> stringResource(R.string.Delete_event)
+                        is AgendaItem.Event -> if (agendaItem.isUserEventCreator) stringResource(R.string.Delete_event) else stringResource(
+                            R.string.Leave_event
+                        )
+
                         null -> stringResource(R.string.Delete_event)
                     },
                     style = typography.bodyLarge.copy(fontWeight = FontWeight.W600),
@@ -465,6 +471,7 @@ private fun VisitorsSection(
     onAction: (AgendaDetailAction) -> Unit,
     visitorFilter: VisitorFilter,
     isReadOnly: Boolean,
+    isEventCreator: Boolean
 ) {
 
     Column(modifier = Modifier.padding(top = dimensions.large32dp)) {
@@ -563,6 +570,7 @@ private fun VisitorsSection(
 
             visitors.forEach { visitor ->
                 VisitorItem(
+                    isEventCreator = isEventCreator,
                     visitor = visitor,
                     onDeleteAttendee = { onAction(AgendaDetailAction.OnDeleteAttendee(it)) }
                 )
@@ -586,6 +594,7 @@ private fun VisitorsSection(
 
             emptyList<Attendee>().forEach { visitor ->
                 VisitorItem(
+                    isEventCreator = isEventCreator,
                     visitor = visitor,
                     onDeleteAttendee = { onAction(AgendaDetailAction.OnDeleteAttendee(visitor)) }
                 )
@@ -611,6 +620,7 @@ private fun VisitorsSection(
 
 @Composable
 private fun VisitorItem(
+    isEventCreator: Boolean,
     visitor: Attendee,
     onDeleteAttendee: (Attendee) -> Unit
 ) {
@@ -653,7 +663,7 @@ private fun VisitorItem(
 
                 Text(text = visitor.name, style = typography.bodySmall.copy(color = colors.black))
             }
-            if (visitor.isCreator) {
+            if (isEventCreator) {
                 Text(
                     text = stringResource(R.string.creator),
                     style = typography.bodyMedium.copy(
@@ -787,17 +797,13 @@ fun AgendaDetailEditablePreview() {
             onAction = {},
             onUpdateState = {},
             agendaItemId = "12345",
-            agendaItem = AgendaItem.Event(
-                eventId = "12345",
-                eventTitle = "ridens",
-                eventDescription = null,
-                from = 1221,
-                to = 4855,
-                photos = listOf(),
-                attendees = listOf(),
-                isUserEventCreator = false,
-                host = null,
-                remindAtTime = 4626,
+            agendaItem = AgendaItem.Task(
+                taskId = "regione",
+                taskTitle = "vero",
+                taskDescription = null,
+                time = 5082,
+                isDone = false,
+                remindAtTime = 1844
             ),
             onUpdatePhotos = {},
             onShowDialog = {},

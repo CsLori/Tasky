@@ -59,7 +59,7 @@ class RegisterViewModel @Inject constructor(
                 when (result) {
                     is Result.Success -> {
 //                        login(email.value, password.value)
-//                        _uiState.update { RegisterUiState.Success }
+                        _uiState.update { RegisterUiState.Success }
                     }
 
                     is Result.Error -> {
@@ -76,7 +76,7 @@ class RegisterViewModel @Inject constructor(
         }
     }
 
-    private suspend fun login(email: String, password: String) {
+    suspend fun login(email: String, password: String) {
         try {
             defaultUserRepository.login(email, password)
             _uiState.update { RegisterUiState.Success }
@@ -125,6 +125,10 @@ class RegisterViewModel @Inject constructor(
                 passwordErrorStatus = passwordErrorStatus
             )
         }
+    }
+
+    fun hideDialog() {
+        _dialogState.update { DialogState.Hide }
     }
 
     private fun isFormValid(

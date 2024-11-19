@@ -5,7 +5,7 @@ data class Attendee(
     val name: String,
     val userId: String,
     val eventId: String,
-    val isGoing: Boolean,
+    val isGoing: Boolean = true,
     val remindAt: Long,
-    val isCreator: Boolean
+    val isCreator: Boolean = false
 )
