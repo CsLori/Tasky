@@ -25,15 +25,15 @@ fun AttendeeMinimalDto.toAttendeeMinimal(): AttendeeMinimal {
     )
 }
 
-fun AttendeeDto.toAttendee(): Attendee {
+fun AttendeeDto.toAttendee(isCreator: Boolean = false): Attendee {
     return Attendee(
         userId = userId,
         email = email,
         name = fullName,
         eventId = eventId,
-        isGoing = true,
+        isGoing = isGoing,
         remindAt = remindAt,
-        isCreator = false
+        isCreator = isCreator
     )
 }
 
@@ -47,7 +47,7 @@ fun Attendee.toAttendeeDto(): AttendeeDto {
         email = email,
         fullName = name,
         eventId = eventId,
-        isGoing = true,
+        isGoing = isGoing,
         remindAt = remindAt,
     )
 }
@@ -56,7 +56,7 @@ fun List<Attendee>.toAttendeeDtos(): List<AttendeeDto> {
     return map { it.toAttendeeDto() }
 }
 
-fun AttendeeMinimalDto.toAttendee(eventId: String, remindAt: Long, isGoing: Boolean = true): Attendee {
+fun AttendeeMinimalDto.toAttendee(eventId: String, remindAt: Long, isGoing: Boolean = true, isCreator: Boolean = false): Attendee {
     return Attendee(
         userId = userId,
         email = email,
@@ -64,6 +64,6 @@ fun AttendeeMinimalDto.toAttendee(eventId: String, remindAt: Long, isGoing: Bool
         eventId = eventId,
         isGoing = isGoing,
         remindAt = remindAt,
-        isCreator = false
+        isCreator = isCreator
     )
 }

@@ -11,7 +11,7 @@ import com.example.tasky.agenda.agenda_data.local.entity.ReminderEntity
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
-import com.example.tasky.agenda.agenda_domain.repository.AgendaItemsRepository
+import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import java.time.LocalDate
@@ -19,12 +19,12 @@ import java.time.ZoneId
 import javax.inject.Inject
 
 
-class LocalDatabaseRepository @Inject constructor(
+class LocalDataSource @Inject constructor(
     private val taskDao: TaskDao,
     private val eventDao: EventDao,
     private val reminderDao: ReminderDao,
     private val syncAgendaItemsDao: SyncAgendaItemsDao
-) : AgendaItemsRepository {
+) : LocalDatabaseRepository {
 
     override fun getAllTasks(startOfDay: Long, endOfDay: Long): Flow<List<TaskEntity>> {
         return taskDao.getAllTasks(startOfDay, endOfDay)
@@ -115,7 +115,7 @@ class LocalDatabaseRepository @Inject constructor(
         return syncAgendaItemsDao.clearAllDeletedItems()
     }
 
-    override fun getDeletedItemsForSync(): Flow<List<AgendaItemForDeletionEntity>> {
+    override suspend fun getDeletedItemsForSync(): List<AgendaItemForDeletionEntity> {
         return syncAgendaItemsDao.getAllDeletedItems()
     }
 }

@@ -9,7 +9,7 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
-interface AgendaItemsRepository {
+interface LocalDatabaseRepository {
 
     fun getAllTasks(startOfDay: Long, endOfDay: Long): Flow<List<TaskEntity>>
 
@@ -50,5 +50,5 @@ interface AgendaItemsRepository {
 
     suspend fun deleteAllSyncedAgendaItems()
 
-    fun getDeletedItemsForSync(): Flow<List<AgendaItemForDeletionEntity>>
+    suspend fun getDeletedItemsForSync(): List<AgendaItemForDeletionEntity>
 }
