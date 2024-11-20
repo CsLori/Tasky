@@ -1,5 +1,7 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel.state
 
+import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_presentation.components.reminderOptions
@@ -26,7 +28,7 @@ data class AgendaDetailState(
     val shouldShowSecondRowTimePicker: Boolean = false,
     val shouldShowReminderDropdown: Boolean = false,
     val editType: EditType = EditType.TITLE,
-    val selectedAgendaItem: AgendaItemDetails? = null,
+    val selectedAgendaItem: AgendaItem? = null,
     val selectedDate: LocalDateTime? = null,
     val selectedReminder: Long = reminderOptions[1].timeBeforeInMillis,
     val emailErrorStatus: ErrorStatus? = null,
@@ -35,80 +37,6 @@ data class AgendaDetailState(
     val hasDeviceBeenOffline: Boolean = false,
     val isDateSelectedFromDatePicker: Boolean = false,
 )
-
-sealed interface AgendaItemDetails {
-    data class Event(
-        val toTime: LocalDateTime,
-        val attendees: List<Attendee>,
-        val photos: List<Photo>,
-        val isUserEventCreator: Boolean,
-        val host: String?
-    ): AgendaItemDetails
-
-    data class Task(
-        val isDone: Boolean
-    ): AgendaItemDetails
-
-    data object Reminder: AgendaItemDetails
-}
-
-//    val task: AgendaItem.Task = AgendaItem.Task(
-//        taskId = UUID.randomUUID().toString(),
-//        taskTitle = "Task",
-//        taskDescription = "Task description",
-//        time = ZonedDateTime.now().toInstant().toEpochMilli(),
-//        remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
-//        isDone = false,
-//    ),
-//    val event: AgendaItem.Event = AgendaItem.Event(
-//        eventId = UUID.randomUUID().toString(),
-//        eventTitle = "Event",
-//        eventDescription = "Event description",
-//        from = ZonedDateTime.now().toInstant().toEpochMilli(),
-//        to = ZonedDateTime.now().toInstant().toEpochMilli(),
-//        remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
-//        isUserEventCreator = false,
-//        attendees = emptyList(),
-//        photos = emptyList(),
-//        host = null,
-//    ),
-//    val reminder: AgendaItem.Reminder = AgendaItem.Reminder(
-//        reminderId = UUID.randomUUID().toString(),
-//        reminderTitle = "Reminder",
-//        reminderDescription = "Reminder description",
-//        time = ZonedDateTime.now().toInstant().toEpochMilli(),
-//        remindAtTime = ZonedDateTime.now().toInstant().toEpochMilli(),
-//    ),
-//    val isLoading: Boolean = false,
-//    val shouldShowDatePicker: Boolean = false,
-//    val shouldShowSecondRowDatePicker: Boolean = false,
-//    val date: LocalDate = LocalDate.now(),
-//    val secondRowDate: String = DateUtils.getCurrentDate().localDateToStringMMMdyyyyFormat(),
-//    val fromAtTime: TimePickerState = TimePickerState(
-//        initialHour = LocalTime.now().hour,
-//        initialMinute = LocalTime.now().minute,
-//        is24Hour = true
-//        is24Hour = true
-//    ),
-//    val toTime: TimePickerState = TimePickerState(
-//        initialHour = LocalTime.now().hour,
-//        initialMinute = LocalTime.now().minute,
-//        is24Hour = true
-//    ),
-//    val isDateSelectedFromDatePicker: Boolean = false,
-//    val selectedDate: LocalDate = DateUtils.getCurrentDate(),
-//    val shouldShowTimePicker: Boolean = false,
-//    val shouldShowSecondRowTimePicker: Boolean = false,
-//    val editType: EditType = EditType.TITLE,
-//    val shouldShowReminderDropdown: Boolean = false,
-//    val selectedReminder: Long = reminderOptions[1].timeBeforeInMillis,
-//    val isReadOnly: Boolean = false,
-//    val selectedAgendaItem: AgendaItem? = null,
-//    val addVisitorEmail: FieldInput? = null,
-//    val emailErrorStatus: ErrorStatus? = null,
-//    val visitorFilter: VisitorFilter = VisitorFilter.ALL,
-//    val hasDeviceBeenOffline: Boolean = false
-//)
 
 enum class RemindBeforeDuration(val duration: Duration) {
     TEN_MINUTES(10.minutes),
@@ -143,7 +71,7 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateTitle(val title: String) : AgendaDetailStateUpdate
     data class UpdateDescription(val description: String) : AgendaDetailStateUpdate
     data class UpdateIsReadOnly(val isReadOnly: Boolean) : AgendaDetailStateUpdate
-    data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItemDetails?) : AgendaDetailStateUpdate
+    data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem?) : AgendaDetailStateUpdate
     data class UpdatePhotos(val photos: List<Photo>) : AgendaDetailStateUpdate
     data class UpdateAttendees(val attendees: List<Attendee>) : AgendaDetailStateUpdate
     data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate

@@ -44,12 +44,12 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaItemDetails
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.RemindBeforeDuration
 import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
@@ -81,10 +81,10 @@ fun AgendaItemMainHeader(agendaItem: AgendaItem?) {
             modifier = Modifier
                 .size(24.dp),
             imageVector = Icons.Rounded.Square,
-            tint = when (agendaItem) {
-                is AgendaItem.Task -> colors.green
-                is AgendaItem.Event -> colors.lightGreen
-                is AgendaItem.Reminder -> colors.gray
+            tint = when (agendaItem?.details) {
+                is AgendaItemDetails.Task -> colors.green
+                is AgendaItemDetails.Event -> colors.lightGreen
+                is AgendaItemDetails.Reminder -> colors.gray
                 null -> colors.green
             },
             contentDescription = "Icon checked"
@@ -93,10 +93,10 @@ fun AgendaItemMainHeader(agendaItem: AgendaItem?) {
         Spacer(Modifier.width(dimensions.small8dp))
 
         Text(
-            text = when (agendaItem) {
-                is AgendaItem.Task -> AgendaOption.TASK.displayName
-                is AgendaItem.Event -> AgendaOption.EVENT.displayName
-                is AgendaItem.Reminder -> AgendaOption.REMINDER.displayName
+            text = when (agendaItem?.details) {
+                is AgendaItemDetails.Task -> AgendaOption.TASK.displayName
+                is AgendaItemDetails.Event -> AgendaOption.EVENT.displayName
+                is AgendaItemDetails.Reminder -> AgendaOption.REMINDER.displayName
                 null -> AgendaOption.TASK.displayName
             },
             style = typography.bodyLarge.copy(lineHeight = 20.sp)
@@ -247,10 +247,10 @@ fun TimeAndDateRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = when (agendaItem) {
-                        is AgendaItem.Task -> state.time.toHourMinuteFormat()
-                        is AgendaItem.Event -> if (isSecondRow) (state.details as? AgendaItemDetails.Event)?.toTime?.toHourMinuteFormat() ?: "" else state.time.toHourMinuteFormat()
-                        is AgendaItem.Reminder -> state.time.toHourMinuteFormat()
+                    text = when (agendaItem.details) {
+                        is AgendaItemDetails.Task -> state.time.toHourMinuteFormat()
+                        is AgendaItemDetails.Event -> if (isSecondRow) (state.details as? AgendaItemDetails.Event)?.toTime?.toHourMinuteFormat() ?: "" else state.time.toHourMinuteFormat()
+                        is AgendaItemDetails.Reminder -> state.time.toHourMinuteFormat()
                     },
 
                     style = typography.bodyLarge.copy(
@@ -714,13 +714,13 @@ fun AddPhotosSectionReadOnlyPreview() {
 fun TimeAndDateRowPreview() {
     AppTheme {
         TimeAndDateRow(
-            agendaItem = AgendaItem.Task(
-                taskId = "meliore",
-                taskTitle = "scripta",
-                taskDescription = "dsfdsfsfsfsddf",
-                time = 4404,
-                isDone = false,
-                remindAtTime = 9437
+            agendaItem = AgendaItem(
+                id = "suavitate",
+                title = "homero",
+                description = "congue",
+                time = LocalDateTime.now(),
+                remindAt = LocalDateTime.now(),
+                details = AgendaItemDetails.Task(isDone = false)
             ),
             text = "From",
             onUpdateState = {},

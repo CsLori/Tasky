@@ -4,44 +4,53 @@ import com.example.tasky.agenda.agenda_data.remote.dto.EventRequest
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.EventUpdate
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
+import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
+import com.example.tasky.core.presentation.DateUtils.toLong
 
-fun EventResponse.toEvent(): AgendaItem.Event {
-    return AgendaItem.Event(
-        eventId = id,
-        eventTitle = title,
-        eventDescription = description,
-        from = from,
-        to = to,
-        remindAtTime = remindAt,
-        host = host,
-        isUserEventCreator = isUserEventCreator,
-        attendees = attendees.toAttendees(),
-        photos = photos.toPhotos(),
+fun EventResponse.toEvent(): AgendaItem {
+    return AgendaItem(
+        id = id,
+        title = title,
+        description = description,
+        time = from.toLocalDateTime(),
+        details = AgendaItemDetails.Event(
+            toTime = to.toLocalDateTime(),
+            attendees = attendees.toAttendees(),
+            photos = photos.toPhotos(),
+            isUserEventCreator = isUserEventCreator,
+            host = host
+        ),
+        remindAt = remindAt.toLocalDateTime(),
     )
 }
 
-fun AgendaItem.Event.toEventRequest(): EventRequest {
+fun AgendaItem.toEventRequest(): EventRequest {
+    val eventDetails = details as? AgendaItemDetails.Event
+        ?: throw IllegalStateException("Details are not of type Event")
     return EventRequest(
         id = id,
         title = title,
         description = description ?: "",
-        from = from,
-        to = to,
-        remindAt = remindAt,
-        attendeeIds = attendees.map { it.userId },
+        from = time.toLong(),
+        to = eventDetails.toTime.toLong(),
+        remindAt = remindAt.toLong(),
+        attendeeIds = eventDetails.attendees.map { it.userId },
     )
 }
 
-fun AgendaItem.Event.toEventUpdate(deletedPhotoKeys: List<String>): EventUpdate {
+fun AgendaItem.toEventUpdate(deletedPhotoKeys: List<String>): EventUpdate {
+    val eventDetails = details as? AgendaItemDetails.Event
+        ?: throw IllegalStateException("Details are not of type Event")
     return EventUpdate(
         id = id,
         title = title,
         description = description ?: "",
-        from = from,
-        to = to,
-        remindAt = remindAt,
-        attendeeIds = attendees.map { it.userId },
-        deletedPhotoKeys = emptyList(),
+        from = time.toLong(),
+        to = eventDetails.toTime.toLong(),
+        remindAt = remindAt.toLong(),
+        attendeeIds = eventDetails.attendees.map { it.userId },
+        deletedPhotoKeys = deletedPhotoKeys,
         isGoing = true,
     )
 }

@@ -44,7 +44,7 @@ class AgendaRepositoryImpl(
 ) : AgendaRepository {
 
     override suspend fun addTask(
-        task: AgendaItem.Task
+        task: AgendaItem
     ): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertTask(task.toTaskEntity())
@@ -60,7 +60,7 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun getTaskById(taskId: String): Result<AgendaItem.Task, TaskyError> {
+    override suspend fun getTaskById(taskId: String): Result<AgendaItem, TaskyError> {
         return try {
             val result = localDatabaseRepository.getTaskById(taskId).toAgendaItem()
             Result.Success(result)
@@ -75,7 +75,7 @@ class AgendaRepositoryImpl(
     }
 
 
-    override suspend fun updateTask(task: AgendaItem.Task): Result<Unit, TaskyError> {
+    override suspend fun updateTask(task: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertTask(task.toTaskEntity())
             api.updateTask(task.toSerializedTask())
@@ -91,7 +91,7 @@ class AgendaRepositoryImpl(
     }
 
 
-    override suspend fun deleteTask(task: AgendaItem.Task): Result<Unit, TaskyError> {
+    override suspend fun deleteTask(task: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.deleteTask(task.toTaskEntity())
             val remoteResult = api.deleteTaskById(task.id)
@@ -99,7 +99,7 @@ class AgendaRepositoryImpl(
 
             // If they api call fails, we would like to save the deleted task, event, reminder
             if (!remoteResult.isSuccessful) {
-                insertDeletedAgendaItem(AgendaItemForDeletionEntity(task.taskId, AgendaOption.TASK))
+                insertDeletedAgendaItem(AgendaItemForDeletionEntity(task.id, AgendaOption.TASK))
             }
             Result.Success(Unit)
         } catch (e: Exception) {
@@ -112,7 +112,7 @@ class AgendaRepositoryImpl(
     }
 
     override suspend fun addEvent(
-        event: AgendaItem.Event,
+        event: AgendaItem,
         photos: List<ByteArray>
     ): Result<EventResponse, TaskyError> {
         val eventPart = createMultipartEventRequest(event.toEventRequest())
@@ -132,7 +132,7 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun getEventById(eventId: String): Result<AgendaItem.Event, TaskyError> {
+    override suspend fun getEventById(eventId: String): Result<AgendaItem, TaskyError> {
         return try {
             val result = localDatabaseRepository.getEventById(eventId).toAgendaItem()
             Result.Success(result)
@@ -147,7 +147,7 @@ class AgendaRepositoryImpl(
     }
 
     override suspend fun updateEvent(
-        event: AgendaItem.Event,
+        event: AgendaItem,
         photos: List<ByteArray>,
         photosToDelete: List<String>
     ): Result<EventResponse, TaskyError> {
@@ -168,13 +168,13 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun deleteEvent(event: AgendaItem.Event): Result<Unit, TaskyError> {
+    override suspend fun deleteEvent(event: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.deleteEvent(event.toEventEntity())
-            val remoteResult = api.deleteEventById(event.eventId)
+            val remoteResult = api.deleteEventById(event.id)
 
             if (!remoteResult.isSuccessful) {
-                insertDeletedAgendaItem(AgendaItemForDeletionEntity(event.eventId, AgendaOption.EVENT))
+                insertDeletedAgendaItem(AgendaItemForDeletionEntity(event.id, AgendaOption.EVENT))
             }
             Result.Success(Unit)
         } catch (e: Exception) {
@@ -186,7 +186,7 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun addReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError> {
+    override suspend fun addReminder(reminder: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertReminder(reminder.toReminderEntity())
             api.addReminder(reminder.toSerializedReminder())
@@ -200,7 +200,7 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun getReminderById(reminderId: String): Result<AgendaItem.Reminder, TaskyError> {
+    override suspend fun getReminderById(reminderId: String): Result<AgendaItem, TaskyError> {
         return try {
             val result = localDatabaseRepository.getReminderById(reminderId).toAgendaItem()
             Result.Success(result)
@@ -214,7 +214,7 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun updateReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError> {
+    override suspend fun updateReminder(reminder: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertReminder(reminder.toReminderEntity())
             api.updateReminder(reminder.toSerializedReminder())
@@ -229,13 +229,13 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun deleteReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError> {
+    override suspend fun deleteReminder(reminder: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.deleteReminder(reminder.toReminderEntity())
-            val remoteResult = api.deleteReminderById(reminder.reminderId)
+            val remoteResult = api.deleteReminderById(reminder.id)
 
             if (!remoteResult.isSuccessful) {
-                insertDeletedAgendaItem(AgendaItemForDeletionEntity(reminder.reminderId, AgendaOption.REMINDER))
+                insertDeletedAgendaItem(AgendaItemForDeletionEntity(reminder.id, AgendaOption.REMINDER))
             }
             Result.Success(Unit)
         } catch (e: Exception) {

@@ -82,6 +82,11 @@ object DateUtils {
     }
 
     // Output Mar 15, 10:00
+    fun LocalDateTime.toMMMdHHmmFormat(): String {
+        val formatter = DateTimeFormatter.ofPattern("MMM d, HH:mm")
+        return this.format(formatter)
+    }
+
     fun Long.toMMMdHHmmFormat(): String {
         val formatter = DateTimeFormatter.ofPattern("MMM d, HH:mm")
         return Instant.ofEpochMilli(this)
@@ -102,9 +107,9 @@ object DateUtils {
     }
 
     fun Long.toLocalDateTime(): LocalDateTime {
-        return Instant.ofEpochMilli(this) // Convert millis to Instant
-            .atZone(ZoneId.systemDefault()) // Convert to ZonedDateTime in system's default time zone
-            .toLocalDateTime() // Extract LocalDateTime
+        return Instant.ofEpochMilli(this)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDateTime()
     }
 
     fun LocalDateTime.toLong(): Long {

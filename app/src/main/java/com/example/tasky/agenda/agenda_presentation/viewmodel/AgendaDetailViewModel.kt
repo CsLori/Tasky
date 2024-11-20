@@ -10,13 +10,13 @@ import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
 import com.example.tasky.agenda.agenda_data.notification.NotificationService
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaItemDetails
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
 import com.example.tasky.core.domain.TaskyError
@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
 
@@ -107,18 +108,38 @@ class AgendaDetailViewModel @Inject constructor(
                     )
                 }
 
-                is AgendaDetailStateUpdate.UpdateShouldShowDatePicker -> it.copy(shouldShowDatePicker = action.shouldShowDatePicker)
-                is AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker -> it.copy(shouldShowSecondRowDatePicker = action.shouldShowSecondRowDatePicker)
-                is AgendaDetailStateUpdate.UpdateShouldShowTimePicker -> it.copy(shouldShowTimePicker = action.shouldShowTimePicker)
-                is AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker -> it.copy(shouldShowSecondRowTimePicker = action.shouldShowTimePicker)
+                is AgendaDetailStateUpdate.UpdateShouldShowDatePicker -> it.copy(
+                    shouldShowDatePicker = action.shouldShowDatePicker
+                )
+
+                is AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker -> it.copy(
+                    shouldShowSecondRowDatePicker = action.shouldShowSecondRowDatePicker
+                )
+
+                is AgendaDetailStateUpdate.UpdateShouldShowTimePicker -> it.copy(
+                    shouldShowTimePicker = action.shouldShowTimePicker
+                )
+
+                is AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker -> it.copy(
+                    shouldShowSecondRowTimePicker = action.shouldShowTimePicker
+                )
+
                 is AgendaDetailStateUpdate.UpdateEditType -> it.copy(editType = action.editType)
-                is AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown -> it.copy(shouldShowReminderDropdown = action.shouldShowReminderDropdown)
+                is AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown -> it.copy(
+                    shouldShowReminderDropdown = action.shouldShowReminderDropdown
+                )
+
                 is AgendaDetailStateUpdate.UpdateSelectedReminder -> it.copy(selectedReminder = action.selectedReminder)
                 is AgendaDetailStateUpdate.UpdateDescription -> it.copy(description = action.description)
                 is AgendaDetailStateUpdate.UpdateTitle -> it.copy(title = action.title)
                 is AgendaDetailStateUpdate.UpdateIsReadOnly -> it.copy(isReadOnly = action.isReadOnly)
                 is AgendaDetailStateUpdate.UpdateSelectedAgendaItem -> it.copy(selectedAgendaItem = action.selectedAgendaItem)
-                is AgendaDetailStateUpdate.UpdatePhotos -> it.copy(details = (it.details as? AgendaItemDetails.Event?)?.copy(photos = action.photos))
+                is AgendaDetailStateUpdate.UpdatePhotos -> it.copy(
+                    details = (it.details as? AgendaItemDetails.Event?)?.copy(
+                        photos = action.photos
+                    )
+                )
+
                 is AgendaDetailStateUpdate.UpdateAttendees -> it.copy(
                     details = (it.details as? AgendaItemDetails.Event?)?.copy(attendees = action.attendees)
                 )
@@ -131,6 +152,7 @@ class AgendaDetailViewModel @Inject constructor(
                         emailErrorStatus = emailErrorStatus
                     )
                 }
+
                 is AgendaDetailStateUpdate.UpdateVisitorFilter -> it.copy(visitorFilter = action.filter)
                 is AgendaDetailStateUpdate.UpdateRemindAtTime -> it.copy(remindAt = action.remindAtTime)
 //                is AgendaDetailStateUpdate.UpdateSortDate -> {
@@ -142,7 +164,11 @@ class AgendaDetailViewModel @Inject constructor(
 //                    }
 //                }
 
-                is AgendaDetailStateUpdate.UpdateSecondRowToDate -> it.copy(details = (it.details as? AgendaItemDetails.Event?)?.copy(toTime = action.toDate))
+                is AgendaDetailStateUpdate.UpdateSecondRowToDate -> it.copy(
+                    details = (it.details as? AgendaItemDetails.Event?)?.copy(
+                        toTime = action.toDate
+                    )
+                )
             }
         }
     }
@@ -151,18 +177,18 @@ class AgendaDetailViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
-            val result = when (agendaItem) {
-                is AgendaItem.Task -> {
+            val result = when (agendaItem.details) {
+                is AgendaItemDetails.Task -> {
                     val newTask = createTask()
                     agendaRepository.addTask(newTask)
                 }
 
-                is AgendaItem.Event -> {
+                is AgendaItemDetails.Event -> {
                     val (photos, newAgendaItem) = createNewEvent()
                     agendaRepository.addEvent(newAgendaItem, photos)
                 }
 
-                is AgendaItem.Reminder -> {
+                is AgendaItemDetails.Reminder -> {
                     val newReminder = createReminder()
                     agendaRepository.addReminder(newReminder)
                 }
@@ -190,23 +216,22 @@ class AgendaDetailViewModel @Inject constructor(
     }
 
     fun updateAgendaItem(agendaItem: AgendaItem) {
-//        Timber.d("DDD - viewmodel updateAgendaItem agendaItem: ${agendaItem.remindAt.toLocalDateTime()}")
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            val result = when (agendaItem) {
-                is AgendaItem.Task -> {
+            val result = when (agendaItem.details) {
+                is AgendaItemDetails.Task -> {
                     val newTask = prepareUpdatedTask(agendaItem)
                     notificationService.schedule(newTask)
                     agendaRepository.updateTask(newTask)
                 }
 
-                is AgendaItem.Event -> {
+                is AgendaItemDetails.Event -> {
                     val (photos, newEvent) = prepareUpdatedEvent(agendaItem)
                     notificationService.schedule(newEvent)
                     agendaRepository.updateEvent(newEvent, photos, deletedPhotos.toList())
                 }
 
-                is AgendaItem.Reminder -> {
+                is AgendaItemDetails.Reminder -> {
                     val newReminder = prepareUpdatedReminder(agendaItem)
                     notificationService.schedule(newReminder)
                     agendaRepository.updateReminder(newReminder)
@@ -242,58 +267,60 @@ class AgendaDetailViewModel @Inject constructor(
         }
     }
 
-    private fun createTask(): AgendaItem.Task {
-        val currentState = state.value.details as? AgendaItemDetails.Task ?: throw IllegalStateException("Current details are not of type Task")
-        return AgendaItem.Task(
-            taskId = UUID.randomUUID().toString(),
-            taskTitle = state.value.title,
-            taskDescription = state.value.description,
-            time = state.value.time.toLong(),
-            isDone = currentState.isDone,
-            remindAtTime = state.value.remindAt?.toLong() ?: 0
+    private fun createTask(): AgendaItem {
+        return AgendaItem(
+            id = UUID.randomUUID().toString(),
+            title = state.value.title ?: "Task",
+            description = state.value.description ?: "New task",
+            time = state.value.time,
+            details = AgendaItemDetails.Task(isDone = false),
+            remindAt = state.value.remindAt ?: LocalDateTime.now()
         )
     }
 
-    private fun createReminder(): AgendaItem.Reminder {
-        return AgendaItem.Reminder(
-            reminderId = UUID.randomUUID().toString(),
-            reminderTitle = state.value.title,
-            reminderDescription = state.value.description,
-            time = state.value.time.toLong(),
-            remindAtTime = state.value.remindAt?.toLong() ?: 0
+    private fun createReminder(): AgendaItem {
+        return AgendaItem(
+            id = UUID.randomUUID().toString(),
+            title = state.value.title ?: "Reminder",
+            description = state.value.description ?: "New reminder",
+            time = state.value.time,
+            details = AgendaItemDetails.Reminder,
+            remindAt = state.value.remindAt ?: LocalDateTime.now()
         )
     }
 
-    private fun prepareUpdatedTask(agendaItem: AgendaItem.Task): AgendaItem.Task {
-        val currentState = state.value.details as? AgendaItemDetails.Task ?: throw IllegalStateException("Current details are not of type Task")
-        Timber.d("DDD - viewmodel prepareUpdatedTask agendaItem: ${agendaItem.remindAtTime.toLocalDateTime()}")
-        Timber.d("DDD - viewmodel prepareUpdatedTask currentState: ${state.value.time.toLong().toLocalDateTime()}")
+    private fun prepareUpdatedTask(agendaItem: AgendaItem): AgendaItem {
+        Timber.d("DDD - viewmodel prepareUpdatedTask agendaItem: ${agendaItem.remindAt}")
+        Timber.d(
+            "DDD - viewmodel prepareUpdatedTask currentState: ${
+                state.value.time.toLong().toLocalDateTime()
+            }"
+        )
         val newTask = agendaItem.copy(
-            taskTitle = state.value.title,
-            taskDescription = state.value.description,
-            time = state.value.time.toLong(),
-            isDone = currentState.isDone,
-            remindAtTime = state.value.remindAt?.toLong() ?: 0
+            id = state.value.title,
+            description = state.value.description,
+            time = state.value.time,
+            details = (state.value.details as? AgendaItemDetails.Task)?.copy(isDone = false) ?: AgendaItemDetails.Task(isDone = false),
+            remindAt = state.value.remindAt ?: LocalDateTime.now()
         )
 
         return newTask
     }
 
-    private fun prepareUpdatedReminder(agendaItem: AgendaItem.Reminder): AgendaItem.Reminder {
-        val currentState = state.value.details as? AgendaItemDetails.Reminder ?: throw IllegalStateException("Current details are not of type Reminder")
+    private fun prepareUpdatedReminder(agendaItem: AgendaItem): AgendaItem {
         val newReminder = agendaItem.copy(
-            reminderTitle = state.value.title,
-            reminderDescription = state.value.description,
-            time = state.value.time.toLong(),
-            remindAtTime = state.value.remindAt?.toLong() ?: 0
+            title = state.value.title,
+            description = state.value.description,
+            time = state.value.time,
+            remindAt = state.value.remindAt ?: LocalDateTime.now()
         )
         return newReminder
     }
 
-    private suspend fun createNewEvent(): Pair<List<ByteArray>, AgendaItem.Event> {
-        val currentState = state.value.details as? AgendaItemDetails.Event ?: throw IllegalStateException("Current details are not of type Event")
+    private suspend fun createNewEvent(): Pair<List<ByteArray>, AgendaItem> {
+        val currentState = state.value.details
         val photosJob = viewModelScope.async(Dispatchers.IO) {
-            photoConverter.convertPhotosToByteArrays(currentState.photos)
+            photoConverter.convertPhotosToByteArrays((currentState as AgendaItemDetails.Event).photos)
         }
         val photos = photosJob.await()
 
@@ -322,36 +349,44 @@ class AgendaDetailViewModel @Inject constructor(
             }
         }
 
-        val newAgendaItem = AgendaItem.Event(
-            eventId = eventId,
-            eventTitle = state.value.title,
-            eventDescription = state.value.description,
-            from = state.value.time.toLong(),
-            to = currentState.toTime.toLong(),
-            photos = currentState.photos,
-            attendees = currentState.attendees + listOfNotNull(loggedInAttendee),
-            isUserEventCreator = true,
-            host = currentState.host ?: "",
-            remindAtTime = state.value.remindAt?.toLong() ?: 0
+        val newAgendaItem = AgendaItem(
+            id = eventId,
+            title = state.value.title ?: "Event",
+            description = state.value.description ?: "New event",
+            time = state.value.time,
+            details = AgendaItemDetails.Event(
+                toTime = (currentState as AgendaItemDetails.Event).toTime,
+                photos = (currentState as AgendaItemDetails.Event).photos,
+                attendees = (currentState as AgendaItemDetails.Event).attendees + listOfNotNull(loggedInAttendee),
+                isUserEventCreator = true,
+                host = (currentState as AgendaItemDetails.Event).host ?: "",
+            ),
+            remindAt = state.value.remindAt ?: LocalDateTime.now()
         )
         return Pair(photos, newAgendaItem)
     }
 
-    private suspend fun prepareUpdatedEvent(agendaItem: AgendaItem.Event): Pair<List<ByteArray>, AgendaItem.Event> {
-        val currentState = state.value.details as? AgendaItemDetails.Event ?: throw IllegalStateException("Current details are not of type Event")
+    private suspend fun prepareUpdatedEvent(agendaItem: AgendaItem): Pair<List<ByteArray>, AgendaItem> {
+        val currentState = state.value.details as? AgendaItemDetails.Event
+            ?: throw IllegalStateException("Current details are not of type Event")
         val photosJob = viewModelScope.async(Dispatchers.IO) {
             photoConverter.convertPhotosToByteArrays(currentState.photos)
         }
         val photos = photosJob.await()
 
+        val agendaEventDetails = agendaItem.details as? AgendaItemDetails.Event
+            ?: throw IllegalArgumentException("Agenda item details must be of type Event")
+
         val newEvent = agendaItem.copy(
-            eventTitle = state.value.title,
-            eventDescription = state.value.description,
-            from = state.value.time.toLong(),
-            to = currentState.toTime.toLong(),
-            photos = (agendaItem.photos + currentState.photos).distinctBy { it.key },
-            attendees = (agendaItem.attendees + currentState.attendees).distinctBy { it.userId },
-            remindAtTime = state.value.remindAt?.toLong() ?: 0,
+            title = state.value.title,
+            description = state.value.description,
+            time = state.value.time,
+            details = currentState.copy(
+                toTime = currentState.toTime,
+                photos = (agendaEventDetails.photos + currentState.photos).distinctBy { it.key },
+                attendees = (agendaEventDetails.attendees + currentState.attendees).distinctBy { it.userId },
+            ),
+            remindAt = state.value.remindAt ?: LocalDateTime.now(),
         )
         return Pair(photos, newEvent)
     }
@@ -359,10 +394,10 @@ class AgendaDetailViewModel @Inject constructor(
     fun deleteAgendaItem(agendaItem: AgendaItem) {
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            val result = when (agendaItem) {
-                is AgendaItem.Task -> agendaRepository.deleteTask(agendaItem)
-                is AgendaItem.Event -> agendaRepository.deleteEvent(agendaItem)
-                is AgendaItem.Reminder -> agendaRepository.deleteReminder(agendaItem)
+            val result = when (agendaItem.details) {
+                is AgendaItemDetails.Task -> agendaRepository.deleteTask(agendaItem)
+                is AgendaItemDetails.Event -> agendaRepository.deleteEvent(agendaItem)
+                is AgendaItemDetails.Reminder -> agendaRepository.deleteReminder(agendaItem)
             }
 
             result.onSuccess {
@@ -421,7 +456,7 @@ class AgendaDetailViewModel @Inject constructor(
                             _state.update { currentState ->
                                 currentState.copy(
                                     selectedAgendaItem = event,
-                                    event = event,
+                                    details = currentState.details as? AgendaItemDetails.Event,
                                     isLoading = false
                                 )
                             }
@@ -437,7 +472,7 @@ class AgendaDetailViewModel @Inject constructor(
                             _state.update { currentState ->
                                 currentState.copy(
                                     selectedAgendaItem = task,
-                                    task = task,
+                                    details = currentState.details as? AgendaItemDetails.Task,
                                     isLoading = false
                                 )
                             }
@@ -453,7 +488,7 @@ class AgendaDetailViewModel @Inject constructor(
                             _state.update { currentState ->
                                 currentState.copy(
                                     selectedAgendaItem = reminder,
-                                    reminder = reminder,
+                                    details = currentState.details as? AgendaItemDetails.Reminder,
                                     isLoading = false
                                 )
                             }
@@ -482,10 +517,11 @@ class AgendaDetailViewModel @Inject constructor(
                     if (attendeeResponse.doesUserExist) {
                         val newAttendee = attendeeResponse.attendee
                         _state.update { currentState ->
+                            val currentDetails = currentState.details as? AgendaItemDetails.Event
                             currentState.copy(
-                                details = (currentState.details as? AgendaItemDetails.Event?)?.copy(
+                                details = currentDetails?.copy(
                                     attendees = currentState.details.attendees + newAttendee.toAttendee(
-                                        eventId = state.value.event.eventId,
+                                        eventId = UUID.randomUUID().toString(), // I am not sure here
                                         remindAt = state.value.remindAt?.toLong() ?: 0
                                     )
                                 ),
@@ -540,17 +576,29 @@ class AgendaDetailViewModel @Inject constructor(
                     key = UUID.randomUUID().toString(),
                     url = uri.toString()
                 )
-                updateState(AgendaDetailStateUpdate.UpdatePhotos(((state.value.details as? AgendaItemDetails.Event?)?.photos ?: emptyList()) + newPhoto))
+                updateState(
+                    AgendaDetailStateUpdate.UpdatePhotos(
+                        ((state.value.details as? AgendaItemDetails.Event?)?.photos
+                            ?: emptyList()) + newPhoto
+                    )
+                )
             }
         }
     }
 
     fun deletePhoto(photoKey: String) {
-        val updatedPhotos = (state.value.details as? AgendaItemDetails.Event)?.photos?.filterNot { it.key == photoKey } ?: emptyList()
-        val deletedPhoto = (state.value.details as? AgendaItemDetails.Event)?.photos?.find { it.key == photoKey }
+        val updatedPhotos =
+            (state.value.details as? AgendaItemDetails.Event)?.photos?.filterNot { it.key == photoKey }
+                ?: emptyList()
+        val deletedPhoto =
+            (state.value.details as? AgendaItemDetails.Event)?.photos?.find { it.key == photoKey }
         deletedPhotos.add(deletedPhoto?.key ?: "")
         _state.update { currentState ->
-            currentState.copy(details = (currentState.details as? AgendaItemDetails.Event)?.copy(photos = updatedPhotos))
+            currentState.copy(
+                details = (currentState.details as? AgendaItemDetails.Event)?.copy(
+                    photos = updatedPhotos
+                )
+            )
         }
     }
 

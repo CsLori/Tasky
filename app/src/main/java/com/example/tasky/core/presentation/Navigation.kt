@@ -15,7 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.tasky.Screen
-import com.example.tasky.agenda.agenda_domain.model.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaItemEditScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
@@ -141,22 +141,9 @@ fun Navigation() {
                             savedStateHandle.remove<String>(PHOTO_ID)
                         }
                     }
-                    val navigationTitle =
-                        when (agendaDetailViewModel.agendaOption) {
-                            AgendaOption.TASK -> agendaDetailViewModel.state.value.task.title
-                            AgendaOption.EVENT -> agendaDetailViewModel.state.value.event.title
-                            AgendaOption.REMINDER -> agendaDetailViewModel.state.value.reminder.title
+                    val navigationTitle = agendaDetailViewModel.state.value.title
 
-                        }
-
-                    val navigationDescription =
-                        when (agendaDetailViewModel.agendaOption) {
-                            AgendaOption.TASK -> agendaDetailViewModel.state.value.task.description
-                            AgendaOption.EVENT -> agendaDetailViewModel.state.value.event.description
-                            AgendaOption.REMINDER -> agendaDetailViewModel.state.value.reminder.description
-
-                        }
-
+                    val navigationDescription = agendaDetailViewModel.state.value.description
 
                     savedStateHandle?.get<String>(TITLE)?.let { newTitle ->
                         agendaDetailViewModel.updateState(
@@ -191,8 +178,8 @@ fun Navigation() {
                         },
                         agendaItemId = args.agendaItemId,
                         onNavigateToSelectedPhoto = { photoId ->
-                            val photoUrl = agendaDetailViewModel.state.value.event.photos
-                                .firstOrNull { photo -> photo.key == photoId }?.url
+                            val photoUrl = (agendaDetailViewModel.state.value.details as? AgendaItemDetails.Event)?.photos
+                                ?.firstOrNull { photo -> photo.key == photoId }?.url
 
                             if (photoUrl != null && photoId != null) {
                                 navController.navigate(Screen.Photo(photoId, photoUrl))
