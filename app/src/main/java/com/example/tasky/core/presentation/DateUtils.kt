@@ -5,7 +5,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -100,5 +99,28 @@ object DateUtils {
         return this.atStartOfDay(ZoneId.systemDefault())
             .toInstant()
             .toEpochMilli()
+    }
+
+    fun Long.toLocalDateTime(): LocalDateTime {
+        return Instant.ofEpochMilli(this) // Convert millis to Instant
+            .atZone(ZoneId.systemDefault()) // Convert to ZonedDateTime in system's default time zone
+            .toLocalDateTime() // Extract LocalDateTime
+    }
+
+    fun LocalDateTime.toLong(): Long {
+        return this.atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+    }
+
+    fun LocalDateTime.toHourMinuteFormat(): String {
+        val hours = this.hour
+        val minutes = this.minute
+
+        return String.format(Locale.getDefault(), "%02d:%02d", hours, minutes)
+    }
+
+    fun LocalDateTime.toStringMMMdyyyyFormat(): String {
+        return this.format(DateTimeFormatter.ofPattern("MMM d yyyy"))
     }
 }

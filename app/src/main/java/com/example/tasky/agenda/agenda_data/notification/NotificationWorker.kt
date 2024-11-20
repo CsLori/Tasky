@@ -12,6 +12,7 @@ import kotlin.random.Random
 class NotificationWorker(context: Context, workerParams: WorkerParameters) :
     Worker(context, workerParams) {
     override fun doWork(): Result {
+//        Timber.d("NotificationWorker triggered with title: ${inputData.getString("title")}")
         val title = inputData.getString("title") ?: return Result.failure()
         val message = inputData.getString("message") ?: return Result.failure()
 

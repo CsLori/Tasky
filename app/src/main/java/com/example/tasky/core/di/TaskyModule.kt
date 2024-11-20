@@ -11,6 +11,7 @@ import com.example.tasky.agenda.agenda_data.local.dao.EventDao
 import com.example.tasky.agenda.agenda_data.local.dao.ReminderDao
 import com.example.tasky.agenda.agenda_data.local.dao.SyncAgendaItemsDao
 import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
+import com.example.tasky.agenda.agenda_data.notification.NotificationService
 import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
 import com.example.tasky.agenda.agenda_data.remote.AuthTokenInterceptor
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
@@ -142,5 +143,11 @@ object TaskyModule {
     @Singleton
     fun provideNetworkConnectivityService(@ApplicationContext context: Context) : NetworkConnectivityService {
         return NetworkConnectivityService(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationService(@ApplicationContext context: Context) : NotificationService {
+        return NotificationService(context)
     }
 }

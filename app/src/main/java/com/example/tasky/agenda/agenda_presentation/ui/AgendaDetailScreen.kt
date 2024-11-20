@@ -70,6 +70,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewMo
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
+import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaItemDetails
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.VisitorFilter
 import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
@@ -110,9 +111,9 @@ internal fun AgendaDetailScreen(
             agendaDetailViewModel.updateState(
                 AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
                     when (agendaDetailViewModel.agendaOption) {
-                        AgendaOption.TASK -> state.task
-                        AgendaOption.EVENT -> state.event
-                        AgendaOption.REMINDER -> state.reminder
+                        AgendaOption.TASK -> state.details as? AgendaItemDetails.Task
+                        AgendaOption.EVENT -> state.details as? AgendaItemDetails.Event
+                        AgendaOption.REMINDER -> state.details as? AgendaItemDetails.Reminder
                     }
                 )
             )
@@ -120,7 +121,7 @@ internal fun AgendaDetailScreen(
             agendaDetailViewModel.loadAgendaItem(agendaItemId)
             agendaDetailViewModel.updateState(
                 AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
-                    state.selectedAgendaItem
+                    state.details
                 )
             )
         }
@@ -136,8 +137,8 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnCreateSuccess -> onNavigateToAgendaScreen()
                 AgendaDetailAction.OnEditRowPressed -> onEditPressed()
                 AgendaDetailAction.OnSavePressed -> {
-                    val time = LocalTime.of(state.fromAtTime.hour, state.fromAtTime.minute)
-                    val dateTime = LocalDateTime.of(state.date, time)
+                    val time = LocalTime.of(state.time.hour, state.time.minute)
+                    val dateTime = LocalDateTime.of(state.time.toLocalDate() , time)
                     val timestamp =
                         dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                     agendaDetailViewModel.updateState(
@@ -146,8 +147,8 @@ internal fun AgendaDetailScreen(
                         )
                     )
 
-                    val secondRowTime = LocalTime.of(state.toTime.hour, state.toTime.minute)
-                    val secondRowDateTime = LocalDateTime.of(state.date, secondRowTime)
+                    val secondRowTime = LocalTime.of((state.details as? AgendaItemDetails.Event)?.toTime?.hour ?: 0, (state.details as? AgendaItemDetails.Event)?.toTime?.minute ?: 0)
+                    val secondRowDateTime = LocalDateTime.of((state.details as? AgendaItemDetails.Event)?.toTime?.toLocalDate(), secondRowTime)
                     val secondRowTimestamp =
                         secondRowDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
@@ -179,9 +180,9 @@ internal fun AgendaDetailScreen(
                 is AgendaDetailAction.OnPhotoPressed -> onNavigateToSelectedPhoto(action.key)
 
                 is AgendaDetailAction.OnVisitorFilterChanged -> when (state.visitorFilter) {
-                    VisitorFilter.ALL -> state.event.attendees
-                    VisitorFilter.GOING -> state.event.attendees.filter { it.isGoing }
-                    VisitorFilter.NOT_GOING -> state.event.attendees.filterNot { it.isGoing }
+                    VisitorFilter.ALL -> (state.details as? AgendaItemDetails.Event)?.attendees
+                    VisitorFilter.GOING -> (state.details as? AgendaItemDetails.Event)?.attendees?.filter { it.isGoing }
+                    VisitorFilter.NOT_GOING -> (state.details as? AgendaItemDetails.Event)?.attendees?.filterNot { it.isGoing }
                 }
 
                 is AgendaDetailAction.OnDeleteAgendaItem -> {
@@ -244,7 +245,7 @@ private fun AgendaDetailContent(
                 when (errorDialogState) {
                     is AgendaDetailViewModel.ErrorDialogState.AgendaItemError -> {
                         ErrorDialog(
-                            label = errorDialogState.message.asString() ?: "",
+                            label = errorDialogState.message.asString(),
                             displayCloseIcon = false,
                             positiveButtonText = stringResource(R.string.OK),
                             positiveOnClick = { onErrorDialogDismiss() },
@@ -253,7 +254,7 @@ private fun AgendaDetailContent(
 
                     is AgendaDetailViewModel.ErrorDialogState.AttendeeError -> {
                         ErrorDialog(
-                            label = errorDialogState.message.asString() ?: "",
+                            label = errorDialogState.message.asString(),
                             displayCloseIcon = false,
                             positiveButtonText = stringResource(R.string.OK),
                             positiveOnClick = { onErrorDialogDismiss() },
@@ -262,7 +263,7 @@ private fun AgendaDetailContent(
 
                     is AgendaDetailViewModel.ErrorDialogState.GeneralError -> {
                         ErrorDialog(
-                            label = errorDialogState.message.asString() ?: "",
+                            label = errorDialogState.message.asString(),
                             displayCloseIcon = false,
                             positiveButtonText = stringResource(R.string.OK),
                             positiveOnClick = { onErrorDialogDismiss() },
@@ -383,9 +384,9 @@ fun MainContent(
                 onAddPhotos = onAddPhotosPressed,
                 selectedImageUri = selectedImageUri,
                 onUpdateState = onUpdateState,
-                photos = state.event.photos,
+                photos = (state.details as? AgendaItemDetails.Event)?.photos ?: emptyList(),
                 onAction = onAction,
-                isEventCreator = state.event.isUserEventCreator
+                isEventCreator = (state.details as? AgendaItemDetails.Event)?.isUserEventCreator ?: false
             )
         }
     }
@@ -401,7 +402,7 @@ fun MainContent(
 
         if (agendaItem is AgendaItem.Event) {
             VisitorsSection(
-                visitors = state.event.attendees,
+                visitors = (state.details as? AgendaItemDetails.Event)?.attendees ?: emptyList(),
                 onVisitorStatusChanged = { onAction(AgendaDetailAction.OnVisitorFilterChanged) },
                 onShowDialog = onShowDialog,
                 onDialogDismiss = onDialogDismiss,
@@ -412,7 +413,7 @@ fun MainContent(
                 onAction = onAction,
                 visitorFilter = state.visitorFilter,
                 isReadOnly = state.isReadOnly,
-                isEventCreator = state.event.isUserEventCreator
+                isEventCreator = (state.details as? AgendaItemDetails.Event)?.isUserEventCreator ?: false
             )
         }
         Box(
