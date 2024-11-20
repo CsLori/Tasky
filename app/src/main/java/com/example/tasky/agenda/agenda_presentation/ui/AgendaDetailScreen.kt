@@ -85,8 +85,6 @@ import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 import com.example.tasky.util.getInitials
 import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
 
 
 @Composable
@@ -137,24 +135,24 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnCreateSuccess -> onNavigateToAgendaScreen()
                 AgendaDetailAction.OnEditRowPressed -> onEditPressed()
                 AgendaDetailAction.OnSavePressed -> {
-                    val time = LocalTime.of(state.time.hour, state.time.minute)
-                    val dateTime = LocalDateTime.of(state.time.toLocalDate() , time)
-                    val timestamp =
-                        dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+//                    val time = LocalTime.of(state.time.hour, state.time.minute)
+//                    val dateTime = LocalDateTime.of(state.time.toLocalDate() , time)
+//                    val timestamp =
+//                        dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                     agendaDetailViewModel.updateState(
-                        AgendaDetailStateUpdate.UpdateSortDate(
-                            timestamp
+                        AgendaDetailStateUpdate.UpdateTime(
+                            state.time
                         )
                     )
 
-                    val secondRowTime = LocalTime.of((state.details as? AgendaItemDetails.Event)?.toTime?.hour ?: 0, (state.details as? AgendaItemDetails.Event)?.toTime?.minute ?: 0)
-                    val secondRowDateTime = LocalDateTime.of((state.details as? AgendaItemDetails.Event)?.toTime?.toLocalDate(), secondRowTime)
-                    val secondRowTimestamp =
-                        secondRowDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+//                    val secondRowTime = LocalTime.of((state.details as? AgendaItemDetails.Event)?.toTime?.hour ?: 0, (state.details as? AgendaItemDetails.Event)?.toTime?.minute ?: 0)
+//                    val secondRowDateTime = LocalDateTime.of((state.details as? AgendaItemDetails.Event)?.toTime?.toLocalDate(), secondRowTime)
+//                    val secondRowTimestamp =
+//                        secondRowDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
                     agendaDetailViewModel.updateState(
                         AgendaDetailStateUpdate.UpdateSecondRowToDate(
-                            secondRowTimestamp
+                            (state.details as? AgendaItemDetails.Event)?.toTime ?: LocalDateTime.now()
                         )
                     )
                     if (agendaItemId == null) {
