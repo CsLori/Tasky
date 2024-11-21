@@ -155,15 +155,6 @@ class AgendaDetailViewModel @Inject constructor(
 
                 is AgendaDetailStateUpdate.UpdateVisitorFilter -> it.copy(visitorFilter = action.filter)
                 is AgendaDetailStateUpdate.UpdateRemindAtTime -> it.copy(remindAt = action.remindAtTime)
-//                is AgendaDetailStateUpdate.UpdateSortDate -> {
-//                    when (it.selectedAgendaItem) {
-//                        is AgendaItem.Task -> it.copy(task = it.task.copy(time = action.sortDate))
-//                        is AgendaItem.Event -> it.copy(event = it.event.copy(from = action.sortDate))
-//                        is AgendaItem.Reminder -> it.copy(reminder = it.reminder.copy(time = action.sortDate))
-//                        else -> it
-//                    }
-//                }
-
                 is AgendaDetailStateUpdate.UpdateSecondRowToDate -> it.copy(
                     details = (it.details as? AgendaItemDetails.Event?)?.copy(
                         toTime = action.toDate
@@ -319,7 +310,9 @@ class AgendaDetailViewModel @Inject constructor(
     }
 
     private suspend fun createNewEvent(): Pair<List<ByteArray>, AgendaItem> {
-        val currentState = state.value.details
+        val currentState = state.value.selectedAgendaItem?.details as? AgendaItemDetails.Event
+            ?: throw IllegalStateException("Selected agenda item is not an Event")
+
         val photosJob = viewModelScope.async(Dispatchers.IO) {
             photoConverter.convertPhotosToByteArrays((currentState as AgendaItemDetails.Event).photos)
         }
@@ -356,13 +349,11 @@ class AgendaDetailViewModel @Inject constructor(
             description = state.value.description ?: "New event",
             time = state.value.time,
             details = AgendaItemDetails.Event(
-                toTime = (currentState as AgendaItemDetails.Event).toTime,
-                photos = (currentState as AgendaItemDetails.Event).photos,
-                attendees = (currentState as AgendaItemDetails.Event).attendees + listOfNotNull(
-                    loggedInAttendee
-                ),
+                toTime = currentState.toTime,
+                photos = currentState.photos,
+                attendees = currentState.attendees + listOfNotNull(loggedInAttendee),
                 isUserEventCreator = true,
-                host = (currentState as AgendaItemDetails.Event).host ?: "",
+                host = currentState.host ?: "",
             ),
             remindAt = state.value.remindAt ?: LocalDateTime.now()
         )
@@ -370,7 +361,7 @@ class AgendaDetailViewModel @Inject constructor(
     }
 
     private suspend fun prepareUpdatedEvent(agendaItem: AgendaItem): Pair<List<ByteArray>, AgendaItem> {
-        val currentState = state.value.details as? AgendaItemDetails.Event
+        val currentState = state.value.selectedAgendaItem?.details as? AgendaItemDetails.Event
             ?: throw IllegalStateException("Current details are not of type Event")
         val photosJob = viewModelScope.async(Dispatchers.IO) {
             photoConverter.convertPhotosToByteArrays(currentState.photos)
