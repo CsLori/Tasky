@@ -117,6 +117,7 @@ internal fun AgendaDetailScreen(
                             remindAt = LocalDateTime.now(),
                             details = AgendaItemDetails.Task(isDone = false)
                         )
+
                         AgendaOption.EVENT -> AgendaItem(
                             id = "",
                             title = "",
@@ -124,11 +125,11 @@ internal fun AgendaDetailScreen(
                             time = LocalDateTime.now(),
                             remindAt = LocalDateTime.now(),
                             details = AgendaItemDetails.Event(
-                            toTime = LocalDateTime.now(),
-                            attendees = emptyList(),
-                            photos = emptyList(),
-                            isUserEventCreator = true,
-                            host = ""
+                                toTime = LocalDateTime.now(),
+                                attendees = emptyList(),
+                                photos = emptyList(),
+                                isUserEventCreator = true,
+                                host = ""
                             ),
                         )
 

@@ -652,8 +652,8 @@ fun SetReminderRow(
         ReminderDropdown(
             options = reminderOptions,
             onItemSelected = {
-                val selectedTime = state.remindAt
-                val remindAt = (selectedTime?.toLong() ?: 0) - it.timeBeforeInMillis
+                val selectedTime = state.time
+                val remindAt = selectedTime.toLong() - it.timeBeforeInMillis
                 Timber.d("DDD component - onItemSelected: remindAt - ${remindAt.toLocalDateTime()} | selectedTime - $selectedTime")
                 onUpdateState(AgendaDetailStateUpdate.UpdateSelectedReminder(it.timeBeforeInMillis))
                 onUpdateState(

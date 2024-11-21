@@ -319,6 +319,7 @@ class AgendaDetailViewModel @Inject constructor(
         val photos = photosJob.await()
 
         val eventId = UUID.randomUUID().toString()
+        Timber.d("DDD - viewmodel create currentState: ${currentState}")
 
         val loggedInUserResult = agendaRepository.getLoggedInUserDetails()
         val loggedInAttendee: Attendee? = when (loggedInUserResult) {
@@ -357,6 +358,8 @@ class AgendaDetailViewModel @Inject constructor(
             ),
             remindAt = state.value.remindAt ?: LocalDateTime.now()
         )
+        Timber.d("DDD - viewmodel create newAgendaItem: ${newAgendaItem}")
+
         return Pair(photos, newAgendaItem)
     }
 
@@ -370,6 +373,9 @@ class AgendaDetailViewModel @Inject constructor(
 
         val agendaEventDetails = agendaItem.details as? AgendaItemDetails.Event
             ?: throw IllegalArgumentException("Agenda item details must be of type Event")
+
+        Timber.d("DDD - viewmodel prepareUpdatedEvent agendaEventDetails: ${agendaEventDetails}")
+        Timber.d("DDD - viewmodel prepareUpdatedEvent agendaItem: ${currentState}")
 
         val newEvent = agendaItem.copy(
             title = state.value.title,
@@ -488,8 +494,7 @@ class AgendaDetailViewModel @Inject constructor(
                             currentState.copy(
                                 details = currentDetails?.copy(
                                     attendees = currentState.details.attendees + newAttendee.toAttendee(
-                                        eventId = UUID.randomUUID()
-                                            .toString(), // I am not sure here
+                                        eventId = state.value.selectedAgendaItem?.id ?: "",
                                         remindAt = state.value.remindAt?.toLong() ?: 0
                                     )
                                 ),
