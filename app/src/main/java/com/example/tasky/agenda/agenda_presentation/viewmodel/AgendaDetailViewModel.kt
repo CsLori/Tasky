@@ -98,7 +98,7 @@ class AgendaDetailViewModel @Inject constructor(
                     isDateSelectedFromDatePicker = false
                 )
 
-                is AgendaDetailStateUpdate.UpdateFromAtTime -> it.copy(time = action.time)
+//                is AgendaDetailStateUpdate.UpdateFromAtTime -> it.copy(time = action.time)
 
                 is AgendaDetailStateUpdate.UpdateEventSecondRowTime -> {
                     it.copy(

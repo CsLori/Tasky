@@ -111,34 +111,34 @@ internal fun AgendaDetailScreen(
                     when (agendaDetailViewModel.agendaOption) {
                         AgendaOption.TASK -> AgendaItem(
                             id = "",
-                            title = "",
-                            description = "",
-                            time = LocalDateTime.now(),
-                            remindAt = LocalDateTime.now(),
+                            title = state.title,
+                            description = state.description,
+                            time = state.time,
+                            remindAt = state.remindAt ?: LocalDateTime.now(),
                             details = AgendaItemDetails.Task(isDone = false)
                         )
 
                         AgendaOption.EVENT -> AgendaItem(
                             id = "",
-                            title = "",
-                            description = "",
-                            time = LocalDateTime.now(),
-                            remindAt = LocalDateTime.now(),
+                            title = state.title,
+                            description = state.description,
+                            time = state.time,
+                            remindAt = state.remindAt ?: LocalDateTime.now(),
                             details = AgendaItemDetails.Event(
-                                toTime = LocalDateTime.now(),
-                                attendees = emptyList(),
-                                photos = emptyList(),
+                                toTime = (state.details as? AgendaItemDetails.Event)?.toTime ?: LocalDateTime.now(),
+                                attendees = (state.details as? AgendaItemDetails.Event)?.attendees ?: emptyList(),
+                                photos = (state.details as? AgendaItemDetails.Event)?.photos ?: emptyList(),
                                 isUserEventCreator = true,
-                                host = ""
+                                host = (state.details as? AgendaItemDetails.Event)?.host
                             ),
                         )
 
                         AgendaOption.REMINDER -> AgendaItem(
                             id = "",
-                            title = "",
-                            description = "",
-                            time = LocalDateTime.now(),
-                            remindAt = LocalDateTime.now(),
+                            title = state.title,
+                            description = state.description,
+                            time = state.time,
+                            remindAt = state.remindAt ?: LocalDateTime.now(),
                             details = AgendaItemDetails.Reminder
                         )
                     }

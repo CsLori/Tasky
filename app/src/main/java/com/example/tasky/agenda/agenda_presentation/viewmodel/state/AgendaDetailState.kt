@@ -58,7 +58,7 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateTime(val date: LocalDateTime) : AgendaDetailStateUpdate
     data class UpdateEventSecondRowDate(val date: LocalDateTime) : AgendaDetailStateUpdate
 //    data class UpdateFromAtTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
-    data class UpdateFromAtTime(val time: LocalDateTime) : AgendaDetailStateUpdate // this is probably not needed, UpdateTime will do it
+//    data class UpdateFromAtTime(val time: LocalDateTime) : AgendaDetailStateUpdate // this is probably not needed, UpdateTime will do it
 //    data class UpdateEventSecondRowTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
     data class UpdateEventSecondRowTime(val toTime: LocalDateTime) : AgendaDetailStateUpdate
     data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaDetailStateUpdate

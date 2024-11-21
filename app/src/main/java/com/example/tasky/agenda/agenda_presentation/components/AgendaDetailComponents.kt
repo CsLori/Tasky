@@ -135,7 +135,7 @@ fun AgendaItemTitle(
             Spacer(Modifier.width(dimensions.small8dp))
 
             Text(
-                text = state.title,
+                text = agendaItem?.title ?: "",
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
@@ -174,7 +174,7 @@ fun AgendaItemDescription(
         horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Text(
-            text = state.description,
+            text = agendaItem?.description ?:"",
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
         if (!state.isReadOnly) {
@@ -214,13 +214,13 @@ fun TimeAndDateRow(
                             if (isSecondRow) {
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker(
-                                        !state.shouldShowTimePicker
+                                        !state.shouldShowSecondRowTimePicker
                                     )
                                 )
                             } else {
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                        !state.shouldShowSecondRowTimePicker
+                                        !state.shouldShowTimePicker
                                     )
                                 )
                             }
@@ -249,7 +249,7 @@ fun TimeAndDateRow(
                 Text(
                     text = when (agendaItem.details) {
                         is AgendaItemDetails.Task -> state.time.toHourMinuteFormat()
-                        is AgendaItemDetails.Event -> if (isSecondRow) (state.details as? AgendaItemDetails.Event)?.toTime?.toHourMinuteFormat() ?: "" else state.time.toHourMinuteFormat()
+                        is AgendaItemDetails.Event -> if (isSecondRow) (state.details as? AgendaItemDetails.Event)?.toTime?.toHourMinuteFormat() ?: LocalDateTime.now().toHourMinuteFormat() else state.time.toHourMinuteFormat()
                         is AgendaItemDetails.Reminder -> state.time.toHourMinuteFormat()
                     },
 
@@ -288,7 +288,7 @@ fun TimeAndDateRow(
                                 )
 
                                 onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateFromAtTime(state.time)
+                                    AgendaDetailStateUpdate.UpdateTime(state.time)
                                 )
                             }
                         ) { Text(stringResource(R.string.OK)) }
@@ -338,8 +338,6 @@ fun TimeAndDateRow(
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateEventSecondRowTime(
                                         (state.details as? AgendaItemDetails.Event)?.toTime ?: LocalDateTime.now()
-//                                        hour = (state.details as? AgendaItemDetails.Event)?.toTime?.hour ?: 0,
-//                                        minute = (state.details as? AgendaItemDetails.Event)?.toTime?.minute ?: 0
                                     )
                                 )
                             }
@@ -400,7 +398,7 @@ fun TimeAndDateRow(
             Text(
                 modifier = Modifier
                     .padding(start = dimensions.default16dp),
-                text = if (isSecondRow) (state.secondRowDate?.toStringMMMdyyyyFormat() ?: "") else state.time.toStringMMMdyyyyFormat(),
+                text = if (isSecondRow) (state.secondRowDate?.toStringMMMdyyyyFormat() ?: LocalDateTime.now().toStringMMMdyyyyFormat()) else state.time.toStringMMMdyyyyFormat(),
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
             if (!state.isReadOnly) {
@@ -462,7 +460,7 @@ fun TimeAndDateRow(
                         )
                     )
                 },
-                initialDate = state.selectedDate?.toLong()
+                initialDate = state.secondRowDate?.toLong()
             )
         }
     }
