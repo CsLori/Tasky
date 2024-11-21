@@ -300,7 +300,8 @@ class AgendaDetailViewModel @Inject constructor(
             id = state.value.title,
             description = state.value.description,
             time = state.value.time,
-            details = (state.value.details as? AgendaItemDetails.Task)?.copy(isDone = false) ?: AgendaItemDetails.Task(isDone = false),
+            details = (state.value.details as? AgendaItemDetails.Task)?.copy(isDone = false)
+                ?: AgendaItemDetails.Task(isDone = false),
             remindAt = state.value.remindAt ?: LocalDateTime.now()
         )
 
@@ -357,7 +358,9 @@ class AgendaDetailViewModel @Inject constructor(
             details = AgendaItemDetails.Event(
                 toTime = (currentState as AgendaItemDetails.Event).toTime,
                 photos = (currentState as AgendaItemDetails.Event).photos,
-                attendees = (currentState as AgendaItemDetails.Event).attendees + listOfNotNull(loggedInAttendee),
+                attendees = (currentState as AgendaItemDetails.Event).attendees + listOfNotNull(
+                    loggedInAttendee
+                ),
                 isUserEventCreator = true,
                 host = (currentState as AgendaItemDetails.Event).host ?: "",
             ),
@@ -449,63 +452,36 @@ class AgendaDetailViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
-            when (agendaOption) {
-                AgendaOption.EVENT -> {
-                    agendaRepository.getEventById(agendaItemId)
-                        .onSuccess { event ->
-                            _state.update { currentState ->
-                                currentState.copy(
-                                    selectedAgendaItem = event,
-                                    details = currentState.details as? AgendaItemDetails.Event,
-                                    isLoading = false
-                                )
-                            }
-                        }
-                        .onError {
-                            _state.update { it.copy(isLoading = false) }
-                        }
-                }
+            val result = when (agendaOption) {
+                AgendaOption.EVENT -> agendaRepository.getEventById(agendaItemId)
+                AgendaOption.TASK -> agendaRepository.getTaskById(agendaItemId)
+                AgendaOption.REMINDER -> agendaRepository.getReminderById(agendaItemId)
+            }
 
-                AgendaOption.TASK -> {
-                    agendaRepository.getTaskById(agendaItemId)
-                        .onSuccess { task ->
-                            _state.update { currentState ->
-                                currentState.copy(
-                                    selectedAgendaItem = task,
-                                    details = currentState.details as? AgendaItemDetails.Task,
-                                    isLoading = false
-                                )
-                            }
-                        }
-                        .onError {
-                            _state.update { it.copy(isLoading = false) }
-                        }
-                }
-
-                AgendaOption.REMINDER -> {
-                    agendaRepository.getReminderById(agendaItemId)
-                        .onSuccess { reminder ->
-                            _state.update { currentState ->
-                                currentState.copy(
-                                    selectedAgendaItem = reminder,
-                                    details = currentState.details as? AgendaItemDetails.Reminder,
-                                    isLoading = false
-                                )
-                            }
-                        }
-                        .onError {
-                            _state.update { it.copy(isLoading = false) }
-                            _dialogState.update { DialogState.ShowError }
-                            _errorDialogState.update {
-                                ErrorDialogState.AgendaItemError(
-                                    UiText.StringResource(
-                                        R.string.Agenda_item_failed
-                                    )
-                                )
-                            }
-                        }
+            result.onSuccess { agendaItem ->
+                _state.update { currentState ->
+                    currentState.copy(
+                        selectedAgendaItem = agendaItem,
+                        title = agendaItem.title,
+                        description = agendaItem.description,
+                        time = agendaItem.time,
+                        remindAt = agendaItem.remindAt,
+                        details = agendaItem.details,
+                        isLoading = false
+                    )
                 }
             }
+                .onError {
+                    _state.update { it.copy(isLoading = false) }
+                    _dialogState.update { DialogState.ShowError }
+                    _errorDialogState.update {
+                        ErrorDialogState.AgendaItemError(
+                            UiText.StringResource(
+                                R.string.Agenda_item_failed
+                            )
+                        )
+                    }
+                }
         }
     }
 
@@ -521,7 +497,8 @@ class AgendaDetailViewModel @Inject constructor(
                             currentState.copy(
                                 details = currentDetails?.copy(
                                     attendees = currentState.details.attendees + newAttendee.toAttendee(
-                                        eventId = UUID.randomUUID().toString(), // I am not sure here
+                                        eventId = UUID.randomUUID()
+                                            .toString(), // I am not sure here
                                         remindAt = state.value.remindAt?.toLong() ?: 0
                                     )
                                 ),
