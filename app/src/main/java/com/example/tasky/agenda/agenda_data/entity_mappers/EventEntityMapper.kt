@@ -14,8 +14,8 @@ fun EventEntity.toAgendaItem(): AgendaItem {
         time = from.toLocalDateTime(),
         details = AgendaItemDetails.Event(
             toTime = to.toLocalDateTime(),
-            attendees = attendeeIds,
-            photos = photos,
+            attendees = attendeeIds.map { it.copy() },
+            photos = photos.toList(),
             isUserEventCreator = isUserEventCreator,
             host = host
         ),
@@ -29,12 +29,12 @@ fun AgendaItem.toEventEntity(): EventEntity {
     return EventEntity(
         id = id,
         title = title,
-        description = description ?: "",
+        description = description,
         from = time.toLong(),
         to = eventDetails.toTime.toLong(),
         remindAt = remindAt.toLong(),
-        attendeeIds = eventDetails.attendees,
-        photos = eventDetails.photos,
+        attendeeIds = eventDetails.attendees.map { it.copy() },
+        photos = eventDetails.photos.toList(),
         isUserEventCreator = eventDetails.isUserEventCreator,
         host = eventDetails.host,
     )

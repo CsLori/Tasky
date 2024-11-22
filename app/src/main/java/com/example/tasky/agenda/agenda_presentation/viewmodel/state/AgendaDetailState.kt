@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.tasky.agenda.agenda_presentation.viewmodel.state
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TimePickerState
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.Attendee
@@ -36,6 +40,16 @@ data class AgendaDetailState(
     val addVisitorEmail: FieldInput? = null,
     val hasDeviceBeenOffline: Boolean = false,
     val isDateSelectedFromDatePicker: Boolean = false,
+    val firstRowTimePickerState : TimePickerState = TimePickerState(
+        initialHour = time.hour,
+        initialMinute = time.minute,
+        is24Hour = true
+    ),
+    val secondRowTimePickerState : TimePickerState = TimePickerState(
+        initialHour = (details as? AgendaItemDetails.Event)?.toTime?.hour ?: LocalDateTime.now().hour,
+        initialMinute = (details as? AgendaItemDetails.Event)?.toTime?.minute ?: LocalDateTime.now().hour,
+        is24Hour = true
+    ),
 )
 
 enum class RemindBeforeDuration(val duration: Duration) {
@@ -57,8 +71,6 @@ enum class VisitorFilter(val displayName: String) {
 sealed interface AgendaDetailStateUpdate {
     data class UpdateTime(val date: LocalDateTime) : AgendaDetailStateUpdate
     data class UpdateEventSecondRowDate(val date: LocalDateTime) : AgendaDetailStateUpdate
-//    data class UpdateFromAtTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
-//    data class UpdateFromAtTime(val time: LocalDateTime) : AgendaDetailStateUpdate // this is probably not needed, UpdateTime will do it
 //    data class UpdateEventSecondRowTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
     data class UpdateEventSecondRowTime(val toTime: LocalDateTime) : AgendaDetailStateUpdate
     data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaDetailStateUpdate
@@ -77,6 +89,5 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate
     data class UpdateVisitorFilter(val filter: VisitorFilter) : AgendaDetailStateUpdate
     data class UpdateRemindAtTime(val remindAtTime: LocalDateTime?) : AgendaDetailStateUpdate
-//    data class UpdateSortDate(val sortDate: Long) : AgendaDetailStateUpdate
     data class UpdateSecondRowToDate(val toDate: LocalDateTime) : AgendaDetailStateUpdate
 }

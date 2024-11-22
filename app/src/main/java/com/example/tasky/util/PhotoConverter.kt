@@ -15,6 +15,7 @@ class PhotoConverter(
             inputStream?.readBytes()
         } catch (e: Exception) {
             if (e is CancellationException) throw e
+
             e.printStackTrace()
             null
         }

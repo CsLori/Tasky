@@ -7,12 +7,19 @@ import androidx.work.workDataOf
 import com.example.tasky.agenda.agenda_domain.NotificationScheduler
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.core.presentation.DateUtils.toLong
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 class NotificationService(private val context: Context): NotificationScheduler {
     override fun schedule(agendaItem: AgendaItem) {
-        val delay = (agendaItem.remindAt.toLong() - System.currentTimeMillis())
-//        Timber.d("DDD - NotificationService: ${agendaItem.remindAt.toLocalDateTime()} | ${System.currentTimeMillis().toLocalDateTime()}")
+        val delay = agendaItem.time.toLong() - agendaItem.remindAt.toLong()
+        Timber.d("DDD - NotificationService: remindAt=${agendaItem.remindAt}, time=${agendaItem.time}, delay=${delay}ms")
+
+        if (delay < 0) {
+            Timber.w("DDD - NotificationService: Invalid delay, notification not scheduled.")
+            return
+        }
+
         val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
             .setInputData(workDataOf("title" to agendaItem.title, "message" to agendaItem.description))
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)

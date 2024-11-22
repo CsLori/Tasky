@@ -1,3 +1,5 @@
+@file:Suppress("OPT_IN_USAGE_FUTURE_ERROR", "OPT_IN_USAGE_FUTURE_ERROR")
+
 package com.example.tasky.agenda.agenda_presentation.components
 
 import android.net.Uri
@@ -29,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -135,7 +136,7 @@ fun AgendaItemTitle(
             Spacer(Modifier.width(dimensions.small8dp))
 
             Text(
-                text = agendaItem?.title ?: "",
+                text = state.title,
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
@@ -174,7 +175,7 @@ fun AgendaItemDescription(
         horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Text(
-            text = agendaItem?.description ?:"",
+            text = state.description,
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
         if (!state.isReadOnly) {
@@ -248,8 +249,11 @@ fun TimeAndDateRow(
             ) {
                 Text(
                     text = when (agendaItem.details) {
-                        is AgendaItemDetails.Task -> state.time.toHourMinuteFormat()
-                        is AgendaItemDetails.Event -> if (isSecondRow) (state.details as? AgendaItemDetails.Event)?.toTime?.toHourMinuteFormat() ?: LocalDateTime.now().toHourMinuteFormat() else state.time.toHourMinuteFormat()
+                        is AgendaItemDetails.Task -> state.selectedDate?.toHourMinuteFormat() ?: ""
+                        is AgendaItemDetails.Event -> if (isSecondRow) (state.details as? AgendaItemDetails.Event)?.toTime?.toHourMinuteFormat()
+                            ?: LocalDateTime.now()
+                                .toHourMinuteFormat() else state.time.toHourMinuteFormat()
+
                         is AgendaItemDetails.Reminder -> state.time.toHourMinuteFormat()
                     },
 
@@ -280,15 +284,21 @@ fun TimeAndDateRow(
                     confirmButton = {
                         TextButton(
                             onClick = {
+                                val selectedHour = state.firstRowTimePickerState.hour
+                                val selectedMinute = state.firstRowTimePickerState.minute
 
+                                val updatedTime = state.time.withHour(selectedHour)
+                                    ?.withMinute(selectedMinute)
+
+                                onUpdateState(
+                                    AgendaDetailStateUpdate.UpdateTime(
+                                        updatedTime ?: LocalDateTime.now()
+                                    )
+                                )
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
                                         shouldShowTimePicker = false
                                     )
-                                )
-
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateTime(state.time)
                                 )
                             }
                         ) { Text(stringResource(R.string.OK)) }
@@ -305,14 +315,7 @@ fun TimeAndDateRow(
                         ) { Text(stringResource(R.string.Cancel)) }
                     },
                     content = {
-                        TimePicker(
-                            state = TimePickerState(
-                                initialHour = state.time.hour,
-                                initialMinute = state.time.minute,
-                                is24Hour = true
-                            )
-                        )
-
+                        TimePicker(state = state.firstRowTimePickerState)
                     }
                 )
             }
@@ -329,15 +332,23 @@ fun TimeAndDateRow(
                     confirmButton = {
                         TextButton(
                             onClick = {
+                                val selectedHour = state.secondRowTimePickerState.hour
+                                val selectedMinute = state.secondRowTimePickerState.minute
+
+                                val updatedTime =
+                                    (state.details as? AgendaItemDetails.Event)?.toTime
+                                        ?.withHour(selectedHour)
+                                        ?.withMinute(selectedMinute)
+
+                                onUpdateState(
+                                    AgendaDetailStateUpdate.UpdateEventSecondRowTime(
+                                        updatedTime ?: LocalDateTime.now()
+                                    )
+                                )
 
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker(
                                         shouldShowTimePicker = false
-                                    )
-                                )
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateEventSecondRowTime(
-                                        (state.details as? AgendaItemDetails.Event)?.toTime ?: LocalDateTime.now()
                                     )
                                 )
                             }
@@ -355,13 +366,7 @@ fun TimeAndDateRow(
                         ) { Text(stringResource(R.string.Cancel)) }
                     },
                     content = {
-                        TimePicker(
-                            state = TimePickerState(
-                                initialHour = (state.details as? AgendaItemDetails.Event)?.toTime?.hour ?: LocalDateTime.now().hour,
-                                initialMinute = (state.details as? AgendaItemDetails.Event)?.toTime?.minute ?: LocalDateTime.now().minute,
-                                is24Hour = true
-                            )
-                        )
+                        TimePicker(state = state.secondRowTimePickerState)
 
                     }
                 )
@@ -398,7 +403,9 @@ fun TimeAndDateRow(
             Text(
                 modifier = Modifier
                     .padding(start = dimensions.default16dp),
-                text = if (isSecondRow) (state.secondRowDate?.toStringMMMdyyyyFormat() ?: LocalDateTime.now().toStringMMMdyyyyFormat()) else state.time.toStringMMMdyyyyFormat(),
+                text = if (isSecondRow) (state.secondRowDate?.toStringMMMdyyyyFormat()
+                    ?: LocalDateTime.now()
+                        .toStringMMMdyyyyFormat()) else state.time.toStringMMMdyyyyFormat(),
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
             if (!state.isReadOnly) {
@@ -651,7 +658,7 @@ fun SetReminderRow(
             options = reminderOptions,
             onItemSelected = {
                 val selectedTime = state.time
-                val remindAt = selectedTime.toLong() - it.timeBeforeInMillis
+                val remindAt = (selectedTime.toLong() ?: 0) - it.timeBeforeInMillis
                 Timber.d("DDD component - onItemSelected: remindAt - ${remindAt.toLocalDateTime()} | selectedTime - $selectedTime")
                 onUpdateState(AgendaDetailStateUpdate.UpdateSelectedReminder(it.timeBeforeInMillis))
                 onUpdateState(
@@ -707,22 +714,23 @@ fun AddPhotosSectionReadOnlyPreview() {
     }
 }
 
-@Preview
-@Composable
-fun TimeAndDateRowPreview() {
-    AppTheme {
-        TimeAndDateRow(
-            agendaItem = AgendaItem(
-                id = "suavitate",
-                title = "homero",
-                description = "congue",
-                time = LocalDateTime.now(),
-                remindAt = LocalDateTime.now(),
-                details = AgendaItemDetails.Task(isDone = false)
-            ),
-            text = "From",
-            onUpdateState = {},
-            state = AgendaDetailState()
-        )
-    }
-}
+// Some issues here with material 3 due to timepickerstate
+//@Preview
+//@Composable
+//fun TimeAndDateRowPreview() {
+//    AppTheme {
+//        TimeAndDateRow(
+//            agendaItem = AgendaItem(
+//                id = "suavitate",
+//                title = "homero",
+//                description = "congue",
+//                time = LocalDateTime.now(),
+//                remindAt = LocalDateTime.now(),
+//                details = AgendaItemDetails.Task(isDone = false)
+//            ),
+//            text = "From",
+//            onUpdateState = {},
+//            state = AgendaDetailState()
+//        )
+//    }
+//}

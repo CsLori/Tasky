@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import android.net.Uri
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -97,8 +100,6 @@ class AgendaDetailViewModel @Inject constructor(
                     secondRowDate = action.date,
                     isDateSelectedFromDatePicker = false
                 )
-
-//                is AgendaDetailStateUpdate.UpdateFromAtTime -> it.copy(time = action.time)
 
                 is AgendaDetailStateUpdate.UpdateEventSecondRowTime -> {
                     it.copy(
@@ -319,7 +320,6 @@ class AgendaDetailViewModel @Inject constructor(
         val photos = photosJob.await()
 
         val eventId = UUID.randomUUID().toString()
-        Timber.d("DDD - viewmodel create currentState: ${currentState}")
 
         val loggedInUserResult = agendaRepository.getLoggedInUserDetails()
         val loggedInAttendee: Attendee? = when (loggedInUserResult) {
@@ -358,7 +358,6 @@ class AgendaDetailViewModel @Inject constructor(
             ),
             remindAt = state.value.remindAt ?: LocalDateTime.now()
         )
-        Timber.d("DDD - viewmodel create newAgendaItem: ${newAgendaItem}")
 
         return Pair(photos, newAgendaItem)
     }
@@ -367,28 +366,33 @@ class AgendaDetailViewModel @Inject constructor(
         val currentState = state.value.selectedAgendaItem?.details as? AgendaItemDetails.Event
             ?: throw IllegalStateException("Current details are not of type Event")
         val photosJob = viewModelScope.async(Dispatchers.IO) {
-            photoConverter.convertPhotosToByteArrays(currentState.photos)
+            photoConverter.convertPhotosToByteArrays((state.value.details as AgendaItemDetails.Event).photos)
         }
-        val photos = photosJob.await()
-
+        val photosByteArray = photosJob.await()
+        val attendees = (state.value.details as? AgendaItemDetails.Event)?.attendees ?: emptyList()
+        val addedPhotos = (state.value.details as AgendaItemDetails.Event).photos
         val agendaEventDetails = agendaItem.details as? AgendaItemDetails.Event
             ?: throw IllegalArgumentException("Agenda item details must be of type Event")
 
-        Timber.d("DDD - viewmodel prepareUpdatedEvent agendaEventDetails: ${agendaEventDetails}")
-        Timber.d("DDD - viewmodel prepareUpdatedEvent agendaItem: ${currentState}")
+
+        val updatedAttendees = attendees.map { attendee ->
+            attendee.copy(eventId = agendaItem.id)
+        }
 
         val newEvent = agendaItem.copy(
             title = state.value.title,
             description = state.value.description,
             time = state.value.time,
-            details = currentState.copy(
+            details = AgendaItemDetails.Event(
                 toTime = currentState.toTime,
-                photos = (agendaEventDetails.photos + currentState.photos).distinctBy { it.key },
-                attendees = (agendaEventDetails.attendees + currentState.attendees).distinctBy { it.userId },
+                photos = (agendaEventDetails.photos + addedPhotos).distinctBy { it.key },
+                attendees = (agendaEventDetails.attendees + updatedAttendees).distinctBy { it.userId },
+                isUserEventCreator = currentState.isUserEventCreator,
+                host = currentState.host,
             ),
             remindAt = state.value.remindAt ?: LocalDateTime.now(),
         )
-        return Pair(photos, newEvent)
+        return Pair(photosByteArray, newEvent)
     }
 
     fun deleteAgendaItem(agendaItem: AgendaItem) {
@@ -490,14 +494,19 @@ class AgendaDetailViewModel @Inject constructor(
                     if (attendeeResponse.doesUserExist) {
                         val newAttendee = attendeeResponse.attendee
                         _state.update { currentState ->
-                            val currentDetails = currentState.details as? AgendaItemDetails.Event
+                            val currentDetails =
+                                currentState.details as? AgendaItemDetails.Event
+                                    ?: return@update currentState // Exit if not an Event
+
+                            val updatedAttendees =
+                                currentDetails.attendees + newAttendee.toAttendee(
+                                    eventId = state.value.selectedAgendaItem?.id ?: "",
+                                    remindAt = state.value.remindAt?.toLong() ?: 0
+                                )
                             currentState.copy(
-                                details = currentDetails?.copy(
-                                    attendees = currentState.details.attendees + newAttendee.toAttendee(
-                                        eventId = state.value.selectedAgendaItem?.id ?: "",
-                                        remindAt = state.value.remindAt?.toLong() ?: 0
-                                    )
-                                ),
+                                details = currentDetails.copy(
+                                    attendees = updatedAttendees
+                                )
                             )
                         }
                         _dialogState.update { DialogState.Hide }

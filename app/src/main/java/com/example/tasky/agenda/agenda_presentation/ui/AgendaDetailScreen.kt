@@ -164,27 +164,6 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnCreateSuccess -> onNavigateToAgendaScreen()
                 AgendaDetailAction.OnEditRowPressed -> onEditPressed()
                 AgendaDetailAction.OnSavePressed -> {
-//                    val time = LocalTime.of(state.time.hour, state.time.minute)
-//                    val dateTime = LocalDateTime.of(state.time.toLocalDate() , time)
-//                    val timestamp =
-//                        dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    agendaDetailViewModel.updateState(
-                        AgendaDetailStateUpdate.UpdateTime(
-                            state.time
-                        )
-                    )
-
-//                    val secondRowTime = LocalTime.of((state.details as? AgendaItemDetails.Event)?.toTime?.hour ?: 0, (state.details as? AgendaItemDetails.Event)?.toTime?.minute ?: 0)
-//                    val secondRowDateTime = LocalDateTime.of((state.details as? AgendaItemDetails.Event)?.toTime?.toLocalDate(), secondRowTime)
-//                    val secondRowTimestamp =
-//                        secondRowDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-                    agendaDetailViewModel.updateState(
-                        AgendaDetailStateUpdate.UpdateSecondRowToDate(
-                            (state.details as? AgendaItemDetails.Event)?.toTime
-                                ?: LocalDateTime.now()
-                        )
-                    )
                     if (agendaItemId == null) {
                         state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {
