@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.room.Room.databaseBuilder
 import com.example.tasky.Constants.BASE_URL
+import com.example.tasky.agenda.agenda_data.alarm.AlarmSchedulerService
 import com.example.tasky.agenda.agenda_data.di.BasicOkHttpClient
 import com.example.tasky.agenda.agenda_data.local.AgendaDatabase
 import com.example.tasky.agenda.agenda_data.local.LocalDataSource
@@ -11,7 +12,6 @@ import com.example.tasky.agenda.agenda_data.local.dao.EventDao
 import com.example.tasky.agenda.agenda_data.local.dao.ReminderDao
 import com.example.tasky.agenda.agenda_data.local.dao.SyncAgendaItemsDao
 import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
-import com.example.tasky.agenda.agenda_data.notification.NotificationService
 import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
 import com.example.tasky.agenda.agenda_data.remote.AuthTokenInterceptor
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
@@ -122,9 +122,10 @@ object TaskyModule {
     fun provideAgendaRepository(
         api: TaskyApi,
         userPrefsRepository: ProtoUserPrefsRepository,
-        localDatabaseRepository: LocalDataSource
+        localDatabaseRepository: LocalDataSource,
+        alarmSchedulerService: AlarmSchedulerService
     ): AgendaRepository {
-        return AgendaRepositoryImpl(api, userPrefsRepository, localDatabaseRepository)
+        return AgendaRepositoryImpl(api, userPrefsRepository, localDatabaseRepository, alarmSchedulerService)
     }
 
     @Provides
@@ -147,7 +148,7 @@ object TaskyModule {
 
     @Provides
     @Singleton
-    fun provideNotificationService(@ApplicationContext context: Context) : NotificationService {
-        return NotificationService(context)
+    fun provideAlarmSchedulerService(@ApplicationContext context: Context) : AlarmSchedulerService {
+        return AlarmSchedulerService(context)
     }
 }

@@ -717,7 +717,7 @@ fun AgendaContentPreview() {
                                 isCreator = false
                             )),
                             isUserEventCreator = true,
-                            host = null,
+                            host = "123123123",
                         ),
                         remindAt = LocalDateTime.now()
                     ),
@@ -739,7 +739,7 @@ fun AgendaContentPreview() {
                                 isCreator = false
                             )),
                             isUserEventCreator = false,
-                            host = null,
+                            host = "1212323",
                         ),
                         remindAt = LocalDateTime.now()
                     )
@@ -788,7 +788,7 @@ fun AgendaContentPreview() {
                             isCreator = false
                         )),
                         isUserEventCreator = true,
-                        host = null,
+                        host = "12321321",
                     ),
                     remindAt = LocalDateTime.now()
                 ),
@@ -810,7 +810,7 @@ fun AgendaContentPreview() {
                             isCreator = false
                         )),
                         isUserEventCreator = false,
-                        host = null,
+                        host = "213213213",
                     ),
                     remindAt = LocalDateTime.now()
                 )

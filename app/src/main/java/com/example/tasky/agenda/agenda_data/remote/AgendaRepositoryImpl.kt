@@ -1,5 +1,6 @@
 package com.example.tasky.agenda.agenda_data.remote
 
+import com.example.tasky.agenda.agenda_data.alarm.AlarmSchedulerService
 import com.example.tasky.agenda.agenda_data.createMultipartEventRequest
 import com.example.tasky.agenda.agenda_data.createPhotoPart
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAgendaItems
@@ -41,6 +42,7 @@ class AgendaRepositoryImpl(
     private val api: TaskyApi,
     private val userPrefsRepository: ProtoUserPrefsRepository,
     private val localDatabaseRepository: LocalDataSource,
+    private val  alarmScheduler: AlarmSchedulerService
 ) : AgendaRepository {
 
     override suspend fun addTask(
@@ -78,6 +80,7 @@ class AgendaRepositoryImpl(
     override suspend fun updateTask(task: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertTask(task.toTaskEntity())
+            alarmScheduler.schedule(task)
             api.updateTask(task.toSerializedTask())
             Result.Success(Unit)
 
@@ -156,6 +159,7 @@ class AgendaRepositoryImpl(
 
         return try {
             localDatabaseRepository.upsertEvent(event.toEventEntity())
+            alarmScheduler.schedule(event)
             val result = api.updateEvent(eventPart, photosPart)
 
             Result.Success(result)
@@ -217,6 +221,7 @@ class AgendaRepositoryImpl(
     override suspend fun updateReminder(reminder: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertReminder(reminder.toReminderEntity())
+            alarmScheduler.schedule(reminder)
             api.updateReminder(reminder.toSerializedReminder())
             Result.Success(Unit)
 

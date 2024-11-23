@@ -1,17 +1,14 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import android.net.Uri
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.tasky.R
 import com.example.tasky.Screen
+import com.example.tasky.agenda.agenda_data.alarm.AlarmSchedulerService
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
-import com.example.tasky.agenda.agenda_data.notification.NotificationService
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
@@ -32,18 +29,14 @@ import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.util.CredentialsValidator
 import com.example.tasky.util.Logger
-import com.example.tasky.util.NetworkConnectivityService
-import com.example.tasky.util.NetworkStatus
 import com.example.tasky.util.PhotoCompressor
 import com.example.tasky.util.PhotoConverter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -57,8 +50,7 @@ class AgendaDetailViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val photoCompressor: PhotoCompressor,
     private val photoConverter: PhotoConverter,
-    private val networkConnectivityService: NetworkConnectivityService,
-    private val notificationService: NotificationService
+    private val alarmSchedulerService: AlarmSchedulerService
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaDetailState())
@@ -78,11 +70,11 @@ class AgendaDetailViewModel @Inject constructor(
 
     private var deletedPhotos: MutableList<String> = mutableListOf()
 
-    val networkStatus: StateFlow<NetworkStatus> = networkConnectivityService.networkStatus.stateIn(
-        initialValue = NetworkStatus.Unknown,
-        scope = viewModelScope,
-        started = WhileSubscribed(5000)
-    )
+//    val networkStatus: StateFlow<NetworkStatus> = networkConnectivityService.networkStatus.stateIn(
+//        initialValue = NetworkStatus.Unknown,
+//        scope = viewModelScope,
+//        started = WhileSubscribed(5000)
+//    )
 
     init {
         updateState(AgendaDetailStateUpdate.UpdateIsReadOnly(isReadOnly))
@@ -91,45 +83,26 @@ class AgendaDetailViewModel @Inject constructor(
     fun updateState(action: AgendaDetailStateUpdate) {
         _state.update {
             when (action) {
-                is AgendaDetailStateUpdate.UpdateTime -> it.copy(
-                    time = action.date,
+                is AgendaDetailStateUpdate.UpdateStartTime -> it.copy(
+                    time = action.startTime,
                     isDateSelectedFromDatePicker = false
                 )
 
-                is AgendaDetailStateUpdate.UpdateEventSecondRowDate -> it.copy(
-                    secondRowDate = action.date,
+                is AgendaDetailStateUpdate.UpdateEndDate -> it.copy(
+                    details = (it.details as? AgendaItemDetails.Event)?.copy(
+                        toTime = action.endDate
+                    ),
                     isDateSelectedFromDatePicker = false
                 )
 
-                is AgendaDetailStateUpdate.UpdateEventSecondRowTime -> {
+                is AgendaDetailStateUpdate.UpdateEndTime -> {
                     it.copy(
                         details = (it.details as? AgendaItemDetails.Event)?.copy(
-                            toTime = action.toTime
+                            toTime = action.endTime
                         )
                     )
                 }
-
-                is AgendaDetailStateUpdate.UpdateShouldShowDatePicker -> it.copy(
-                    shouldShowDatePicker = action.shouldShowDatePicker
-                )
-
-                is AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker -> it.copy(
-                    shouldShowSecondRowDatePicker = action.shouldShowSecondRowDatePicker
-                )
-
-                is AgendaDetailStateUpdate.UpdateShouldShowTimePicker -> it.copy(
-                    shouldShowTimePicker = action.shouldShowTimePicker
-                )
-
-                is AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker -> it.copy(
-                    shouldShowSecondRowTimePicker = action.shouldShowTimePicker
-                )
-
                 is AgendaDetailStateUpdate.UpdateEditType -> it.copy(editType = action.editType)
-                is AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown -> it.copy(
-                    shouldShowReminderDropdown = action.shouldShowReminderDropdown
-                )
-
                 is AgendaDetailStateUpdate.UpdateSelectedReminder -> it.copy(selectedReminder = action.selectedReminder)
                 is AgendaDetailStateUpdate.UpdateDescription -> it.copy(description = action.description)
                 is AgendaDetailStateUpdate.UpdateTitle -> it.copy(title = action.title)
@@ -213,19 +186,17 @@ class AgendaDetailViewModel @Inject constructor(
             val result = when (agendaItem.details) {
                 is AgendaItemDetails.Task -> {
                     val newTask = prepareUpdatedTask(agendaItem)
-                    notificationService.schedule(newTask)
+                    alarmSchedulerService.schedule(agendaItem)
                     agendaRepository.updateTask(newTask)
                 }
 
                 is AgendaItemDetails.Event -> {
                     val (photos, newEvent) = prepareUpdatedEvent(agendaItem)
-                    notificationService.schedule(newEvent)
                     agendaRepository.updateEvent(newEvent, photos, deletedPhotos.toList())
                 }
 
                 is AgendaItemDetails.Reminder -> {
                     val newReminder = prepareUpdatedReminder(agendaItem)
-                    notificationService.schedule(newReminder)
                     agendaRepository.updateReminder(newReminder)
                 }
             }

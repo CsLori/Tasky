@@ -3,7 +3,6 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel.state
 
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.TimePickerState
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.Attendee
@@ -25,12 +24,6 @@ data class AgendaDetailState(
     val details: AgendaItemDetails? = null,
     val isLoading: Boolean = false,
     val isReadOnly: Boolean = false,
-    val secondRowDate: LocalDateTime? = null,
-    val shouldShowDatePicker: Boolean = false,
-    val shouldShowSecondRowDatePicker: Boolean = false,
-    val shouldShowTimePicker: Boolean = false,
-    val shouldShowSecondRowTimePicker: Boolean = false,
-    val shouldShowReminderDropdown: Boolean = false,
     val editType: EditType = EditType.TITLE,
     val selectedAgendaItem: AgendaItem? = null,
     val selectedDate: LocalDateTime? = null,
@@ -40,16 +33,6 @@ data class AgendaDetailState(
     val addVisitorEmail: FieldInput? = null,
     val hasDeviceBeenOffline: Boolean = false,
     val isDateSelectedFromDatePicker: Boolean = false,
-    val firstRowTimePickerState : TimePickerState = TimePickerState(
-        initialHour = time.hour,
-        initialMinute = time.minute,
-        is24Hour = true
-    ),
-    val secondRowTimePickerState : TimePickerState = TimePickerState(
-        initialHour = (details as? AgendaItemDetails.Event)?.toTime?.hour ?: LocalDateTime.now().hour,
-        initialMinute = (details as? AgendaItemDetails.Event)?.toTime?.minute ?: LocalDateTime.now().hour,
-        is24Hour = true
-    ),
 )
 
 enum class RemindBeforeDuration(val duration: Duration) {
@@ -69,16 +52,10 @@ enum class VisitorFilter(val displayName: String) {
 }
 
 sealed interface AgendaDetailStateUpdate {
-    data class UpdateTime(val date: LocalDateTime) : AgendaDetailStateUpdate
-    data class UpdateEventSecondRowDate(val date: LocalDateTime) : AgendaDetailStateUpdate
-//    data class UpdateEventSecondRowTime(val hour: Int, val minute: Int) : AgendaDetailStateUpdate
-    data class UpdateEventSecondRowTime(val toTime: LocalDateTime) : AgendaDetailStateUpdate
-    data class UpdateShouldShowDatePicker(val shouldShowDatePicker: Boolean) : AgendaDetailStateUpdate
-    data class UpdateShouldShowSecondRowDatePicker(val shouldShowSecondRowDatePicker: Boolean) : AgendaDetailStateUpdate
-    data class UpdateShouldShowTimePicker(val shouldShowTimePicker: Boolean) : AgendaDetailStateUpdate
-    data class UpdateShouldShowSecondRowTimePicker(val shouldShowTimePicker: Boolean) : AgendaDetailStateUpdate
+    data class UpdateStartTime(val startTime: LocalDateTime) : AgendaDetailStateUpdate
+    data class UpdateEndTime(val endTime: LocalDateTime) : AgendaDetailStateUpdate
+    data class UpdateEndDate(val endDate: LocalDateTime) : AgendaDetailStateUpdate
     data class UpdateEditType(val editType: EditType) : AgendaDetailStateUpdate
-    data class UpdateShouldShowReminderDropdown(val shouldShowReminderDropdown: Boolean) : AgendaDetailStateUpdate
     data class UpdateSelectedReminder(val selectedReminder: Long) : AgendaDetailStateUpdate
     data class UpdateTitle(val title: String) : AgendaDetailStateUpdate
     data class UpdateDescription(val description: String) : AgendaDetailStateUpdate

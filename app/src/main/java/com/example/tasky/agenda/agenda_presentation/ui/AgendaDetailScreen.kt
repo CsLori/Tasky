@@ -102,8 +102,6 @@ internal fun AgendaDetailScreen(
     val errorDialogState =
         agendaDetailViewModel.errorDialogState.collectAsStateWithLifecycle().value
 
-    val networkStatus by agendaDetailViewModel.networkStatus.collectAsStateWithLifecycle()
-
     LaunchedEffect(agendaItemId) {
         if (agendaItemId == null) {
             agendaDetailViewModel.updateState(
@@ -129,7 +127,7 @@ internal fun AgendaDetailScreen(
                                 attendees = (state.details as? AgendaItemDetails.Event)?.attendees ?: emptyList(),
                                 photos = (state.details as? AgendaItemDetails.Event)?.photos ?: emptyList(),
                                 isUserEventCreator = true,
-                                host = (state.details as? AgendaItemDetails.Event)?.host
+                                host = (state.details as? AgendaItemDetails.Event)?.host ?: ""
                             ),
                         )
 
@@ -370,7 +368,7 @@ fun MainContent(
                 text = stringResource(R.string.to),
                 onUpdateState = onUpdateState,
                 state = state,
-                isSecondRow = true
+                endTime = true
             )
         } else {
             if (agendaItem != null) {
@@ -795,7 +793,7 @@ fun AgendaDetailReadOnlyPreview() {
                         )
                     ),
                     isUserEventCreator = false,
-                    host = null,
+                    host = "123213123",
                 ),
                 remindAt = LocalDateTime.now()
             ),
@@ -841,7 +839,7 @@ fun AgendaDetailEditablePreview() {
                         )
                     ),
                     isUserEventCreator = false,
-                    host = null,
+                    host = "12312123",
                 ),
                 remindAt = LocalDateTime.now()
             ),

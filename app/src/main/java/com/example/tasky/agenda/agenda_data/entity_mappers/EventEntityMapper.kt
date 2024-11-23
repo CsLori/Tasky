@@ -17,7 +17,7 @@ fun EventEntity.toAgendaItem(): AgendaItem {
             attendees = attendeeIds.map { it.copy() },
             photos = photos.toList(),
             isUserEventCreator = isUserEventCreator,
-            host = host
+            host = host ?: ""
         ),
         remindAt = remindAt.toLocalDateTime()
     )
