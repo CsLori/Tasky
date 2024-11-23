@@ -2,33 +2,40 @@ package com.example.tasky.agenda.agenda_data.entity_mappers
 
 import com.example.tasky.agenda.agenda_data.local.entity.EventEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
+import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
+import com.example.tasky.core.presentation.DateUtils.toLong
 
-fun EventEntity.toAgendaItem(): AgendaItem.Event {
-    return AgendaItem.Event(
-        eventId = id,
-        eventTitle = title,
-        eventDescription = description,
-        from = from,
-        to = to,
-        remindAtTime = remindAt,
-        photos = photos,
-        attendees = attendeeIds,
-        isUserEventCreator = isUserEventCreator,
-        host = host
-    )
-}
-
-fun AgendaItem.Event.toEventEntity(): EventEntity {
-    return EventEntity(
+fun EventEntity.toAgendaItem(): AgendaItem {
+    return AgendaItem(
         id = id,
         title = title,
         description = description ?: "",
-        from = from,
-        to = to,
-        remindAt = remindAt,
-        attendeeIds = attendees,
-        photos = photos,
-        isUserEventCreator = isUserEventCreator,
-        host = host,
+        time = from.toLocalDateTime(),
+        details = AgendaItemDetails.Event(
+            toTime = to.toLocalDateTime(),
+            attendees = attendeeIds.map { it.copy() },
+            photos = photos.toList(),
+            isUserEventCreator = isUserEventCreator,
+            host = host ?: ""
+        ),
+        remindAt = remindAt.toLocalDateTime()
+    )
+}
+
+fun AgendaItem.toEventEntity(): EventEntity {
+    val eventDetails = details as? AgendaItemDetails.Event
+        ?: throw IllegalStateException("Details are not of type Event")
+    return EventEntity(
+        id = id,
+        title = title,
+        description = description,
+        from = time.toLong(),
+        to = eventDetails.toTime.toLong(),
+        remindAt = remindAt.toLong(),
+        attendeeIds = eventDetails.attendees.map { it.copy() },
+        photos = eventDetails.photos.toList(),
+        isUserEventCreator = eventDetails.isUserEventCreator,
+        host = eventDetails.host,
     )
 }

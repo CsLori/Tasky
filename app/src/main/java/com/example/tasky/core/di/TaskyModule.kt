@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.room.Room.databaseBuilder
 import com.example.tasky.Constants.BASE_URL
+import com.example.tasky.agenda.agenda_data.alarm.AlarmSchedulerService
 import com.example.tasky.agenda.agenda_data.di.BasicOkHttpClient
 import com.example.tasky.agenda.agenda_data.local.AgendaDatabase
 import com.example.tasky.agenda.agenda_data.local.LocalDataSource
@@ -121,9 +122,10 @@ object TaskyModule {
     fun provideAgendaRepository(
         api: TaskyApi,
         userPrefsRepository: ProtoUserPrefsRepository,
-        localDatabaseRepository: LocalDataSource
+        localDatabaseRepository: LocalDataSource,
+        alarmSchedulerService: AlarmSchedulerService
     ): AgendaRepository {
-        return AgendaRepositoryImpl(api, userPrefsRepository, localDatabaseRepository)
+        return AgendaRepositoryImpl(api, userPrefsRepository, localDatabaseRepository, alarmSchedulerService)
     }
 
     @Provides
@@ -142,5 +144,11 @@ object TaskyModule {
     @Singleton
     fun provideNetworkConnectivityService(@ApplicationContext context: Context) : NetworkConnectivityService {
         return NetworkConnectivityService(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAlarmSchedulerService(@ApplicationContext context: Context) : AlarmSchedulerService {
+        return AlarmSchedulerService(context)
     }
 }

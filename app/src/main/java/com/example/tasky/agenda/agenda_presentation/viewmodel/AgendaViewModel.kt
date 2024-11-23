@@ -4,12 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
-import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
 import com.example.tasky.core.presentation.UiText
@@ -22,7 +22,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -81,16 +80,16 @@ class AgendaViewModel @Inject constructor(
     }
 
     val syncResult = networkStatus
-        .filter { it == NetworkStatus.Connected && state.value.hasDeviceBeenOffline}
+        .filter { it == NetworkStatus.Connected && state.value.hasDeviceBeenOffline }
         .mapLatest { agendaRepository.syncAgenda() }
         .onEach { result ->
             when (result) {
-                is Result.Success -> {
+                is Success -> {
                     _uiState.update { AgendaUiState.None }
                     _state.update { it.copy(hasDeviceBeenOffline = false) }
                 }
 
-                is Result.Error -> {
+                is Error -> {
                     _errorDialogState.update {
                         ErrorDialogState.AgendaItemDeletionError(
                             UiText.StringResource(R.string.Could_not_sync_agenda_items)
@@ -101,8 +100,8 @@ class AgendaViewModel @Inject constructor(
         }
         .stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5_000L),
-            Result.Success(NetworkStatus.Unknown)
+            WhileSubscribed(5_000L),
+            Success(NetworkStatus.Unknown)
         )
 
     val agendaItems = selectedDate
@@ -119,7 +118,7 @@ class AgendaViewModel @Inject constructor(
                     )
                 }
             }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
+        }.stateIn(viewModelScope, WhileSubscribed(5_000L), emptyList())
 
     fun deleteAgendaItem(agendaItem: AgendaItem) {
         viewModelScope.launch {
@@ -127,9 +126,9 @@ class AgendaViewModel @Inject constructor(
                 state.value.agendaItems.find { it.id == agendaItem.id }
 
             existingAgendaItem?.let { safeAgendaItem ->
-                when (agendaItem) {
-                    is AgendaItem.Task -> {
-                        val task = safeAgendaItem as? AgendaItem.Task
+                when (agendaItem.details) {
+                    is AgendaItemDetails.Task -> {
+                        val task = safeAgendaItem as? AgendaItem
                         if (task != null) {
                             agendaRepository.deleteTask(task)
 
@@ -140,8 +139,8 @@ class AgendaViewModel @Inject constructor(
 
                     }
 
-                    is AgendaItem.Event -> {
-                        val event = safeAgendaItem as? AgendaItem.Event
+                    is AgendaItemDetails.Event -> {
+                        val event = safeAgendaItem as? AgendaItem
                         if (event != null) {
                             agendaRepository.deleteEvent(event)
 
@@ -151,8 +150,8 @@ class AgendaViewModel @Inject constructor(
                         }
                     }
 
-                    is AgendaItem.Reminder -> {
-                        val reminder = safeAgendaItem as? AgendaItem.Reminder
+                    is AgendaItemDetails.Reminder -> {
+                        val reminder = safeAgendaItem as? AgendaItem
                         if (reminder != null) {
                             agendaRepository.deleteReminder(reminder)
 
@@ -211,10 +210,15 @@ class AgendaViewModel @Inject constructor(
 
                 is AgendaUpdateState.UpdateSelectedItem -> it.copy(selectedItem = action.agendaItem)
                 is AgendaUpdateState.UpdateIsDone -> {
-                    if (it.selectedItem is AgendaItem.Task) {
-                        val updatedTask =
-                            (it.selectedItem as AgendaItem.Task).copy(isDone = action.isDone)
-                        it.copy(selectedItem = updatedTask)
+                    if (it.selectedItem?.details is AgendaItemDetails.Task) {
+                        val updatedTaskDetails =
+                            (it.selectedItem.details as AgendaItemDetails.Task).copy(isDone = action.isDone)
+                        val updatedItem = it.selectedItem.copy(details = updatedTaskDetails)
+
+                        it.copy(selectedItem = updatedItem,
+                            agendaItems = it.agendaItems.map { item ->
+                                if (item.id == updatedItem.id) item.copy(details = updatedItem.details) else item
+                            })
                     } else {
                         it
                     }
@@ -246,7 +250,7 @@ class AgendaViewModel @Inject constructor(
     }
 
     fun getNumberOfDeletedItemsForSync(): Int? {
-        var numberOfSyncedItems: Int = 0
+        var numberOfSyncedItems = 0
         viewModelScope.launch {
             numberOfSyncedItems = localDatabaseRepository.getDeletedItemsForSync().size
         }

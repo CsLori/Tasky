@@ -1,3 +1,5 @@
+@file:Suppress("OPT_IN_USAGE_FUTURE_ERROR")
+
 package com.example.tasky.agenda.agenda_presentation.components
 
 import android.net.Uri
@@ -29,7 +31,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
@@ -50,9 +57,10 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetail
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.RemindBeforeDuration
-import com.example.tasky.core.presentation.DateUtils
-import com.example.tasky.core.presentation.DateUtils.localDateToStringMMMdyyyyFormat
 import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
+import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
+import com.example.tasky.core.presentation.DateUtils.toLong
+import com.example.tasky.core.presentation.DateUtils.toStringMMMdyyyyFormat
 import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.core.presentation.components.ReminderDropdown
 import com.example.tasky.core.presentation.components.showToast
@@ -60,7 +68,7 @@ import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import java.time.ZoneId
+import java.time.LocalDateTime
 import kotlin.time.Duration.Companion.milliseconds
 
 const val thirtyMinutesInMillis = 1800000L // 30 * 60 * 1000
@@ -77,10 +85,10 @@ fun AgendaItemMainHeader(agendaItem: AgendaItem?) {
             modifier = Modifier
                 .size(24.dp),
             imageVector = Icons.Rounded.Square,
-            tint = when (agendaItem) {
-                is AgendaItem.Task -> colors.green
-                is AgendaItem.Event -> colors.lightGreen
-                is AgendaItem.Reminder -> colors.gray
+            tint = when (agendaItem?.details) {
+                is AgendaItemDetails.Task -> colors.green
+                is AgendaItemDetails.Event -> colors.lightGreen
+                is AgendaItemDetails.Reminder -> colors.gray
                 null -> colors.green
             },
             contentDescription = "Icon checked"
@@ -89,10 +97,10 @@ fun AgendaItemMainHeader(agendaItem: AgendaItem?) {
         Spacer(Modifier.width(dimensions.small8dp))
 
         Text(
-            text = when (agendaItem) {
-                is AgendaItem.Task -> AgendaOption.TASK.displayName
-                is AgendaItem.Event -> AgendaOption.EVENT.displayName
-                is AgendaItem.Reminder -> AgendaOption.REMINDER.displayName
+            text = when (agendaItem?.details) {
+                is AgendaItemDetails.Task -> AgendaOption.TASK.displayName
+                is AgendaItemDetails.Event -> AgendaOption.EVENT.displayName
+                is AgendaItemDetails.Reminder -> AgendaOption.REMINDER.displayName
                 null -> AgendaOption.TASK.displayName
             },
             style = typography.bodyLarge.copy(lineHeight = 20.sp)
@@ -131,12 +139,7 @@ fun AgendaItemTitle(
             Spacer(Modifier.width(dimensions.small8dp))
 
             Text(
-                text = when (agendaItem) {
-                    is AgendaItem.Task -> state.task.title
-                    is AgendaItem.Event -> state.event.title
-                    is AgendaItem.Reminder -> state.reminder.title
-                    null -> state.task.title
-                },
+                text = state.title,
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
@@ -175,12 +178,7 @@ fun AgendaItemDescription(
         horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Text(
-            text = when (agendaItem) {
-                is AgendaItem.Task -> state.task.taskDescription ?: ""
-                is AgendaItem.Event -> state.event.eventDescription ?: ""
-                is AgendaItem.Reminder -> state.reminder.reminderDescription ?: ""
-                null -> ""
-            },
+            text = state.description,
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
         if (!state.isReadOnly) {
@@ -200,7 +198,7 @@ fun TimeAndDateRow(
     text: String,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     state: AgendaDetailState,
-    isSecondRow: Boolean = false
+    endTime: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -210,6 +208,33 @@ fun TimeAndDateRow(
         horizontalArrangement = Arrangement.SpaceBetween
 
     ) {
+        val firstRowTimePickerState by remember {
+            mutableStateOf(
+                TimePickerState(
+                    initialHour = state.time.hour,
+                    initialMinute = state.time.minute,
+                    is24Hour = true
+                )
+            )
+        }
+
+        val secondRowTimePickerState by remember {
+            mutableStateOf(
+                TimePickerState(
+                    initialHour = (state.details as? AgendaItemDetails.Event)?.toTime?.hour
+                        ?: LocalDateTime.now().hour,
+                    initialMinute = (state.details as? AgendaItemDetails.Event)?.toTime?.minute
+                        ?: LocalDateTime.now().hour,
+                    is24Hour = true
+                )
+            )
+        }
+
+        var shouldShowStartDatePicker = remember {  mutableStateOf(false)}
+        var shouldShowEndDatePicker = remember {  mutableStateOf(false)}
+        var shouldShowStartTimePicker = remember { mutableStateOf(false) }
+        var shouldShowEndTimePicker = remember { mutableStateOf(false) }
+
         Row(
             modifier = Modifier
                 .width(120.dp)
@@ -217,18 +242,11 @@ fun TimeAndDateRow(
                 .then(
                     if (!state.isReadOnly) {
                         Modifier.clickable {
-                            if (isSecondRow) {
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker(
-                                        !state.shouldShowSecondRowTimePicker
-                                    )
-                                )
+                            if (endTime) {
+                                shouldShowEndTimePicker.value = !shouldShowEndTimePicker.value
+
                             } else {
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                        !state.shouldShowTimePicker
-                                    )
-                                )
+                                shouldShowStartTimePicker.value = !shouldShowStartTimePicker.value
                             }
                         }
                     } else {
@@ -253,10 +271,13 @@ fun TimeAndDateRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = when (agendaItem) {
-                        is AgendaItem.Task -> state.task.time.toHourMinuteFormat()
-                        is AgendaItem.Event -> if (isSecondRow) state.event.to.toHourMinuteFormat() else state.event.from.toHourMinuteFormat()
-                        is AgendaItem.Reminder -> state.reminder.time.toHourMinuteFormat()
+                    text = when (agendaItem.details) {
+                        is AgendaItemDetails.Task -> state.time.toHourMinuteFormat() ?: ""
+                        is AgendaItemDetails.Event -> if (endTime) (state.details as? AgendaItemDetails.Event)?.toTime?.toHourMinuteFormat()
+                            ?: LocalDateTime.now()
+                                .toHourMinuteFormat() else state.time.toHourMinuteFormat()
+
+                        is AgendaItemDetails.Reminder -> state.time.toHourMinuteFormat()
                     },
 
                     style = typography.bodyLarge.copy(
@@ -274,96 +295,68 @@ fun TimeAndDateRow(
                 }
             }
 
-            if (state.shouldShowTimePicker && !isSecondRow) {
+            if (shouldShowStartTimePicker.value && !endTime) {
                 TimePickerDialog(
-                    onDismissRequest = {
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                false
-                            )
-                        )
-                    },
+                    onDismissRequest = { shouldShowStartTimePicker.value = false },
                     confirmButton = {
                         TextButton(
                             onClick = {
+                                val selectedHour = firstRowTimePickerState.hour
+                                val selectedMinute = firstRowTimePickerState.minute
+
+                                val updatedTime = state.time.withHour(selectedHour)
+                                    ?.withMinute(selectedMinute)
 
                                 onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                        shouldShowTimePicker = false
+                                    AgendaDetailStateUpdate.UpdateStartTime(
+                                        updatedTime ?: LocalDateTime.now()
                                     )
                                 )
-
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateFromAtTime(
-                                        hour = state.fromAtTime.hour,
-                                        minute = state.fromAtTime.minute
-                                    )
-                                )
+                                shouldShowStartTimePicker.value = false
                             }
                         ) { Text(stringResource(R.string.OK)) }
                     },
                     dismissButton = {
                         TextButton(
-                            onClick = {
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowTimePicker(
-                                        false
-                                    )
-                                )
-                            }
+                            onClick = { shouldShowStartTimePicker.value = false }
                         ) { Text(stringResource(R.string.Cancel)) }
                     },
                     content = {
-                        TimePicker(
-                            state = state.fromAtTime
-                        )
-
+                        TimePicker(state = firstRowTimePickerState)
                     }
                 )
             }
 
-            if (state.shouldShowSecondRowTimePicker) {
+            if (shouldShowEndTimePicker.value) {
                 TimePickerDialogSecondRow(
-                    onDismissRequest = {
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker(
-                                false
-                            )
-                        )
-                    },
+                    onDismissRequest = { shouldShowEndTimePicker.value = false },
                     confirmButton = {
                         TextButton(
                             onClick = {
+                                val selectedHour = secondRowTimePickerState.hour
+                                val selectedMinute = secondRowTimePickerState.minute
+
+                                val updatedTime =
+                                    (state.details as? AgendaItemDetails.Event)?.toTime
+                                        ?.withHour(selectedHour)
+                                        ?.withMinute(selectedMinute)
 
                                 onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker(
-                                        shouldShowTimePicker = false
+                                    AgendaDetailStateUpdate.UpdateEndTime(
+                                        updatedTime ?: LocalDateTime.now()
                                     )
                                 )
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateEventSecondRowTime(
-                                        hour = state.toTime.hour,
-                                        minute = state.toTime.minute
-                                    )
-                                )
+                                shouldShowEndTimePicker.value = false
                             }
                         ) { Text(stringResource(R.string.OK)) }
                     },
                     dismissButton = {
                         TextButton(
-                            onClick = {
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowSecondRowTimePicker(
-                                        false
-                                    )
-                                )
-                            }
+                            onClick = { shouldShowEndTimePicker.value = false }
                         ) { Text(stringResource(R.string.Cancel)) }
                     },
                     content = {
-                        TimePicker(
-                            state = state.toTime
-                        )
+                        TimePicker(state = secondRowTimePickerState)
 
                     }
                 )
@@ -376,18 +369,10 @@ fun TimeAndDateRow(
                 .then(
                     if (!state.isReadOnly) {
                         Modifier.clickable {
-                            if (isSecondRow) {
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker(
-                                        !state.shouldShowSecondRowDatePicker
-                                    )
-                                )
+                            if (endTime) {
+                                shouldShowEndDatePicker.value = !shouldShowEndDatePicker.value
                             } else {
-                                onUpdateState(
-                                    AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
-                                        !state.shouldShowDatePicker
-                                    )
-                                )
+                                shouldShowStartDatePicker.value = !shouldShowStartDatePicker.value
                             }
                         }
                     } else {
@@ -400,7 +385,10 @@ fun TimeAndDateRow(
             Text(
                 modifier = Modifier
                     .padding(start = dimensions.default16dp),
-                text = if (isSecondRow) state.secondRowDate else state.date.localDateToStringMMMdyyyyFormat(), //Lori this looks ok!
+                text = if (endTime) {
+                    (state.details as? AgendaItemDetails.Event)?.toTime?.toStringMMMdyyyyFormat()
+                        ?: LocalDateTime.now().toStringMMMdyyyyFormat()
+                } else state.time.toStringMMMdyyyyFormat(),
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
             if (!state.isReadOnly) {
@@ -411,72 +399,42 @@ fun TimeAndDateRow(
             }
         }
 
-        if (state.shouldShowDatePicker) {
+        if (shouldShowStartDatePicker.value) {
             DatePickerModal(
                 onDateSelected = { date ->
                     date?.let { safeDate ->
-                        val result = DateUtils.convertMillisToLocalDate(safeDate)
-
                         onUpdateState(
-                            AgendaDetailStateUpdate.UpdateDate(
-                                DateUtils.longToLocalDate(safeDate)
+                            AgendaDetailStateUpdate.UpdateStartTime(
+                                safeDate.toLocalDateTime()
                             )
                         )
-
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateRemindAtTime(
-                                safeDate
-                            )
-                        )
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
-                                true
-                            )
-                        )
+                        shouldShowStartDatePicker.value = true
                     }
                 },
                 onDismiss = {
-                    onUpdateState(
-                        AgendaDetailStateUpdate.UpdateShouldShowDatePicker(
-                            false
-                        )
-                    )
+                    shouldShowStartDatePicker.value = false
                 },
-                initialDate = state.selectedDate.atStartOfDay(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
+                initialDate = state.time.toLong()
             )
-
         }
 
-        if (state.shouldShowSecondRowDatePicker) {
+        if (shouldShowEndDatePicker.value) {
             DatePickerModalSecondRow(
                 onDateSelected = { date ->
                     date?.let { safeDate ->
-                        val result = DateUtils.convertMillisToLocalDate(safeDate)
-
                         onUpdateState(
-                            AgendaDetailStateUpdate.UpdateEventSecondRowDate(
-                                DateUtils.longToLocalDate(safeDate)
+                            AgendaDetailStateUpdate.UpdateEndDate(
+                                safeDate.toLocalDateTime()
                             )
                         )
-                        onUpdateState(
-                            AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker(
-                                true
-                            )
-                        )
+                        shouldShowEndDatePicker.value = true
                     }
                 },
                 onDismiss = {
-                    onUpdateState(
-                        AgendaDetailStateUpdate.UpdateShouldShowSecondRowDatePicker(
-                            false
-                        )
-                    )
+                    shouldShowEndDatePicker.value = false
+
                 },
-                initialDate = state.selectedDate.atStartOfDay(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
+                initialDate = (state.details as? AgendaItemDetails.Event)?.toTime?.toLong()
             )
         }
     }
@@ -607,6 +565,7 @@ fun SetReminderRow(
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     state: AgendaDetailState,
 ) {
+    val shouldShowReminderDropdown = remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -616,7 +575,7 @@ fun SetReminderRow(
                     Modifier
                 } else {
                     Modifier.clickable {
-                        onUpdateState(AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(true))
+                        shouldShowReminderDropdown.value = true
                     }
                 }
             ),
@@ -662,20 +621,21 @@ fun SetReminderRow(
             )
         }
     }
-    if (state.shouldShowReminderDropdown) {
+    if (shouldShowReminderDropdown.value) {
         ReminderDropdown(
             options = reminderOptions,
             onItemSelected = {
+                val selectedTime = state.time
+                val remindAt = (selectedTime.toLong() ?: 0) - it.timeBeforeInMillis
                 onUpdateState(AgendaDetailStateUpdate.UpdateSelectedReminder(it.timeBeforeInMillis))
-                onUpdateState(AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(false))
-            },
-            visible = state.shouldShowReminderDropdown,
-            onDismiss = {
                 onUpdateState(
-                    AgendaDetailStateUpdate.UpdateShouldShowReminderDropdown(
-                        false
-                    )
+                    AgendaDetailStateUpdate.UpdateRemindAtTime(remindAt.toLocalDateTime())
                 )
+                shouldShowReminderDropdown.value = false
+            },
+            visible = shouldShowReminderDropdown.value,
+            onDismiss = {
+               shouldShowReminderDropdown.value = false
             }
         )
     }
@@ -687,7 +647,7 @@ fun SetReminderRow(
 fun AddPhotosSectionEditablePreview() {
     AppTheme {
         AddPhotosSection(
-            selectedImageUri = android.net.Uri.EMPTY,
+            selectedImageUri = Uri.EMPTY,
             onAddPhotos = {},
             isReadOnly = false,
             onUpdateState = {},
@@ -706,7 +666,7 @@ fun AddPhotosSectionEditablePreview() {
 fun AddPhotosSectionReadOnlyPreview() {
     AppTheme {
         AddPhotosSection(
-            selectedImageUri = android.net.Uri.EMPTY,
+            selectedImageUri = Uri.EMPTY,
             onAddPhotos = {},
             isReadOnly = true,
             onUpdateState = {},
@@ -717,23 +677,23 @@ fun AddPhotosSectionReadOnlyPreview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview
-@Composable
-fun TimeAndDateRowPreview() {
-    AppTheme {
-        TimeAndDateRow(
-            agendaItem = AgendaItem.Task(
-                taskId = "meliore",
-                taskTitle = "scripta",
-                taskDescription = "dsfdsfsfsfsddf",
-                time = 4404,
-                isDone = false,
-                remindAtTime = 9437
-            ),
-            text = "From",
-            onUpdateState = {},
-            state = AgendaDetailState()
-        )
-    }
-}
+// Some issues here with material 3 due to timepickerstate
+//@Preview
+//@Composable
+//fun TimeAndDateRowPreview() {
+//    AppTheme {
+//        TimeAndDateRow(
+//            agendaItem = AgendaItem(
+//                id = "suavitate",
+//                title = "homero",
+//                description = "congue",
+//                time = LocalDateTime.now(),
+//                remindAt = LocalDateTime.now(),
+//                details = AgendaItemDetails.Task(isDone = false)
+//            ),
+//            text = "From",
+//            onUpdateState = {},
+//            state = AgendaDetailState()
+//        )
+//    }
+//}

@@ -10,29 +10,29 @@ import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
 interface AgendaRepository {
-    suspend fun addTask(task: AgendaItem.Task): Result<Unit, TaskyError>
+    suspend fun addTask(task: AgendaItem): Result<Unit, TaskyError>
 
-    suspend fun getTaskById(taskId: String): Result<AgendaItem.Task, TaskyError>
+    suspend fun getTaskById(taskId: String): Result<AgendaItem, TaskyError>
 
-    suspend fun updateTask(task: AgendaItem.Task): Result<Unit, TaskyError>
+    suspend fun updateTask(task: AgendaItem): Result<Unit, TaskyError>
 
-    suspend fun deleteTask(task: AgendaItem.Task): Result<Unit, TaskyError>
+    suspend fun deleteTask(task: AgendaItem): Result<Unit, TaskyError>
 
-    suspend fun addEvent(event: AgendaItem.Event, photos: List<ByteArray>): Result<EventResponse, TaskyError>
+    suspend fun addEvent(event: AgendaItem, photos: List<ByteArray>): Result<EventResponse, TaskyError>
 
-    suspend fun getEventById(eventId: String): Result<AgendaItem.Event, TaskyError>
+    suspend fun getEventById(eventId: String): Result<AgendaItem, TaskyError>
 
-    suspend fun updateEvent(event: AgendaItem.Event, photos: List<ByteArray>, photosToDelete: List<String>): Result<EventResponse, TaskyError>
+    suspend fun updateEvent(event: AgendaItem, photos: List<ByteArray>, photosToDelete: List<String>): Result<EventResponse, TaskyError>
 
-    suspend fun deleteEvent(event: AgendaItem.Event): Result<Unit, TaskyError>
+    suspend fun deleteEvent(event: AgendaItem): Result<Unit, TaskyError>
 
-    suspend fun addReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError>
+    suspend fun addReminder(reminder: AgendaItem): Result<Unit, TaskyError>
 
-    suspend fun getReminderById(reminderId: String): Result<AgendaItem.Reminder, TaskyError>
+    suspend fun getReminderById(reminderId: String): Result<AgendaItem, TaskyError>
 
-    suspend fun updateReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError>
+    suspend fun updateReminder(reminder: AgendaItem): Result<Unit, TaskyError>
 
-    suspend fun deleteReminder(reminder: AgendaItem.Reminder): Result<Unit, TaskyError>
+    suspend fun deleteReminder(reminder: AgendaItem): Result<Unit, TaskyError>
 
     suspend fun getAttendee(email: String): Result<AttendeeExistDto, TaskyError>
 

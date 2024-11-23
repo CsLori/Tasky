@@ -3,14 +3,11 @@ package com.example.tasky.core.presentation
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 object DateUtils {
 
@@ -56,23 +53,6 @@ object DateUtils {
         return this.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
     }
 
-    fun LocalDate.localDateToStringMMMdyyyyFormat(): String {
-        val localDateTime = this.atStartOfDay(ZoneId.systemDefault()).toLocalDateTime()
-        return localDateTime.format(DateTimeFormatter.ofPattern("MMM d yyyy"))
-    }
-
-    // Output 15:00
-    fun Long.toHourMinuteFormat(): String {
-        val hours = TimeUnit.MILLISECONDS.toHours(this) % 24
-        val minutes = TimeUnit.MILLISECONDS.toMinutes(this) % 60
-
-        return String.format(Locale.getDefault(), "%02d:%02d", hours, minutes)
-    }
-
-    fun LocalTime.toMillis(): Long {
-        return this.toSecondOfDay() * 1000L
-    }
-
     // Output Jul 15, 2024
     fun Long.toLocalizedDateFormat(): String {
         val localDateTime =
@@ -83,11 +63,9 @@ object DateUtils {
     }
 
     // Output Mar 15, 10:00
-    fun Long.toMMMdHHmmFormat(): String {
+    fun LocalDateTime.toMMMdHHmmFormat(): String {
         val formatter = DateTimeFormatter.ofPattern("MMM d, HH:mm")
-        return Instant.ofEpochMilli(this)
-            .atZone(ZoneId.systemDefault())
-            .format(formatter)
+        return this.format(formatter)
     }
 
     fun Long.toLocalDate(): LocalDate {
@@ -100,5 +78,29 @@ object DateUtils {
         return this.atStartOfDay(ZoneId.systemDefault())
             .toInstant()
             .toEpochMilli()
+    }
+
+    fun Long.toLocalDateTime(): LocalDateTime {
+        return Instant.ofEpochMilli(this)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDateTime()
+    }
+
+    fun LocalDateTime.toLong(): Long {
+        return this.atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+    }
+
+    // Output 15:00
+    fun LocalDateTime.toHourMinuteFormat(): String {
+        val hours = this.hour
+        val minutes = this.minute
+
+        return String.format(Locale.getDefault(), "%02d:%02d", hours, minutes)
+    }
+
+    fun LocalDateTime.toStringMMMdyyyyFormat(): String {
+        return this.format(DateTimeFormatter.ofPattern("MMM d yyyy"))
     }
 }

@@ -52,7 +52,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
@@ -75,6 +77,7 @@ import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 
 const val NUMBER_OF_DAYS_TO_SHOW = 5
@@ -324,8 +327,8 @@ private fun AgendaContent(
                                 items(
                                     items = agendaItems,
                                     key = { it.id }) { agendaItem ->
-                                    when (agendaItem) {
-                                        is AgendaItem.Task -> {
+                                    when (agendaItem.details) {
+                                        is AgendaItemDetails.Task -> {
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.green,
@@ -359,7 +362,7 @@ private fun AgendaContent(
                                                 onComplete = {
                                                     onUpdateState(
                                                         AgendaUpdateState.UpdateIsDone(
-                                                            !agendaItem.isDone
+                                                            !(agendaItem.details as AgendaItemDetails.Task).isDone
 
                                                         )
                                                     )
@@ -367,7 +370,7 @@ private fun AgendaContent(
                                             )
                                         }
 
-                                        is AgendaItem.Event -> {
+                                        is AgendaItemDetails.Event -> {
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.lightGreen,
@@ -398,7 +401,7 @@ private fun AgendaContent(
                                             )
                                         }
 
-                                        is AgendaItem.Reminder -> {
+                                        is AgendaItemDetails.Reminder -> {
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.light2,
@@ -460,7 +463,7 @@ fun AgendaItem(
             .background(backgroundColor)
     ) {
         var visible by remember { mutableStateOf(false) }
-        val textColor = if (agendaItem is AgendaItem.Task) colors.white else colors.black
+        val textColor = if (agendaItem.details is AgendaItemDetails.Task) colors.white else colors.black
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -470,8 +473,8 @@ fun AgendaItem(
                     .padding(dimensions.default16dp),
             ) {
                 Icon(
-                    imageVector = when (agendaItem) {
-                        is AgendaItem.Task -> if (agendaItem.isDone) Icons.Outlined.CheckCircle else Icons.Outlined.Circle
+                    imageVector = when (agendaItem.details) {
+                        is AgendaItemDetails.Task -> if ((agendaItem.details as AgendaItemDetails.Task).isDone) Icons.Outlined.CheckCircle else Icons.Outlined.Circle
                         else -> Icons.Outlined.Circle
                     },
                     contentDescription = "Icon checked",
@@ -492,8 +495,8 @@ fun AgendaItem(
                             lineHeight = 16.sp,
                             fontSize = 20.sp,
                             color = textColor,
-                        ), textDecoration = when (agendaItem) {
-                            is AgendaItem.Task -> if (agendaItem.isDone) TextDecoration.LineThrough else TextDecoration.None
+                        ), textDecoration = when (agendaItem.details) {
+                            is AgendaItemDetails.Task -> if ((agendaItem.details as AgendaItemDetails.Task).isDone) TextDecoration.LineThrough else TextDecoration.None
                             else -> TextDecoration.None
                         }
                     )
@@ -501,11 +504,7 @@ fun AgendaItem(
                     Spacer(modifier = Modifier.height(dimensions.default16dp))
 
                     Text(
-                        text = when (agendaItem) {
-                            is AgendaItem.Task -> agendaItem.taskDescription ?: ""
-                            is AgendaItem.Event -> agendaItem.eventDescription ?: ""
-                            is AgendaItem.Reminder -> agendaItem.reminderDescription ?: ""
-                        },
+                        text = agendaItem.description,
                         style = TextStyle(color = textColor),
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
@@ -560,10 +559,9 @@ fun AgendaItem(
             contentAlignment = Alignment.BottomEnd
         ) {
             Text(
-                text = when (agendaItem) {
-                    is AgendaItem.Task -> agendaItem.sortDate.toMMMdHHmmFormat()
-                    is AgendaItem.Event -> "${agendaItem.sortDate.toMMMdHHmmFormat()} - ${agendaItem.to.toMMMdHHmmFormat()}"
-                    is AgendaItem.Reminder -> agendaItem.sortDate.toMMMdHHmmFormat()
+                text = when (agendaItem.details) {
+                    is AgendaItemDetails.Event -> "${agendaItem.time.toMMMdHHmmFormat()} - ${(agendaItem.details as AgendaItemDetails.Event).toTime.toMMMdHHmmFormat()}"
+                    else -> agendaItem.time.toMMMdHHmmFormat()
                 },
                 style = TextStyle(color = textColor)
             )
@@ -681,45 +679,69 @@ fun AgendaContentPreview() {
         AgendaContent(
             state = AgendaState(
                 agendaItems = listOf(
-                    AgendaItem.Task(
-                        taskId = "12345",
-                        taskTitle = "Titlevcvcvcvcvcvvcvcvcvcvcvcvcvcvcvcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
-                        taskDescription = "sapien",
-                        time = 1701,
-                        remindAtTime = 7947,
+                    AgendaItem(
+                        id = "12345",
+                        title = "Titlevcvcvcvcvcvvcvcvcvcvcvcvcvcvcvcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
+                        description = "sapien",
+                        time = LocalDateTime.now(),
+                        remindAt = LocalDateTime.now(),
+                        details = AgendaItemDetails.Task(
                         isDone = true,
+                        )
                     ),
-                    AgendaItem.Task(
-                        taskId = "1234",
-                        taskTitle = "facilisi",
-                        taskDescription = "sapien",
-                        time = 1701,
-                        remindAtTime = 7947,
-                        isDone = false,
+                    AgendaItem(
+                        id = "1234343434435",
+                        title = "Titlev",
+                        description = "sapideedeeden",
+                        time = LocalDateTime.now(),
+                        remindAt = LocalDateTime.now(),
+                        details = AgendaItemDetails.Task(
+                            isDone = true,
+                        )
                     ),
-                    AgendaItem.Event(
-                        eventId = "334",
-                        eventTitle = "imperdiet",
-                        eventDescription = null,
-                        from = 4415,
-                        to = 2349,
-                        photos = listOf(),
-                        attendees = listOf(),
-                        isUserEventCreator = false,
-                        host = null,
-                        remindAtTime = 9459
+                    AgendaItem(
+                        id = "334",
+                        title = "imperdiet",
+                        description = "sdsssdsd",
+                        time = LocalDateTime.now(),
+                        details = AgendaItemDetails.Event(
+                            toTime = LocalDateTime.now(),
+                            photos = listOf(),
+                            attendees = listOf(Attendee(
+                                email = "cecelia.cummings@example.com",
+                                name = "Benito Conway",
+                                userId = "laudem",
+                                eventId = "decore",
+                                isGoing = false,
+                                remindAt = 5235,
+                                isCreator = false
+                            )),
+                            isUserEventCreator = true,
+                            host = "123123123",
+                        ),
+                        remindAt = LocalDateTime.now()
                     ),
-                    AgendaItem.Event(
-                        eventId = "545",
-                        eventTitle = "imperdiet",
-                        eventDescription = null,
-                        from = 4415,
-                        to = 2349,
-                        photos = listOf(),
-                        attendees = listOf(),
-                        isUserEventCreator = false,
-                        host = null,
-                        remindAtTime = 9459
+                    AgendaItem(
+                        id = "33232233234",
+                        title = "imperdisdsdsdsdet",
+                        description = "sdsssdsd",
+                        time = LocalDateTime.now(),
+                        details = AgendaItemDetails.Event(
+                            toTime = LocalDateTime.now(),
+                            photos = listOf(),
+                            attendees = listOf(Attendee(
+                                email = "cecelia.cummings@example.com",
+                                name = "Benito Conway",
+                                userId = "laudem",
+                                eventId = "decore",
+                                isGoing = false,
+                                remindAt = 5235,
+                                isCreator = false
+                            )),
+                            isUserEventCreator = false,
+                            host = "1212323",
+                        ),
+                        remindAt = LocalDateTime.now()
                     )
                 ),
             ),
@@ -728,45 +750,69 @@ fun AgendaContentPreview() {
             onAction = { },
             uiState = AgendaViewModel.AgendaUiState.None,
             agendaItems = listOf(
-                AgendaItem.Task(
-                    taskId = "12345",
-                    taskTitle = "facilisi",
-                    taskDescription = "sapien",
-                    time = 1701,
-                    remindAtTime = 7947,
-                    isDone = true,
+                AgendaItem(
+                    id = "12345",
+                    title = "Titlevcvcvcvcvcvvcvcvcvcvcvcvcvcvcvcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
+                    description = "sapien",
+                    time = LocalDateTime.now(),
+                    remindAt = LocalDateTime.now(),
+                    details = AgendaItemDetails.Task(
+                        isDone = true,
+                    )
                 ),
-                AgendaItem.Task(
-                    taskId = "1234",
-                    taskTitle = "facilisi",
-                    taskDescription = "sapien",
-                    time = 1701,
-                    remindAtTime = 7947,
-                    isDone = false,
+                AgendaItem(
+                    id = "1234343434435",
+                    title = "Titlev",
+                    description = "sapideedeeden",
+                    time = LocalDateTime.now(),
+                    remindAt = LocalDateTime.now(),
+                    details = AgendaItemDetails.Task(
+                        isDone = true,
+                    )
                 ),
-                AgendaItem.Event(
-                    eventId = "334",
-                    eventTitle = "imperdiet",
-                    eventDescription = null,
-                    from = 4415,
-                    to = 2349,
-                    photos = listOf(),
-                    attendees = listOf(),
-                    isUserEventCreator = false,
-                    host = null,
-                    remindAtTime = 9459
+                AgendaItem(
+                    id = "334",
+                    title = "imperdiet",
+                    description = "sdsssdsd",
+                    time = LocalDateTime.now(),
+                    details = AgendaItemDetails.Event(
+                        toTime = LocalDateTime.now(),
+                        photos = listOf(),
+                        attendees = listOf(Attendee(
+                            email = "cecelia.cummings@example.com",
+                            name = "Benito Conway",
+                            userId = "laudem",
+                            eventId = "decore",
+                            isGoing = false,
+                            remindAt = 5235,
+                            isCreator = false
+                        )),
+                        isUserEventCreator = true,
+                        host = "12321321",
+                    ),
+                    remindAt = LocalDateTime.now()
                 ),
-                AgendaItem.Event(
-                    eventId = "545",
-                    eventTitle = "imperdiet",
-                    eventDescription = null,
-                    from = 4415,
-                    to = 2349,
-                    photos = listOf(),
-                    attendees = listOf(),
-                    isUserEventCreator = false,
-                    host = null,
-                    remindAtTime = 9459
+                AgendaItem(
+                    id = "33232233234",
+                    title = "imperdisdsdsdsdet",
+                    description = "sdsssdsd",
+                    time = LocalDateTime.now(),
+                    details = AgendaItemDetails.Event(
+                        toTime = LocalDateTime.now(),
+                        photos = listOf(),
+                        attendees = listOf(Attendee(
+                            email = "cecelia.cummings@example.com",
+                            name = "Benito Conway",
+                            userId = "laudem",
+                            eventId = "decore",
+                            isGoing = false,
+                            remindAt = 5235,
+                            isCreator = false
+                        )),
+                        isUserEventCreator = false,
+                        host = "213213213",
+                    ),
+                    remindAt = LocalDateTime.now()
                 )
             ),
             onComplete = {},

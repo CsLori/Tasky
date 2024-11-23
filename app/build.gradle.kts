@@ -13,12 +13,12 @@ plugins {
 
 android {
     namespace = "com.example.tasky"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.tasky"
         minSdk = 29
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -121,6 +121,10 @@ dependencies {
 
     // Timber
     implementation(libs.timber)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime)
+
 
 }
 

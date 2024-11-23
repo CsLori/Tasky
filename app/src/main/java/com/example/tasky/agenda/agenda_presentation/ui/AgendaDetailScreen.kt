@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
@@ -84,8 +85,6 @@ import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 import com.example.tasky.util.getInitials
 import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
 
 
 @Composable
@@ -103,16 +102,43 @@ internal fun AgendaDetailScreen(
     val errorDialogState =
         agendaDetailViewModel.errorDialogState.collectAsStateWithLifecycle().value
 
-    val networkStatus by agendaDetailViewModel.networkStatus.collectAsStateWithLifecycle()
-
     LaunchedEffect(agendaItemId) {
         if (agendaItemId == null) {
             agendaDetailViewModel.updateState(
                 AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
                     when (agendaDetailViewModel.agendaOption) {
-                        AgendaOption.TASK -> state.task
-                        AgendaOption.EVENT -> state.event
-                        AgendaOption.REMINDER -> state.reminder
+                        AgendaOption.TASK -> AgendaItem(
+                            id = "",
+                            title = state.title,
+                            description = state.description,
+                            time = state.time,
+                            remindAt = state.remindAt ?: LocalDateTime.now(),
+                            details = AgendaItemDetails.Task(isDone = false)
+                        )
+
+                        AgendaOption.EVENT -> AgendaItem(
+                            id = "",
+                            title = state.title,
+                            description = state.description,
+                            time = state.time,
+                            remindAt = state.remindAt ?: LocalDateTime.now(),
+                            details = AgendaItemDetails.Event(
+                                toTime = (state.details as? AgendaItemDetails.Event)?.toTime ?: LocalDateTime.now(),
+                                attendees = (state.details as? AgendaItemDetails.Event)?.attendees ?: emptyList(),
+                                photos = (state.details as? AgendaItemDetails.Event)?.photos ?: emptyList(),
+                                isUserEventCreator = true,
+                                host = (state.details as? AgendaItemDetails.Event)?.host ?: ""
+                            ),
+                        )
+
+                        AgendaOption.REMINDER -> AgendaItem(
+                            id = "",
+                            title = state.title,
+                            description = state.description,
+                            time = state.time,
+                            remindAt = state.remindAt ?: LocalDateTime.now(),
+                            details = AgendaItemDetails.Reminder
+                        )
                     }
                 )
             )
@@ -136,26 +162,6 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnCreateSuccess -> onNavigateToAgendaScreen()
                 AgendaDetailAction.OnEditRowPressed -> onEditPressed()
                 AgendaDetailAction.OnSavePressed -> {
-                    val time = LocalTime.of(state.fromAtTime.hour, state.fromAtTime.minute)
-                    val dateTime = LocalDateTime.of(state.date, time)
-                    val timestamp =
-                        dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    agendaDetailViewModel.updateState(
-                        AgendaDetailStateUpdate.UpdateSortDate(
-                            timestamp
-                        )
-                    )
-
-                    val secondRowTime = LocalTime.of(state.toTime.hour, state.toTime.minute)
-                    val secondRowDateTime = LocalDateTime.of(state.date, secondRowTime)
-                    val secondRowTimestamp =
-                        secondRowDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-                    agendaDetailViewModel.updateState(
-                        AgendaDetailStateUpdate.UpdateSecondRowToDate(
-                            secondRowTimestamp
-                        )
-                    )
                     if (agendaItemId == null) {
                         state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {
@@ -179,9 +185,9 @@ internal fun AgendaDetailScreen(
                 is AgendaDetailAction.OnPhotoPressed -> onNavigateToSelectedPhoto(action.key)
 
                 is AgendaDetailAction.OnVisitorFilterChanged -> when (state.visitorFilter) {
-                    VisitorFilter.ALL -> state.event.attendees
-                    VisitorFilter.GOING -> state.event.attendees.filter { it.isGoing }
-                    VisitorFilter.NOT_GOING -> state.event.attendees.filterNot { it.isGoing }
+                    VisitorFilter.ALL -> (state.details as? AgendaItemDetails.Event)?.attendees
+                    VisitorFilter.GOING -> (state.details as? AgendaItemDetails.Event)?.attendees?.filter { it.isGoing }
+                    VisitorFilter.NOT_GOING -> (state.details as? AgendaItemDetails.Event)?.attendees?.filterNot { it.isGoing }
                 }
 
                 is AgendaDetailAction.OnDeleteAgendaItem -> {
@@ -244,7 +250,7 @@ private fun AgendaDetailContent(
                 when (errorDialogState) {
                     is AgendaDetailViewModel.ErrorDialogState.AgendaItemError -> {
                         ErrorDialog(
-                            label = errorDialogState.message.asString() ?: "",
+                            label = errorDialogState.message.asString(),
                             displayCloseIcon = false,
                             positiveButtonText = stringResource(R.string.OK),
                             positiveOnClick = { onErrorDialogDismiss() },
@@ -253,7 +259,7 @@ private fun AgendaDetailContent(
 
                     is AgendaDetailViewModel.ErrorDialogState.AttendeeError -> {
                         ErrorDialog(
-                            label = errorDialogState.message.asString() ?: "",
+                            label = errorDialogState.message.asString(),
                             displayCloseIcon = false,
                             positiveButtonText = stringResource(R.string.OK),
                             positiveOnClick = { onErrorDialogDismiss() },
@@ -262,7 +268,7 @@ private fun AgendaDetailContent(
 
                     is AgendaDetailViewModel.ErrorDialogState.GeneralError -> {
                         ErrorDialog(
-                            label = errorDialogState.message.asString() ?: "",
+                            label = errorDialogState.message.asString(),
                             displayCloseIcon = false,
                             positiveButtonText = stringResource(R.string.OK),
                             positiveOnClick = { onErrorDialogDismiss() },
@@ -347,7 +353,7 @@ fun MainContent(
 
         AgendaItemDescription(agendaItem, onUpdateState, onAction, state)
 
-        if (agendaItem is AgendaItem.Event) {
+        if (agendaItem?.details is AgendaItemDetails.Event) {
             TimeAndDateRow(
                 agendaItem = agendaItem,
                 text = stringResource(R.string.from),
@@ -362,7 +368,7 @@ fun MainContent(
                 text = stringResource(R.string.to),
                 onUpdateState = onUpdateState,
                 state = state,
-                isSecondRow = true
+                endTime = true
             )
         } else {
             if (agendaItem != null) {
@@ -377,15 +383,16 @@ fun MainContent(
     }
 
     Box(modifier = Modifier.fillMaxWidth()) {
-        if (agendaItem is AgendaItem.Event) {
+        if (agendaItem?.details is AgendaItemDetails.Event) {
             AddPhotosSection(
                 isReadOnly = state.isReadOnly,
                 onAddPhotos = onAddPhotosPressed,
                 selectedImageUri = selectedImageUri,
                 onUpdateState = onUpdateState,
-                photos = state.event.photos,
+                photos = (state.details as? AgendaItemDetails.Event)?.photos ?: emptyList(),
                 onAction = onAction,
-                isEventCreator = state.event.isUserEventCreator
+                isEventCreator = (state.details as? AgendaItemDetails.Event)?.isUserEventCreator
+                    ?: false
             )
         }
     }
@@ -399,9 +406,9 @@ fun MainContent(
 
         SetReminderRow(onUpdateState, state)
 
-        if (agendaItem is AgendaItem.Event) {
+        if (agendaItem?.details is AgendaItemDetails.Event) {
             VisitorsSection(
-                visitors = state.event.attendees,
+                visitors = (state.details as? AgendaItemDetails.Event)?.attendees ?: emptyList(),
                 onVisitorStatusChanged = { onAction(AgendaDetailAction.OnVisitorFilterChanged) },
                 onShowDialog = onShowDialog,
                 onDialogDismiss = onDialogDismiss,
@@ -412,7 +419,8 @@ fun MainContent(
                 onAction = onAction,
                 visitorFilter = state.visitorFilter,
                 isReadOnly = state.isReadOnly,
-                isEventCreator = state.event.isUserEventCreator
+                isEventCreator = (state.details as? AgendaItemDetails.Event)?.isUserEventCreator
+                    ?: false
             )
         }
         Box(
@@ -427,7 +435,7 @@ fun MainContent(
                     .align(Alignment.BottomCenter),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (agendaItem !is AgendaItem.Event) DefaultHorizontalDivider()
+                if (agendaItem?.details !is AgendaItemDetails.Event) DefaultHorizontalDivider()
 
                 Spacer(modifier = Modifier.height(dimensions.small8dp))
                 Text(
@@ -440,10 +448,12 @@ fun MainContent(
                                 )
                             }
                         },
-                    text = when (agendaItem) {
-                        is AgendaItem.Task -> stringResource(R.string.Delete_task)
-                        is AgendaItem.Reminder -> stringResource(R.string.Delete_reminder)
-                        is AgendaItem.Event -> if (agendaItem.isUserEventCreator) stringResource(R.string.Delete_event) else stringResource(
+                    text = when (agendaItem?.details) {
+                        is AgendaItemDetails.Task -> stringResource(R.string.Delete_task)
+                        is AgendaItemDetails.Reminder -> stringResource(R.string.Delete_reminder)
+                        is AgendaItemDetails.Event -> if ((agendaItem?.details as? AgendaItemDetails.Event)?.isUserEventCreator == true) stringResource(
+                            R.string.Delete_event
+                        ) else stringResource(
                             R.string.Leave_event
                         )
 
@@ -763,17 +773,29 @@ fun AgendaDetailReadOnlyPreview() {
             onAction = {},
             onUpdateState = {},
             agendaItemId = "12345",
-            agendaItem = AgendaItem.Event(
-                eventId = "12345",
-                eventTitle = "ridens",
-                eventDescription = null,
-                from = 1221,
-                to = 4855,
-                photos = listOf(),
-                attendees = listOf(),
-                isUserEventCreator = false,
-                host = null,
-                remindAtTime = 4626,
+            agendaItem = AgendaItem(
+                id = "33232233234",
+                title = "imperdisdsdsdsdet",
+                description = "sdsssdsd",
+                time = LocalDateTime.now(),
+                details = AgendaItemDetails.Event(
+                    toTime = LocalDateTime.now(),
+                    photos = listOf(),
+                    attendees = listOf(
+                        Attendee(
+                            email = "cecelia.cummings@example.com",
+                            name = "Benito Conway",
+                            userId = "laudem",
+                            eventId = "decore",
+                            isGoing = false,
+                            remindAt = 5235,
+                            isCreator = false
+                        )
+                    ),
+                    isUserEventCreator = false,
+                    host = "123213123",
+                ),
+                remindAt = LocalDateTime.now()
             ),
             onUpdatePhotos = {},
             onShowDialog = {},
@@ -797,13 +819,29 @@ fun AgendaDetailEditablePreview() {
             onAction = {},
             onUpdateState = {},
             agendaItemId = "12345",
-            agendaItem = AgendaItem.Task(
-                taskId = "regione",
-                taskTitle = "vero",
-                taskDescription = null,
-                time = 5082,
-                isDone = false,
-                remindAtTime = 1844
+            agendaItem = AgendaItem(
+                id = "33232233234",
+                title = "imperdisdsdsdsdet",
+                description = "sdsssdsd",
+                time = LocalDateTime.now(),
+                details = AgendaItemDetails.Event(
+                    toTime = LocalDateTime.now(),
+                    photos = listOf(),
+                    attendees = listOf(
+                        Attendee(
+                            email = "cecelia.cummings@example.com",
+                            name = "Benito Conway",
+                            userId = "laudem",
+                            eventId = "decore",
+                            isGoing = false,
+                            remindAt = 5235,
+                            isCreator = false
+                        )
+                    ),
+                    isUserEventCreator = false,
+                    host = "12312123",
+                ),
+                remindAt = LocalDateTime.now()
             ),
             onUpdatePhotos = {},
             onShowDialog = {},
