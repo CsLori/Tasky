@@ -100,7 +100,7 @@ class LocalDataSource @Inject constructor(
             combinedList.addAll(tasks.map { it.toAgendaItem() })
             combinedList.addAll(reminders.map { it.toAgendaItem() })
             combinedList.addAll(events.map { it.toAgendaItem() })
-            combinedList.sortedByDescending { it.time }
+            combinedList.sortedBy { it.time }
         }
     }
 
