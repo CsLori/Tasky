@@ -53,7 +53,13 @@ fun Navigation() {
                             }
                         })
                 }
-                composable<Screen.Login> {
+                composable<Screen.Login>(
+                    deepLinks = listOf(
+                        navDeepLink<Screen.Login>(
+                            basePath = "tasky://login"
+                        )
+                    )
+                ) {
                     val loginViewModel = hiltViewModel<LoginViewModel>()
 
                     loginViewModel.checkUserSession()
@@ -83,7 +89,9 @@ fun Navigation() {
                                     popUpTo(Screen.Login) { inclusive = true }
                                 }
                             },
-                            onNavigateToAgenda = { navController.navigate(Screen.Agenda) }
+                            onNavigateToAgenda = {
+                                navController.navigate(Screen.Agenda)
+                            }
                         )
                     }
 
@@ -135,7 +143,6 @@ fun Navigation() {
                             basePath = "tasky://agenda_detail"
                         )
                     )
-
                 ) {
                     val agendaDetailViewModel = hiltViewModel<AgendaDetailViewModel>()
                     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
