@@ -7,7 +7,7 @@ import com.example.tasky.agenda.agenda_domain.model.AttendeeMinimal
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
 import kotlinx.coroutines.flow.Flow
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 interface AgendaRepository {
     suspend fun addTask(task: AgendaItem): Result<Unit, TaskyError>
@@ -41,7 +41,7 @@ interface AgendaRepository {
     suspend fun getLoggedInUserDetails(): Result<AttendeeMinimal, TaskyError>
 
     //Used for querying all the items for a selected day
-    suspend fun getAllAgendaItems(selectedDate: LocalDate): Result<Flow<List<AgendaItem>>, TaskyError>
+    suspend fun getAllAgendaItems(selectedDate: LocalDateTime): Result<Flow<List<AgendaItem>>, TaskyError>
 
     //Local sync for when user logs in
     suspend fun getFullAgenda(): Result<Unit,TaskyError>

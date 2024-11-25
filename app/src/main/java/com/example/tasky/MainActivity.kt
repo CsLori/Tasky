@@ -14,8 +14,13 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val notificationPermissions = NotificationPermissionUtil(this)
+        notificationPermissions.showNotificationPermissionDialogIfNotEnabled(this)
+
         Logger.init()
         installSplashScreen()
         enableEdgeToEdge()

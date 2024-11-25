@@ -1,26 +1,67 @@
 package com.example.tasky
 
 import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.TaskStackBuilder
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
+import com.example.tasky.Constants.AGENDA_ID
+import com.example.tasky.Constants.AGENDA_OPTION
 import com.example.tasky.Constants.CHANNEL_ID
+import com.example.tasky.Constants.DESCRIPTION
+import com.example.tasky.Constants.TIME
+import com.example.tasky.Constants.TITLE
+import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
+import com.example.tasky.core.presentation.DateUtils.toMMMdHHmmFormat
+import timber.log.Timber
+
 
 class AlarmBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        val message = intent?.getStringExtra("EXTRA_MESSAGE") ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            context?.let { ContextCompat.checkSelfPermission(it, "android.permission.POST_NOTIFICATIONS") } != PackageManager.PERMISSION_GRANTED
+        ) {
+            Timber.e("Notification permission not granted")
+            return
+        }
 
         val channelId = CHANNEL_ID
+        val title = intent?.getStringExtra(TITLE) ?: return
+        val description = intent.getStringExtra(DESCRIPTION) ?: return
+        val agendaItemId = intent?.getStringExtra(AGENDA_ID) ?: return
+        val time = intent?.getLongExtra(TIME, 0)?.toLocalDateTime()
+        val agendaOption = intent?.getStringExtra(AGENDA_OPTION)
+
         context?.let { safeContext ->
+            val activityIntent = Intent(Intent.ACTION_VIEW).apply {
+                data = "tasky://agenda_detail/${agendaOption}?agendaItemId=${agendaItemId}&isAgendaItemReadOnly=true&photoId=null".toUri()
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+
+            val pendingIntent = TaskStackBuilder.create(context).run {
+                addNextIntentWithParentStack(activityIntent)
+                getPendingIntent(0, PendingIntent.FLAG_IMMUTABLE)
+            }
+
             val notificationManager =
                 safeContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val builder = NotificationCompat.Builder(safeContext, channelId)
+
+            val notification = NotificationCompat.Builder(safeContext, channelId)
                 .setSmallIcon(R.drawable.tasky_logo)
-                .setContentTitle("Alarm")
-                .setContentText("Notification message $message")
+                .setContentTitle("Alarm $title at ${time?.toMMMdHHmmFormat()}")
+                .setContentText(description)
+                .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-            notificationManager.notify(1, builder.build())
+                .setAutoCancel(true)
+                .build()
+
+            notificationManager.notify(1, notification)
         }
     }
 }

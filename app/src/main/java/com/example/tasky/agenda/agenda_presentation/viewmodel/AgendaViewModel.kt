@@ -9,13 +9,13 @@ import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
-import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
+import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
-import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
-import com.example.tasky.util.NetworkConnectivityService
+import com.example.tasky.onboarding.onboarding_domain.UserRepository
+import com.example.tasky.util.ConnectivityService
 import com.example.tasky.util.NetworkStatus
 import com.example.tasky.util.getInitials
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,17 +33,17 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class AgendaViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
-    private val defaultUserRepository: DefaultUserRepository,
+    private val defaultUserRepository: UserRepository,
     private val localDatabaseRepository: LocalDatabaseRepository,
-    private val userPrefsRepository: ProtoUserPrefsRepository,
-    private val networkConnectivityService: NetworkConnectivityService
+    private val userPrefsRepository: UserPrefsRepository,
+    private val networkConnectivityService: ConnectivityService
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaState())
@@ -65,7 +65,7 @@ class AgendaViewModel @Inject constructor(
             started = WhileSubscribed(5000)
         )
 
-    private var selectedDate = MutableStateFlow(LocalDate.now())
+    private var selectedDate = MutableStateFlow(LocalDateTime.now())
 
     var userInitials: String = ""
 
@@ -75,7 +75,7 @@ class AgendaViewModel @Inject constructor(
         }
     }
 
-    fun getAgendaItems(filterDate: LocalDate) {
+    fun getAgendaItems(filterDate: LocalDateTime) {
         selectedDate.value = filterDate
     }
 

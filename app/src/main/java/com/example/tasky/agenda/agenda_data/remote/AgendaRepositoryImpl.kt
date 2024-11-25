@@ -1,6 +1,5 @@
 package com.example.tasky.agenda.agenda_data.remote
 
-import com.example.tasky.agenda.agenda_data.alarm.AlarmSchedulerService
 import com.example.tasky.agenda.agenda_data.createMultipartEventRequest
 import com.example.tasky.agenda.agenda_data.createPhotoPart
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAgendaItems
@@ -12,37 +11,37 @@ import com.example.tasky.agenda.agenda_data.entity_mappers.toAgendaItem
 import com.example.tasky.agenda.agenda_data.entity_mappers.toEventEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toReminderEntity
 import com.example.tasky.agenda.agenda_data.entity_mappers.toTaskEntity
-import com.example.tasky.agenda.agenda_data.local.LocalDataSource
 import com.example.tasky.agenda.agenda_data.local.entity.AgendaItemForDeletionEntity
 import com.example.tasky.agenda.agenda_data.remote.dto.AttendeeExistDto
 import com.example.tasky.agenda.agenda_data.remote.dto.EventResponse
 import com.example.tasky.agenda.agenda_data.remote.dto.SyncAgendaRequest
+import com.example.tasky.agenda.agenda_domain.AlarmScheduler
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItems
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.AttendeeMinimal
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
-import com.example.tasky.core.data.local.ProtoUserPrefsRepository
+import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
+import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.core.domain.asResult
 import com.example.tasky.core.domain.mapToTaskyError
-import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.util.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.concurrent.CancellationException
 
 class AgendaRepositoryImpl(
     private val api: TaskyApi,
-    private val userPrefsRepository: ProtoUserPrefsRepository,
-    private val localDatabaseRepository: LocalDataSource,
-    private val  alarmScheduler: AlarmSchedulerService
+    private val userPrefsRepository: UserPrefsRepository,
+    private val localDatabaseRepository: LocalDatabaseRepository,
+    private val  alarmScheduler: AlarmScheduler
 ) : AgendaRepository {
 
     override suspend fun addTask(
@@ -50,6 +49,7 @@ class AgendaRepositoryImpl(
     ): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertTask(task.toTaskEntity())
+            alarmScheduler.schedule(task, AgendaOption.TASK)
             api.addTask(task.toSerializedTask())
             Result.Success(Unit)
 
@@ -80,7 +80,7 @@ class AgendaRepositoryImpl(
     override suspend fun updateTask(task: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertTask(task.toTaskEntity())
-            alarmScheduler.schedule(task)
+            alarmScheduler.schedule(task, AgendaOption.TASK)
             api.updateTask(task.toSerializedTask())
             Result.Success(Unit)
 
@@ -123,6 +123,7 @@ class AgendaRepositoryImpl(
 
         return try {
             localDatabaseRepository.upsertEvent(event.toEventEntity())
+            alarmScheduler.schedule(event, AgendaOption.EVENT)
             val result = api.addEvent(eventPart, photosPart)
 
             Result.Success(result)
@@ -159,7 +160,7 @@ class AgendaRepositoryImpl(
 
         return try {
             localDatabaseRepository.upsertEvent(event.toEventEntity())
-            alarmScheduler.schedule(event)
+            alarmScheduler.schedule(event, AgendaOption.EVENT)
             val result = api.updateEvent(eventPart, photosPart)
 
             Result.Success(result)
@@ -193,6 +194,7 @@ class AgendaRepositoryImpl(
     override suspend fun addReminder(reminder: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertReminder(reminder.toReminderEntity())
+            alarmScheduler.schedule(reminder, AgendaOption.REMINDER)
             api.addReminder(reminder.toSerializedReminder())
             Result.Success(Unit)
         } catch (e: Exception) {
@@ -221,7 +223,7 @@ class AgendaRepositoryImpl(
     override suspend fun updateReminder(reminder: AgendaItem): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertReminder(reminder.toReminderEntity())
-            alarmScheduler.schedule(reminder)
+            alarmScheduler.schedule(reminder, AgendaOption.REMINDER)
             api.updateReminder(reminder.toSerializedReminder())
             Result.Success(Unit)
 
@@ -295,12 +297,12 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun getAllAgendaItems(selectedDate: LocalDate): Result<Flow<List<AgendaItem>>, TaskyError> {
+    override suspend fun getAllAgendaItems(selectedDate: LocalDateTime): Result<Flow<List<AgendaItem>>, TaskyError> {
         return try {
             val localItems = localDatabaseRepository.getAllAgendaItems(selectedDate)
 
             //This request requires UTC
-            val timeStamp = selectedDate.toLong(ZoneOffset.UTC)
+            val timeStamp = selectedDate.toInstant(ZoneOffset.UTC).toEpochMilli()
             val remoteItems = api.getAgenda(timeStamp)
 
             withContext(Dispatchers.IO) {

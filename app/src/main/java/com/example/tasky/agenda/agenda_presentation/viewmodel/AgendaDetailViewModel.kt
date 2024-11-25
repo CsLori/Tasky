@@ -7,8 +7,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.tasky.R
 import com.example.tasky.Screen
-import com.example.tasky.agenda.agenda_data.alarm.AlarmSchedulerService
 import com.example.tasky.agenda.agenda_data.dto_mappers.toAttendee
+import com.example.tasky.agenda.agenda_domain.AlarmScheduler
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
@@ -50,7 +50,7 @@ class AgendaDetailViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val photoCompressor: PhotoCompressor,
     private val photoConverter: PhotoConverter,
-    private val alarmSchedulerService: AlarmSchedulerService
+    private val alarmSchedulerService: AlarmScheduler,
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaDetailState())
@@ -186,7 +186,6 @@ class AgendaDetailViewModel @Inject constructor(
             val result = when (agendaItem.details) {
                 is AgendaItemDetails.Task -> {
                     val newTask = prepareUpdatedTask(agendaItem)
-                    alarmSchedulerService.schedule(agendaItem)
                     agendaRepository.updateTask(newTask)
                 }
 

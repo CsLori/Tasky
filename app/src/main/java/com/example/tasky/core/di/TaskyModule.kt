@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.room.Room.databaseBuilder
 import com.example.tasky.Constants.BASE_URL
+import com.example.tasky.NotificationPermissionUtil
 import com.example.tasky.agenda.agenda_data.alarm.AlarmSchedulerService
 import com.example.tasky.agenda.agenda_data.di.BasicOkHttpClient
 import com.example.tasky.agenda.agenda_data.local.AgendaDatabase
@@ -14,16 +15,21 @@ import com.example.tasky.agenda.agenda_data.local.dao.SyncAgendaItemsDao
 import com.example.tasky.agenda.agenda_data.local.dao.TaskDao
 import com.example.tasky.agenda.agenda_data.remote.AgendaRepositoryImpl
 import com.example.tasky.agenda.agenda_data.remote.AuthTokenInterceptor
+import com.example.tasky.agenda.agenda_domain.AlarmScheduler
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.data.remote.TaskyApi
+import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
+import com.example.tasky.onboarding.onboarding_domain.UserRepository
+import com.example.tasky.util.ConnectivityService
 import com.example.tasky.util.NetworkConnectivityService
 import com.example.tasky.util.PhotoCompressor
 import com.example.tasky.util.PhotoConverter
 import dagger.Module
 import dagger.Provides
+import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
@@ -103,7 +109,7 @@ object TaskyModule {
 
     @Provides
     @Singleton
-    fun provideUserPrefs(@ApplicationContext context: Context): ProtoUserPrefsRepository {
+    fun provideUserPrefs(@ApplicationContext context: Context): UserPrefsRepository {
         return ProtoUserPrefsRepository(context)
     }
 
@@ -111,8 +117,8 @@ object TaskyModule {
     @Singleton
     fun provideUserRepo(
         api: TaskyApi,
-        protoUserPrefsRepository: ProtoUserPrefsRepository
-    ): DefaultUserRepository {
+        protoUserPrefsRepository: UserPrefsRepository
+    ): UserRepository {
         return DefaultUserRepository(api, protoUserPrefsRepository)
     }
 
@@ -121,9 +127,9 @@ object TaskyModule {
     @Singleton
     fun provideAgendaRepository(
         api: TaskyApi,
-        userPrefsRepository: ProtoUserPrefsRepository,
-        localDatabaseRepository: LocalDataSource,
-        alarmSchedulerService: AlarmSchedulerService
+        userPrefsRepository: UserPrefsRepository,
+        localDatabaseRepository: LocalDatabaseRepository,
+        alarmSchedulerService: AlarmScheduler
     ): AgendaRepository {
         return AgendaRepositoryImpl(api, userPrefsRepository, localDatabaseRepository, alarmSchedulerService)
     }
@@ -142,13 +148,25 @@ object TaskyModule {
 
     @Provides
     @Singleton
-    fun provideNetworkConnectivityService(@ApplicationContext context: Context) : NetworkConnectivityService {
+    fun provideNetworkConnectivityService(@ApplicationContext context: Context) : ConnectivityService {
         return NetworkConnectivityService(context)
     }
 
     @Provides
     @Singleton
-    fun provideAlarmSchedulerService(@ApplicationContext context: Context) : AlarmSchedulerService {
+    fun provideAlarmSchedulerService(@ApplicationContext context: Context) : AlarmScheduler {
         return AlarmSchedulerService(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationPermissionUtil(@ApplicationContext context: Context) : NotificationPermissionUtil {
+        return NotificationPermissionUtil(context)
+    }
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface BootReceiverEntryPoint {
+        fun getRepository(): LocalDatabaseRepository
     }
 }

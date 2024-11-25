@@ -18,8 +18,8 @@ object Screen {
     @Serializable
     data class AgendaDetail(
         val agendaItemId: String? = null,
-        val isAgendaItemReadOnly: Boolean,
         val agendaOption: AgendaOption,
+        val isAgendaItemReadOnly: Boolean = false,
         val photoId: String? = null
     )
 

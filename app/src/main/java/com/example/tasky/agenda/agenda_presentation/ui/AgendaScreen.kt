@@ -66,6 +66,7 @@ import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.getDaysWithDates
 import com.example.tasky.core.presentation.DateUtils.localDateToStringddMMMMyyyyFormat
 import com.example.tasky.core.presentation.DateUtils.toLocalDate
+import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
 import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.core.presentation.DateUtils.toMMMdHHmmFormat
 import com.example.tasky.core.presentation.components.AgendaDetailDropdown
@@ -107,8 +108,7 @@ internal fun AgendaScreen(
                     //                showToast(context, (R.string.Failed_to_sync_agenda))
                 }
 
-                else -> { /* Do nothing */
-                }
+                else -> { /* Do nothing */ }
             }
         }
     }
@@ -136,7 +136,7 @@ internal fun AgendaScreen(
                     onOpenPressed(action.agendaItem)
                 }
 
-                is AgendaAction.OnFilterAgendaItems -> agendaViewModel.getAgendaItems(action.filterDate.toLocalDate())
+                is AgendaAction.OnFilterAgendaItems -> agendaViewModel.getAgendaItems(action.filterDate.toLocalDateTime())
             }
         },
         onComplete = {

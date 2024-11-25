@@ -13,7 +13,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
+import com.example.tasky.Constants.DESCRIPTION
+import com.example.tasky.Constants.TITLE
 import com.example.tasky.Screen
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaDetailScreen
@@ -29,8 +32,6 @@ import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 
-const val DESCRIPTION = "description"
-const val TITLE = "title"
 const val PHOTO_ID = "photoId"
 
 @Composable
@@ -98,7 +99,7 @@ fun Navigation() {
                                     agendaItemId = agendaItem.id,
                                     isAgendaItemReadOnly = false,
                                     agendaOption = agendaViewModel.state.value.agendaOption,
-                                    )
+                                )
                             )
                         },
                         onLogoutNavigateToLogin = {
@@ -128,12 +129,17 @@ fun Navigation() {
                         }
                     )
                 }
-                composable<Screen.AgendaDetail> {
+                composable<Screen.AgendaDetail>(
+                    deepLinks = listOf(
+                        navDeepLink<Screen.AgendaDetail>(
+                            basePath = "tasky://agenda_detail"
+                        )
+                    )
+
+                ) {
                     val agendaDetailViewModel = hiltViewModel<AgendaDetailViewModel>()
                     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
                     val args = it.toRoute<Screen.AgendaDetail>()
-
-
 
                     LaunchedEffect(savedStateHandle?.get<String>(PHOTO_ID)) {
                         savedStateHandle?.get<String>(PHOTO_ID)?.let { safePhotoId ->
@@ -178,8 +184,9 @@ fun Navigation() {
                         },
                         agendaItemId = args.agendaItemId,
                         onNavigateToSelectedPhoto = { photoId ->
-                            val photoUrl = (agendaDetailViewModel.state.value.details as? AgendaItemDetails.Event)?.photos
-                                ?.firstOrNull { photo -> photo.key == photoId }?.url
+                            val photoUrl =
+                                (agendaDetailViewModel.state.value.details as? AgendaItemDetails.Event)?.photos
+                                    ?.firstOrNull { photo -> photo.key == photoId }?.url
 
                             if (photoUrl != null && photoId != null) {
                                 navController.navigate(Screen.Photo(photoId, photoUrl))

@@ -14,7 +14,8 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import javax.inject.Inject
 
@@ -86,9 +87,9 @@ class LocalDataSource @Inject constructor(
         return reminderDao.deleteReminder(reminderEntity)
     }
 
-    override fun getAllAgendaItems(selectedDate: LocalDate): Flow<List<AgendaItem>> {
-        val startOfDay = selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val endOfDay = selectedDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    override fun getAllAgendaItems(selectedDate: LocalDateTime): Flow<List<AgendaItem>> {
+        val startOfDay = selectedDate.with(LocalTime.MIN).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val endOfDay = selectedDate.with(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
         return combine(
             taskDao.getAllTasks(startOfDay, endOfDay),
@@ -99,7 +100,7 @@ class LocalDataSource @Inject constructor(
             combinedList.addAll(tasks.map { it.toAgendaItem() })
             combinedList.addAll(reminders.map { it.toAgendaItem() })
             combinedList.addAll(events.map { it.toAgendaItem() })
-            combinedList
+            combinedList.sortedByDescending { it.time }
         }
     }
 

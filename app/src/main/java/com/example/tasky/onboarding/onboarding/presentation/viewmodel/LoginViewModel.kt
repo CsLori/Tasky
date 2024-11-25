@@ -3,16 +3,16 @@ package com.example.tasky.onboarding.onboarding.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
-import com.example.tasky.agenda.agenda_data.local.LocalDataSource
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
-import com.example.tasky.core.data.local.ProtoUserPrefsRepository
+import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
+import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
-import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
+import com.example.tasky.onboarding.onboarding_domain.UserRepository
 import com.example.tasky.onboarding.onboarding_domain.model.LoginUser
 import com.example.tasky.util.CredentialsValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,9 +25,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val defaultUserRepository: DefaultUserRepository,
-    private val userPrefsRepository: ProtoUserPrefsRepository,
-    private val localDatabaseRepository: LocalDataSource,
+    private val defaultUserRepository: UserRepository,
+    private val userPrefsRepository: UserPrefsRepository,
+    private val localDatabaseRepository: LocalDatabaseRepository,
     private val agendaRepository: AgendaRepository
 ) : ViewModel() {
 
