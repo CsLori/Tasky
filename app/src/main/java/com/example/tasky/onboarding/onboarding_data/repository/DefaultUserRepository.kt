@@ -1,9 +1,9 @@
 package com.example.tasky.onboarding.onboarding_data.repository
 
-import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.data.remote.TaskyApi
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
+import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.core.domain.asResult
 import com.example.tasky.core.domain.mapToTaskyError
 import com.example.tasky.onboarding.onboarding_data.dto_mappers.toLoginUser
@@ -16,7 +16,7 @@ import java.util.concurrent.CancellationException
 
 class DefaultUserRepository(
     private val api: TaskyApi,
-    private val userPrefsRepository: ProtoUserPrefsRepository
+    private val userPrefsRepository: UserPrefsRepository
 ) : UserRepository {
     override suspend fun register(
         name: String,

@@ -8,8 +8,6 @@ import java.time.LocalDate
 data class AgendaState(
     val selectedDate: LocalDate = DateUtils.getCurrentDate(),
     val agendaOption: AgendaOption = AgendaOption.TASK,
-    val isVisible: Boolean = false,
-    val shouldShowDatePicker: Boolean = false,
     val month: String = DateUtils.getCurrentMonth(),
     val isDateSelectedFromDatePicker: Boolean = false,
     val selectedIndex: Int = 0,

@@ -230,8 +230,8 @@ fun TimeAndDateRow(
             )
         }
 
-        var shouldShowStartDatePicker = remember {  mutableStateOf(false)}
-        var shouldShowEndDatePicker = remember {  mutableStateOf(false)}
+        var shouldShowStartDatePicker = remember { mutableStateOf(false) }
+        var shouldShowEndDatePicker = remember { mutableStateOf(false) }
         var shouldShowStartTimePicker = remember { mutableStateOf(false) }
         var shouldShowEndTimePicker = remember { mutableStateOf(false) }
 
@@ -564,8 +564,10 @@ fun AddPhotosSection(
 fun SetReminderRow(
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     state: AgendaDetailState,
+    areNotificationsEnabled: Boolean
 ) {
     val shouldShowReminderDropdown = remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -635,7 +637,7 @@ fun SetReminderRow(
             },
             visible = shouldShowReminderDropdown.value,
             onDismiss = {
-               shouldShowReminderDropdown.value = false
+                shouldShowReminderDropdown.value = false
             }
         )
     }

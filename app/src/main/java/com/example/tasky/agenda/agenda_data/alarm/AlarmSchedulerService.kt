@@ -1,16 +1,19 @@
 package com.example.tasky.agenda.agenda_data.alarm
 
-import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.provider.AlarmClock.EXTRA_MESSAGE
 import com.example.tasky.AlarmBroadcastReceiver
+import com.example.tasky.Constants.AGENDA_ID
+import com.example.tasky.Constants.AGENDA_OPTION
+import com.example.tasky.Constants.DESCRIPTION
+import com.example.tasky.Constants.TIME
+import com.example.tasky.Constants.TITLE
 import com.example.tasky.agenda.agenda_domain.AlarmScheduler
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
+import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.core.presentation.DateUtils.toLong
-import timber.log.Timber
 
 class AlarmSchedulerService(private val context: Context) : AlarmScheduler {
 
@@ -18,12 +21,14 @@ class AlarmSchedulerService(private val context: Context) : AlarmScheduler {
         context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     }
 
-    @SuppressLint("ScheduleExactAlarm")
-    override suspend fun schedule(agendaItem: AgendaItem) {
+    override suspend fun schedule(agendaItem: AgendaItem, option: AgendaOption) {
 
-        Timber.d("DDD - Scheduling alarm for ${agendaItem.remindAt} || title: ${agendaItem.title}")
         val intent = Intent(context, AlarmBroadcastReceiver::class.java).apply {
-            putExtra(EXTRA_MESSAGE, agendaItem.title)
+            putExtra(TITLE, agendaItem.title)
+            putExtra(DESCRIPTION, agendaItem.description)
+            putExtra(TIME, agendaItem.time.toLong())
+            putExtra(AGENDA_ID, agendaItem.id)
+            putExtra(AGENDA_OPTION, option.displayName.lowercase())
         }
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
@@ -47,5 +52,4 @@ class AlarmSchedulerService(private val context: Context) : AlarmScheduler {
             )
         )
     }
-
 }

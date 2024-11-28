@@ -2,7 +2,9 @@
 
 package com.example.tasky.agenda.agenda_presentation.ui
 
+import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -36,7 +39,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +59,12 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.tasky.MainActivity
+import com.example.tasky.NotificationPermissionUtil
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
@@ -101,6 +111,18 @@ internal fun AgendaDetailScreen(
     val dialogState = agendaDetailViewModel.dialogState.collectAsStateWithLifecycle().value
     val errorDialogState =
         agendaDetailViewModel.errorDialogState.collectAsStateWithLifecycle().value
+    val context = LocalContext.current
+    val activity = (context as? MainActivity)
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    val permissions = remember { NotificationPermissionUtil(context) }
+    var areNotificationsEnabled by remember {
+        mutableStateOf(
+            permissions.arePushNotificationsEnabledOnTheDevice(
+                context
+            )
+        )
+    }
 
     LaunchedEffect(agendaItemId) {
         if (agendaItemId == null) {
@@ -123,9 +145,12 @@ internal fun AgendaDetailScreen(
                             time = state.time,
                             remindAt = state.remindAt ?: LocalDateTime.now(),
                             details = AgendaItemDetails.Event(
-                                toTime = (state.details as? AgendaItemDetails.Event)?.toTime ?: LocalDateTime.now(),
-                                attendees = (state.details as? AgendaItemDetails.Event)?.attendees ?: emptyList(),
-                                photos = (state.details as? AgendaItemDetails.Event)?.photos ?: emptyList(),
+                                toTime = (state.details as? AgendaItemDetails.Event)?.toTime
+                                    ?: LocalDateTime.now(),
+                                attendees = (state.details as? AgendaItemDetails.Event)?.attendees
+                                    ?: emptyList(),
+                                photos = (state.details as? AgendaItemDetails.Event)?.photos
+                                    ?: emptyList(),
                                 isUserEventCreator = true,
                                 host = (state.details as? AgendaItemDetails.Event)?.host ?: ""
                             ),
@@ -149,6 +174,22 @@ internal fun AgendaDetailScreen(
                     state.selectedAgendaItem
                 )
             )
+        }
+    }
+
+    DisposableEffect(Unit) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val isEnabled = permissions.arePushNotificationsEnabledOnTheDevice(context)
+                if (isEnabled != areNotificationsEnabled) {
+                    areNotificationsEnabled = isEnabled
+                }
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
@@ -211,6 +252,7 @@ internal fun AgendaDetailScreen(
         onErrorDialogDismiss = { agendaDetailViewModel.hideErrorDialog() },
         dialogState = dialogState,
         errorDialogState = errorDialogState,
+        areNotificationsEnabled = areNotificationsEnabled,
     )
 }
 
@@ -229,6 +271,7 @@ private fun AgendaDetailContent(
     dialogState: DialogState,
     errorDialogState: AgendaDetailViewModel.ErrorDialogState,
     onErrorDialogDismiss: () -> Unit,
+    areNotificationsEnabled: Boolean,
 ) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val getContent =
@@ -288,6 +331,7 @@ private fun AgendaDetailContent(
                     onEnableEditPressed = { onAction(AgendaDetailAction.OnEnableEditPressed) },
                     agendaItemId = agendaItemId,
                     isReadOnly = state.isReadOnly,
+                    areNotificationsEnabled = areNotificationsEnabled
                 )
             }
 
@@ -322,8 +366,8 @@ private fun AgendaDetailContent(
                         onShowDialog = onShowDialog,
                         onDialogDismiss = onDialogDismiss,
                         dialogState = dialogState,
+                        areNotificationsEnabled = areNotificationsEnabled
                     )
-
                 }
             }
         }
@@ -341,6 +385,7 @@ fun MainContent(
     onShowDialog: () -> Unit,
     onDialogDismiss: () -> Unit,
     dialogState: DialogState,
+    areNotificationsEnabled: Boolean,
 ) {
     Column(
         modifier = Modifier
@@ -404,7 +449,7 @@ fun MainContent(
     ) {
         DefaultHorizontalDivider()
 
-        SetReminderRow(onUpdateState, state)
+        SetReminderRow(onUpdateState, state, areNotificationsEnabled)
 
         if (agendaItem?.details is AgendaItemDetails.Event) {
             VisitorsSection(
@@ -702,8 +747,40 @@ private fun Header(
     onClosePressed: () -> Unit,
     onEnableEditPressed: () -> Unit,
     agendaItemId: String?,
-    isReadOnly: Boolean
+    isReadOnly: Boolean,
+    areNotificationsEnabled: Boolean
 ) {
+    val context = LocalContext.current
+    var shouldCheckPermissions by remember { mutableStateOf(false) }
+    var hasSeenNotificationAlert by remember { mutableStateOf(false) }
+    if (!areNotificationsEnabled && shouldCheckPermissions) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text(stringResource(R.string.Enable_notifications)) },
+            text = { Text(stringResource(R.string.Notifications_disabled_open_settings)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    }
+                    hasSeenNotificationAlert = true
+                    shouldCheckPermissions = false
+                    context.startActivity(intent)
+                }) {
+                    Text(stringResource(R.string.Go_to_settings))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    hasSeenNotificationAlert = true
+                    shouldCheckPermissions = false
+                }) {
+                    Text(stringResource(R.string.Maybe_later))
+                }
+            }
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -742,7 +819,12 @@ private fun Header(
             )
             if (agendaItemId.isNullOrEmpty() || !isReadOnly) {
                 Text(
-                    modifier = Modifier.clickable { onSavePressed() },
+                    modifier = Modifier.clickable {
+                        shouldCheckPermissions = true
+                        if (areNotificationsEnabled || hasSeenNotificationAlert) {
+                            onSavePressed()
+                        }
+                    },
                     text = stringResource(R.string.Save), color = colors.white
                 )
             } else {
@@ -770,8 +852,8 @@ fun AgendaDetailReadOnlyPreview() {
         AgendaDetailContent(
             state = AgendaDetailState(isReadOnly = true),
             uiState = AgendaDetailViewModel.AgendaDetailUiState.None,
-            onAction = {},
             onUpdateState = {},
+            onAction = {},
             agendaItemId = "12345",
             agendaItem = AgendaItem(
                 id = "33232233234",
@@ -802,7 +884,8 @@ fun AgendaDetailReadOnlyPreview() {
             onDialogDismiss = {},
             dialogState = DialogState.Hide,
             errorDialogState = AgendaDetailViewModel.ErrorDialogState.None,
-            onErrorDialogDismiss = {}
+            onErrorDialogDismiss = {},
+            areNotificationsEnabled = true,
         )
     }
 }
@@ -816,8 +899,8 @@ fun AgendaDetailEditablePreview() {
         AgendaDetailContent(
             state = AgendaDetailState(isReadOnly = false),
             uiState = AgendaDetailViewModel.AgendaDetailUiState.None,
-            onAction = {},
             onUpdateState = {},
+            onAction = {},
             agendaItemId = "12345",
             agendaItem = AgendaItem(
                 id = "33232233234",
@@ -848,7 +931,8 @@ fun AgendaDetailEditablePreview() {
             onDialogDismiss = {},
             dialogState = DialogState.Hide,
             errorDialogState = AgendaDetailViewModel.ErrorDialogState.None,
-            onErrorDialogDismiss = {}
+            onErrorDialogDismiss = {},
+            areNotificationsEnabled = true,
         )
     }
 }

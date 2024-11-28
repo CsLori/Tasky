@@ -1,7 +1,7 @@
 package com.example.tasky.agenda.agenda_data.remote
 
 import com.example.tasky.BuildConfig.API_KEY
-import com.example.tasky.core.data.local.ProtoUserPrefsRepository
+import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.onboarding.onboarding_data.remote.dto.RefreshTokenBody
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
@@ -10,7 +10,7 @@ import retrofit2.HttpException
 import java.io.IOException
 
 class AuthTokenInterceptor(
-    private val userPrefsRepository: ProtoUserPrefsRepository,
+    private val userPrefsRepository: UserPrefsRepository,
     private val tokenRefreshApi: TokenRefreshApi
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {

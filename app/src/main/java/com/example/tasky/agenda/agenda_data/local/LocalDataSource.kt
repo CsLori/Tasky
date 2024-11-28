@@ -14,7 +14,8 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import javax.inject.Inject
 
@@ -27,7 +28,7 @@ class LocalDataSource @Inject constructor(
 ) : LocalDatabaseRepository {
 
     override fun getAllTasks(startOfDay: Long, endOfDay: Long): Flow<List<TaskEntity>> {
-        return taskDao.getAllTasks(startOfDay, endOfDay)
+        return taskDao.getAllTasksForDate(startOfDay, endOfDay)
     }
 
     override suspend fun getTaskById(taskId: String): TaskEntity {
@@ -47,7 +48,7 @@ class LocalDataSource @Inject constructor(
     }
 
     override fun getAllEvents(startOfDay: Long, endOfDay: Long): Flow<List<EventEntity>> {
-        return eventDao.getAllEvents(startOfDay, endOfDay)
+        return eventDao.getAllEventsForDate(startOfDay, endOfDay)
     }
 
     override suspend fun getEventById(eventId: String): EventEntity {
@@ -67,7 +68,7 @@ class LocalDataSource @Inject constructor(
     }
 
     override fun getAllReminders(startOfDay: Long, endOfDay: Long): Flow<List<ReminderEntity>> {
-        return reminderDao.getAllReminders(startOfDay, endOfDay)
+        return reminderDao.getAllRemindersForDate(startOfDay, endOfDay)
     }
 
     override suspend fun getReminderById(reminderId: String): ReminderEntity {
@@ -86,20 +87,35 @@ class LocalDataSource @Inject constructor(
         return reminderDao.deleteReminder(reminderEntity)
     }
 
-    override fun getAllAgendaItems(selectedDate: LocalDate): Flow<List<AgendaItem>> {
-        val startOfDay = selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val endOfDay = selectedDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    //Agenda items for a specific date
+    override fun getAllAgendaItemsForDate(selectedDate: LocalDateTime): Flow<List<AgendaItem>> {
+        val startOfDay = selectedDate.with(LocalTime.MIN).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val endOfDay = selectedDate.with(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
         return combine(
-            taskDao.getAllTasks(startOfDay, endOfDay),
-            reminderDao.getAllReminders(startOfDay, endOfDay),
-            eventDao.getAllEvents(startOfDay, endOfDay)
+            taskDao.getAllTasksForDate(startOfDay, endOfDay),
+            reminderDao.getAllRemindersForDate(startOfDay, endOfDay),
+            eventDao.getAllEventsForDate(startOfDay, endOfDay)
         ) { tasks, reminders, events ->
             val combinedList = mutableListOf<AgendaItem>()
             combinedList.addAll(tasks.map { it.toAgendaItem() })
             combinedList.addAll(reminders.map { it.toAgendaItem() })
             combinedList.addAll(events.map { it.toAgendaItem() })
-            combinedList
+            combinedList.sortedBy { it.time }
+        }
+    }
+
+    override fun getAllAgendaItems(): Flow<List<AgendaItem>> {
+        return combine(
+            taskDao.getAllTasks(),
+            reminderDao.getAllReminders(),
+            eventDao.getAllEvents()
+        ) { tasks, reminders, events ->
+            val combinedList = mutableListOf<AgendaItem>()
+            combinedList.addAll(tasks.map { it.toAgendaItem() })
+            combinedList.addAll(reminders.map { it.toAgendaItem() })
+            combinedList.addAll(events.map { it.toAgendaItem() })
+            combinedList.sortedBy { it.time }
         }
     }
 

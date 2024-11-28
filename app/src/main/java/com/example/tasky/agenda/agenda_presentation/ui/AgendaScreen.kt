@@ -39,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -65,7 +64,7 @@ import com.example.tasky.core.domain.Result
 import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.getDaysWithDates
 import com.example.tasky.core.presentation.DateUtils.localDateToStringddMMMMyyyyFormat
-import com.example.tasky.core.presentation.DateUtils.toLocalDate
+import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
 import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.core.presentation.DateUtils.toMMMdHHmmFormat
 import com.example.tasky.core.presentation.components.AgendaDetailDropdown
@@ -92,12 +91,10 @@ internal fun AgendaScreen(
 ) {
     val state by agendaViewModel.state.collectAsStateWithLifecycle()
     val uiState by agendaViewModel.uiState.collectAsStateWithLifecycle()
-    val agendaItems by agendaViewModel.agendaItems.collectAsStateWithLifecycle()
+    val agendaItems by agendaViewModel.agendaItemsForSelectedDate.collectAsStateWithLifecycle()
     val syncResult by agendaViewModel.syncResult.collectAsStateWithLifecycle()
     val numberOfSyncItems = agendaViewModel.getNumberOfDeletedItemsForSync() ?: 0
     val userInitials = agendaViewModel.userInitials
-
-    val context = LocalContext.current
 
     LaunchedEffect(syncResult) {
         if (numberOfSyncItems > 0) {
@@ -136,12 +133,10 @@ internal fun AgendaScreen(
                     onOpenPressed(action.agendaItem)
                 }
 
-                is AgendaAction.OnFilterAgendaItems -> agendaViewModel.getAgendaItems(action.filterDate.toLocalDate())
+                is AgendaAction.OnFilterAgendaItems -> agendaViewModel.getAgendaItems(action.filterDate.toLocalDateTime())
+                is AgendaAction.OnIsDoneChange -> agendaViewModel.updateTaskOnIsDoneChange()
             }
         },
-        onComplete = {
-            agendaViewModel.updateState(AgendaUpdateState.UpdateIsDone(it))
-        }
     )
 }
 
@@ -153,17 +148,16 @@ private fun AgendaContent(
     uiState: AgendaViewModel.AgendaUiState,
     onEditPressed: (AgendaItem) -> Unit,
     onUpdateState: (AgendaUpdateState) -> Unit,
-    onAction: (AgendaAction) -> Unit,
-    onComplete: (Boolean) -> Unit
+    onAction: (AgendaAction) -> Unit
 ) {
+    var shouldShowDatePicker by remember { mutableStateOf(false) }
+    var isVisible by remember { mutableStateOf(false) }
     when (uiState) {
         AgendaViewModel.AgendaUiState.None -> {
             Scaffold(floatingActionButton = {
                 FloatingActionButton(
                     containerColor = colors.black,
-                    onClick = {
-                        onUpdateState(AgendaUpdateState.UpdateVisibility(!state.isVisible))
-                    },
+                    onClick = { isVisible = !isVisible },
                     shape = RoundedCornerShape(dimensions.default16dp),
                 ) {
                     Icon(
@@ -177,7 +171,7 @@ private fun AgendaContent(
                             onUpdateState(AgendaUpdateState.UpdateSelectedOption(agendaOption))
                             onAction(AgendaAction.OnFabItemPressed)
                         },
-                        visible = state.isVisible
+                        visible = isVisible
                     )
                 }
             }, floatingActionButtonPosition = FabPosition.End) { innerPadding ->
@@ -203,27 +197,14 @@ private fun AgendaContent(
                         ) {
                             Row(
                                 modifier = Modifier
-                                    .clickable {
-                                        onUpdateState(
-                                            AgendaUpdateState.UpdateShouldShowDatePicker(
-                                                !state.shouldShowDatePicker
-                                            )
-                                        )
-                                    },
+                                    .clickable { shouldShowDatePicker = !shouldShowDatePicker },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
                                     text = state.month,
                                     style = typography.title,
                                     textAlign = TextAlign.Center,
-                                    color = colors.white,
-                                    modifier = Modifier.clickable {
-                                        onUpdateState(
-                                            AgendaUpdateState.UpdateShouldShowDatePicker(
-                                                !state.shouldShowDatePicker
-                                            )
-                                        )
-                                    }
+                                    color = colors.white
                                 )
 
                                 Icon(
@@ -233,7 +214,7 @@ private fun AgendaContent(
                                 )
                             }
 
-                            if (state.shouldShowDatePicker) {
+                            if (shouldShowDatePicker) {
                                 DatePickerModal(
                                     onDateSelected = { date ->
                                         date?.let { safeDate ->
@@ -259,13 +240,7 @@ private fun AgendaContent(
                                             )
                                         }
                                     },
-                                    onDismiss = {
-                                        onUpdateState(
-                                            AgendaUpdateState.UpdateShouldShowDatePicker(
-                                                false
-                                            )
-                                        )
-                                    },
+                                    onDismiss = { shouldShowDatePicker = false },
                                     initialDate = state.selectedDate.atStartOfDay(ZoneId.systemDefault())
                                         .toInstant()
                                         .toEpochMilli()
@@ -308,6 +283,7 @@ private fun AgendaContent(
                                         selectedIndex
                                     )
                                 )
+                                onUpdateState(AgendaUpdateState.UpdateMonth(date.toLocalDateTime().month.name))
                                 onAction(AgendaAction.OnFilterAgendaItems(date))
                             })
 
@@ -359,14 +335,19 @@ private fun AgendaContent(
                                                         )
                                                     )
                                                 },
-                                                onComplete = {
+                                                onIsDoneChange = { isDone ->
                                                     onUpdateState(
-                                                        AgendaUpdateState.UpdateIsDone(
-                                                            !(agendaItem.details as AgendaItemDetails.Task).isDone
-
+                                                        AgendaUpdateState.UpdateSelectedItem(
+                                                            agendaItem
                                                         )
                                                     )
-                                                },
+                                                    onUpdateState(
+                                                        AgendaUpdateState.UpdateIsDone(
+                                                            isDone
+                                                        )
+                                                    )
+                                                    onAction(AgendaAction.OnIsDoneChange)
+                                                }
                                             )
                                         }
 
@@ -397,7 +378,7 @@ private fun AgendaContent(
                                                     )
                                                     onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
-                                                onComplete = {}
+                                                onIsDoneChange = {}
                                             )
                                         }
 
@@ -428,7 +409,7 @@ private fun AgendaContent(
                                                     )
                                                     onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
-                                                onComplete = {}
+                                                onIsDoneChange = {}
                                             )
                                         }
                                     }
@@ -452,7 +433,7 @@ fun AgendaItem(
     onDelete: (String) -> Unit,
     onEditPressed: () -> Unit,
     onOpenPressed: () -> Unit,
-    onComplete: () -> Unit,
+    onIsDoneChange: (Boolean) -> Unit
 ) {
 
     Column(
@@ -463,7 +444,8 @@ fun AgendaItem(
             .background(backgroundColor)
     ) {
         var visible by remember { mutableStateOf(false) }
-        val textColor = if (agendaItem.details is AgendaItemDetails.Task) colors.white else colors.black
+        val textColor =
+            if (agendaItem.details is AgendaItemDetails.Task) colors.white else colors.black
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -474,13 +456,13 @@ fun AgendaItem(
             ) {
                 Icon(
                     imageVector = when (agendaItem.details) {
-                        is AgendaItemDetails.Task -> if ((agendaItem.details as AgendaItemDetails.Task).isDone) Icons.Outlined.CheckCircle else Icons.Outlined.Circle
+                        is AgendaItemDetails.Task -> if (agendaItem.details.isDone) Icons.Outlined.CheckCircle else Icons.Outlined.Circle
                         else -> Icons.Outlined.Circle
                     },
                     contentDescription = "Icon checked",
                     tint = textColor,
                     modifier = Modifier.clickable {
-                        onComplete()
+                        onIsDoneChange(!(agendaItem.details as AgendaItemDetails.Task).isDone)
                     }
                 )
 
@@ -496,7 +478,7 @@ fun AgendaItem(
                             fontSize = 20.sp,
                             color = textColor,
                         ), textDecoration = when (agendaItem.details) {
-                            is AgendaItemDetails.Task -> if ((agendaItem.details as AgendaItemDetails.Task).isDone) TextDecoration.LineThrough else TextDecoration.None
+                            is AgendaItemDetails.Task -> if (agendaItem.details.isDone) TextDecoration.LineThrough else TextDecoration.None
                             else -> TextDecoration.None
                         }
                     )
@@ -639,13 +621,12 @@ fun UserInitialsButton(
     onUpdateState: (AgendaUpdateState) -> Unit,
     onAction: (AgendaAction) -> Unit
 ) {
+    var isVisible by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier.size(56.dp),
         shape = CircleShape,
         color = colors.light,
-        onClick = {
-            onUpdateState(AgendaUpdateState.UpdateVisibility(!state.isVisible))
-        }
+        onClick = { isVisible = !isVisible }
     ) {
         Box(
             modifier = Modifier
@@ -658,13 +639,14 @@ fun UserInitialsButton(
                 style = typography.userButton
             )
         }
-        if (state.isVisible) {
+        if (isVisible) {
             LogoutDropdown(
-                onItemSelected = { onAction(AgendaAction.OnLogout) },
-                visible = state.isVisible,
-                onDismiss = {
-                    onUpdateState(AgendaUpdateState.UpdateVisibility(false))
-                }
+                onItemSelected = {
+                    isVisible = false
+                    onAction(AgendaAction.OnLogout)
+                },
+                visible = isVisible,
+                onDismiss = { isVisible = false }
             )
         }
     }
@@ -686,7 +668,7 @@ fun AgendaContentPreview() {
                         time = LocalDateTime.now(),
                         remindAt = LocalDateTime.now(),
                         details = AgendaItemDetails.Task(
-                        isDone = true,
+                            isDone = true,
                         )
                     ),
                     AgendaItem(
@@ -707,15 +689,17 @@ fun AgendaContentPreview() {
                         details = AgendaItemDetails.Event(
                             toTime = LocalDateTime.now(),
                             photos = listOf(),
-                            attendees = listOf(Attendee(
-                                email = "cecelia.cummings@example.com",
-                                name = "Benito Conway",
-                                userId = "laudem",
-                                eventId = "decore",
-                                isGoing = false,
-                                remindAt = 5235,
-                                isCreator = false
-                            )),
+                            attendees = listOf(
+                                Attendee(
+                                    email = "cecelia.cummings@example.com",
+                                    name = "Benito Conway",
+                                    userId = "laudem",
+                                    eventId = "decore",
+                                    isGoing = false,
+                                    remindAt = 5235,
+                                    isCreator = false
+                                )
+                            ),
                             isUserEventCreator = true,
                             host = "123123123",
                         ),
@@ -729,15 +713,17 @@ fun AgendaContentPreview() {
                         details = AgendaItemDetails.Event(
                             toTime = LocalDateTime.now(),
                             photos = listOf(),
-                            attendees = listOf(Attendee(
-                                email = "cecelia.cummings@example.com",
-                                name = "Benito Conway",
-                                userId = "laudem",
-                                eventId = "decore",
-                                isGoing = false,
-                                remindAt = 5235,
-                                isCreator = false
-                            )),
+                            attendees = listOf(
+                                Attendee(
+                                    email = "cecelia.cummings@example.com",
+                                    name = "Benito Conway",
+                                    userId = "laudem",
+                                    eventId = "decore",
+                                    isGoing = false,
+                                    remindAt = 5235,
+                                    isCreator = false
+                                )
+                            ),
                             isUserEventCreator = false,
                             host = "1212323",
                         ),
@@ -778,15 +764,17 @@ fun AgendaContentPreview() {
                     details = AgendaItemDetails.Event(
                         toTime = LocalDateTime.now(),
                         photos = listOf(),
-                        attendees = listOf(Attendee(
-                            email = "cecelia.cummings@example.com",
-                            name = "Benito Conway",
-                            userId = "laudem",
-                            eventId = "decore",
-                            isGoing = false,
-                            remindAt = 5235,
-                            isCreator = false
-                        )),
+                        attendees = listOf(
+                            Attendee(
+                                email = "cecelia.cummings@example.com",
+                                name = "Benito Conway",
+                                userId = "laudem",
+                                eventId = "decore",
+                                isGoing = false,
+                                remindAt = 5235,
+                                isCreator = false
+                            )
+                        ),
                         isUserEventCreator = true,
                         host = "12321321",
                     ),
@@ -800,22 +788,23 @@ fun AgendaContentPreview() {
                     details = AgendaItemDetails.Event(
                         toTime = LocalDateTime.now(),
                         photos = listOf(),
-                        attendees = listOf(Attendee(
-                            email = "cecelia.cummings@example.com",
-                            name = "Benito Conway",
-                            userId = "laudem",
-                            eventId = "decore",
-                            isGoing = false,
-                            remindAt = 5235,
-                            isCreator = false
-                        )),
+                        attendees = listOf(
+                            Attendee(
+                                email = "cecelia.cummings@example.com",
+                                name = "Benito Conway",
+                                userId = "laudem",
+                                eventId = "decore",
+                                isGoing = false,
+                                remindAt = 5235,
+                                isCreator = false
+                            )
+                        ),
                         isUserEventCreator = false,
                         host = "213213213",
                     ),
                     remindAt = LocalDateTime.now()
                 )
             ),
-            onComplete = {},
             userInitials = "Lorant Csuhai"
         )
     }

@@ -7,7 +7,7 @@ import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import kotlinx.coroutines.flow.Flow
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 interface LocalDatabaseRepository {
 
@@ -41,7 +41,10 @@ interface LocalDatabaseRepository {
 
     suspend fun deleteReminder(reminderEntity: ReminderEntity)
 
-    fun getAllAgendaItems(selectedDate: LocalDate): Flow<List<AgendaItem>?>
+    //Agenda items for a specific date
+    fun getAllAgendaItemsForDate(selectedDate: LocalDateTime): Flow<List<AgendaItem>>
+
+    fun getAllAgendaItems(): Flow<List<AgendaItem>>
 
     //Sync agenda functions
     suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity)

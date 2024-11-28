@@ -64,5 +64,10 @@
     <string name="Agenda_successfully_synced">Agenda successfully synced!</string>
     <string name="Failed_to_sync_agenda">Failed to sync agenda.</string>
     <string name="Item_not_found">Agenda item not found</string>
-    <string name="Leave_event">LEAVE EVENT</string>>
+    <string name="Leave_event">LEAVE EVENT</string>
+    <string name="Enable_notifications">Enable Notifications</string>
+    <string name="Notifications_disabled_open_settings">Notifications are disabled. In order to set a reminder, notification permission is required. Please enable it in settings.</string>
+    <string name="Go_to_settings">Go to Settings</string>
+    <string name="Maybe_later">Maybe later.</string>
+    >
 </resources>

@@ -3,7 +3,7 @@ package com.example.tasky.agenda.agenda_data.di
 import com.example.tasky.Constants.BASE_URL
 import com.example.tasky.agenda.agenda_data.remote.AuthTokenInterceptor
 import com.example.tasky.agenda.agenda_data.remote.TokenRefreshApi
-import com.example.tasky.core.data.local.ProtoUserPrefsRepository
+import com.example.tasky.core.domain.UserPrefsRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -50,7 +50,7 @@ object AuthModule {
     @Provides
     @Singleton
     fun provideAuthTokenInterceptor(
-        userPrefsRepository: ProtoUserPrefsRepository,
+        userPrefsRepository: UserPrefsRepository,
         refreshTokenApi: TokenRefreshApi
     ): AuthTokenInterceptor {
         return AuthTokenInterceptor(userPrefsRepository, refreshTokenApi)

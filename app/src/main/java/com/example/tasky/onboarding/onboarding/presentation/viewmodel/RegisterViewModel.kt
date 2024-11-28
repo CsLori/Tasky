@@ -9,7 +9,7 @@ import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
-import com.example.tasky.onboarding.onboarding_data.repository.DefaultUserRepository
+import com.example.tasky.onboarding.onboarding_domain.UserRepository
 import com.example.tasky.util.CredentialsValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +21,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val defaultUserRepository: DefaultUserRepository,
+    private val defaultUserRepository: UserRepository,
 ) : ViewModel() {
 
     private var _uiState = MutableStateFlow<RegisterUiState>(RegisterUiState.None)
