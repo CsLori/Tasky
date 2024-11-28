@@ -19,7 +19,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -46,7 +45,7 @@ class SystemBootCompletedReceiver : BroadcastReceiver() {
 
                 scope.launch {
                     try {
-                        val agendaItems = localDataSource.getAllAgendaItems(LocalDateTime.now()).first()
+                        val agendaItems = localDataSource.getAllAgendaItems().first()
                         agendaItems.forEach { agendaItem ->
                             val option = when (agendaItem.details) {
                                 is AgendaItemDetails.Task -> AgendaOption.TASK

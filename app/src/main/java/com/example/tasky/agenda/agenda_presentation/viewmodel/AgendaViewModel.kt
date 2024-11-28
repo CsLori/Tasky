@@ -3,6 +3,7 @@ package com.example.tasky.agenda.agenda_presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
+import com.example.tasky.agenda.agenda_domain.AlarmScheduler
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
@@ -43,7 +44,8 @@ class AgendaViewModel @Inject constructor(
     private val defaultUserRepository: UserRepository,
     private val localDatabaseRepository: LocalDatabaseRepository,
     private val userPrefsRepository: UserPrefsRepository,
-    private val networkConnectivityService: ConnectivityService
+    private val networkConnectivityService: ConnectivityService,
+    private val alarmScheduler: AlarmScheduler
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaState())
@@ -104,10 +106,10 @@ class AgendaViewModel @Inject constructor(
             Success(NetworkStatus.Unknown)
         )
 
-    val agendaItems = selectedDate
+    val agendaItemsForSelectedDate = selectedDate
         .onEach { _state.update { it.copy(isLoading = true) } }
         .flatMapLatest { date ->
-            when (val result = agendaRepository.getAllAgendaItems(date)) {
+            when (val result = agendaRepository.getAllAgendaItemsForDate(date)) {
                 is Success -> result.data
                 is Error -> emptyFlow()
             }.onEach { agendaItems ->
@@ -193,16 +195,11 @@ class AgendaViewModel @Inject constructor(
             when (action) {
                 is AgendaUpdateState.UpdateSelectedDate -> it.copy(selectedDate = action.newDate)
                 is AgendaUpdateState.UpdateSelectedOption -> it.copy(agendaOption = action.item)
-                is AgendaUpdateState.UpdateVisibility -> it.copy(isVisible = action.visible)
                 is AgendaUpdateState.UpdateIsDateSelectedFromDatePicker -> it.copy(
                     isDateSelectedFromDatePicker = action.isDateSelectedFromDatePicker
                 )
 
                 is AgendaUpdateState.UpdateMonth -> it.copy(month = action.month)
-                is AgendaUpdateState.UpdateShouldShowDatePicker -> it.copy(
-                    shouldShowDatePicker = action.shouldShowDatePicker
-                )
-
                 is AgendaUpdateState.UpdateSelectedIndex -> it.copy(
                     selectedIndex = action.selectedIndex,
                     isDateSelectedFromDatePicker = false
@@ -210,18 +207,14 @@ class AgendaViewModel @Inject constructor(
 
                 is AgendaUpdateState.UpdateSelectedItem -> it.copy(selectedItem = action.agendaItem)
                 is AgendaUpdateState.UpdateIsDone -> {
-                    if (it.selectedItem?.details is AgendaItemDetails.Task) {
-                        val updatedTaskDetails =
-                            (it.selectedItem.details as AgendaItemDetails.Task).copy(isDone = action.isDone)
-                        val updatedItem = it.selectedItem.copy(details = updatedTaskDetails)
-
-                        it.copy(selectedItem = updatedItem,
-                            agendaItems = it.agendaItems.map { item ->
-                                if (item.id == updatedItem.id) item.copy(details = updatedItem.details) else item
-                            })
-                    } else {
-                        it
-                    }
+                    it.copy(
+                        selectedItem = it.selectedItem?.copy(
+                            details = (it.selectedItem.details as? AgendaItemDetails.Task)?.copy(
+                                isDone = action.isDone
+                            )
+                                ?: it.selectedItem.details
+                        )
+                    )
                 }
             }
         }
@@ -231,10 +224,24 @@ class AgendaViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             when (defaultUserRepository.logout()) {
-                is Success -> _uiState.update { AgendaUiState.Success }
-                is Error -> _uiState.update { AgendaUiState.None }
+                is Success -> {
+                    cancelAlarms()
+                    _uiState.update { AgendaUiState.None }
+                }
+
+                is Error -> {}
             }
             _state.update { it.copy(isLoading = false) }
+        }
+    }
+
+    private fun cancelAlarms() {
+        viewModelScope.launch {
+            localDatabaseRepository.getAllAgendaItems().mapLatest { agendaItems ->
+                agendaItems.forEach { agendaItem ->
+                    alarmScheduler.cancel(agendaItem)
+                }
+            }
         }
     }
 
@@ -255,6 +262,17 @@ class AgendaViewModel @Inject constructor(
             numberOfSyncedItems = localDatabaseRepository.getDeletedItemsForSync().size
         }
         return numberOfSyncedItems
+    }
+
+    fun updateTaskOnIsDoneChange() {
+        viewModelScope.launch {
+            state.value.selectedItem?.let { safeTask ->
+                agendaRepository.updateTask(
+                    task = safeTask,
+                    shouldScheduleAlarm = false
+                )
+            }
+        }
     }
 
 

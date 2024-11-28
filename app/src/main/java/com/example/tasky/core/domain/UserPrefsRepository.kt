@@ -1,7 +1,9 @@
 package com.example.tasky.core.domain
 
 import com.example.tasky.UserPreferences
+import com.example.tasky.core.data.AuthInfo
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 interface UserPrefsRepository {
     val userPreferencesFlow: Flow<UserPreferences>
@@ -36,4 +38,5 @@ interface UserPrefsRepository {
 
     suspend fun getAccessTokenExpirationTimestamp(): Long
 
+    val authInfo: StateFlow<AuthInfo?>
 }

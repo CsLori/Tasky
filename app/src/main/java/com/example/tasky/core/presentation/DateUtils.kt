@@ -45,7 +45,7 @@ object DateUtils {
             .atZone(ZoneId.systemDefault())
     }
 
-    fun getCurrentMonth(): String = LocalDate.now().month.toString()
+    fun getCurrentMonth(): String = LocalDateTime.now().month.toString()
 
     fun getCurrentDate(): LocalDate = LocalDate.now()
 

@@ -77,10 +77,12 @@ class AgendaRepositoryImpl(
     }
 
 
-    override suspend fun updateTask(task: AgendaItem): Result<Unit, TaskyError> {
+    override suspend fun updateTask(task: AgendaItem, shouldScheduleAlarm: Boolean): Result<Unit, TaskyError> {
         return try {
             localDatabaseRepository.upsertTask(task.toTaskEntity())
-            alarmScheduler.schedule(task, AgendaOption.TASK)
+            if(shouldScheduleAlarm) {
+                alarmScheduler.schedule(task, AgendaOption.TASK)
+            }
             api.updateTask(task.toSerializedTask())
             Result.Success(Unit)
 
@@ -297,9 +299,9 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun getAllAgendaItems(selectedDate: LocalDateTime): Result<Flow<List<AgendaItem>>, TaskyError> {
+    override suspend fun getAllAgendaItemsForDate(selectedDate: LocalDateTime): Result<Flow<List<AgendaItem>>, TaskyError> {
         return try {
-            val localItems = localDatabaseRepository.getAllAgendaItems(selectedDate)
+            val localItems = localDatabaseRepository.getAllAgendaItemsForDate(selectedDate)
 
             //This request requires UTC
             val timeStamp = selectedDate.toInstant(ZoneOffset.UTC).toEpochMilli()

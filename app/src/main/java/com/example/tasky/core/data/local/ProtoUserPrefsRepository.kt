@@ -5,13 +5,22 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.dataStore
 import com.example.tasky.UserPreferences
+import com.example.tasky.core.data.AuthInfo
 import com.example.tasky.core.domain.UserPrefsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import java.io.IOException
 
 class ProtoUserPrefsRepository(context: Context) : UserPrefsRepository {
+
     private val Context.userPreferencesStore: DataStore<UserPreferences> by dataStore(
         fileName = "user_prefs.pb",
         serializer = UserSerializer
@@ -28,6 +37,23 @@ class ProtoUserPrefsRepository(context: Context) : UserPrefsRepository {
                 throw exception
             }
         }
+
+    override val authInfo: StateFlow<AuthInfo?> = userPreferencesFlow.map { preferences ->
+        if (preferences.accessToken.isNotEmpty()) {
+            AuthInfo(
+                accessToken = preferences.accessToken,
+                refreshToken = preferences.refreshToken,
+                userId = preferences.userId,
+                userName = preferences.userName,
+                email = preferences.email,
+                accessTokenExpirationTimestamp = preferences.accessTokenExpirationTimestamp.toLong()
+            )
+        } else null
+    }.stateIn(
+        scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+        started = SharingStarted.WhileSubscribed(5000L),
+        initialValue = null
+    )
 
     // Access token
     override suspend fun updateAccessToken(accessToken: String) {

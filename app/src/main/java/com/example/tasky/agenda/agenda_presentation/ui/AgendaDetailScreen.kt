@@ -2,7 +2,9 @@
 
 package com.example.tasky.agenda.agenda_presentation.ui
 
+import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -36,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -327,6 +331,7 @@ private fun AgendaDetailContent(
                     onEnableEditPressed = { onAction(AgendaDetailAction.OnEnableEditPressed) },
                     agendaItemId = agendaItemId,
                     isReadOnly = state.isReadOnly,
+                    areNotificationsEnabled = areNotificationsEnabled
                 )
             }
 
@@ -742,8 +747,40 @@ private fun Header(
     onClosePressed: () -> Unit,
     onEnableEditPressed: () -> Unit,
     agendaItemId: String?,
-    isReadOnly: Boolean
+    isReadOnly: Boolean,
+    areNotificationsEnabled: Boolean
 ) {
+    val context = LocalContext.current
+    var shouldCheckPermissions by remember { mutableStateOf(false) }
+    var hasSeenNotificationAlert by remember { mutableStateOf(false) }
+    if (!areNotificationsEnabled && shouldCheckPermissions) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text(stringResource(R.string.Enable_notifications)) },
+            text = { Text(stringResource(R.string.Notifications_disabled_open_settings)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    }
+                    hasSeenNotificationAlert = true
+                    shouldCheckPermissions = false
+                    context.startActivity(intent)
+                }) {
+                    Text(stringResource(R.string.Go_to_settings))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    hasSeenNotificationAlert = true
+                    shouldCheckPermissions = false
+                }) {
+                    Text(stringResource(R.string.Maybe_later))
+                }
+            }
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -782,7 +819,12 @@ private fun Header(
             )
             if (agendaItemId.isNullOrEmpty() || !isReadOnly) {
                 Text(
-                    modifier = Modifier.clickable { onSavePressed() },
+                    modifier = Modifier.clickable {
+                        shouldCheckPermissions = true
+                        if (areNotificationsEnabled || hasSeenNotificationAlert) {
+                            onSavePressed()
+                        }
+                    },
                     text = stringResource(R.string.Save), color = colors.white
                 )
             } else {

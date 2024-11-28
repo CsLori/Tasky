@@ -41,7 +41,10 @@ interface LocalDatabaseRepository {
 
     suspend fun deleteReminder(reminderEntity: ReminderEntity)
 
-    fun getAllAgendaItems(selectedDate: LocalDateTime): Flow<List<AgendaItem>>
+    //Agenda items for a specific date
+    fun getAllAgendaItemsForDate(selectedDate: LocalDateTime): Flow<List<AgendaItem>>
+
+    fun getAllAgendaItems(): Flow<List<AgendaItem>>
 
     //Sync agenda functions
     suspend fun insertDeletedAgendaItem(itemForDeletion: AgendaItemForDeletionEntity)

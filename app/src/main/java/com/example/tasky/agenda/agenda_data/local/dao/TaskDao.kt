@@ -9,8 +9,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TaskDao {
-    @Query("SELECT * FROM tasks WHERE remindAt BETWEEN :startOfDay AND :endOfDay")
-    fun getAllTasks(startOfDay: Long, endOfDay: Long): Flow<List<TaskEntity>>
+    @Query("SELECT * FROM tasks WHERE time BETWEEN :startOfDay AND :endOfDay")
+    fun getAllTasksForDate(startOfDay: Long, endOfDay: Long): Flow<List<TaskEntity>>
+
+    @Query("SELECT * FROM tasks")
+    fun getAllTasks(): Flow<List<TaskEntity>>
 
     @Query("SELECT * FROM tasks WHERE id = :taskId LIMIT 1")
     suspend fun getTaskById(taskId: String): TaskEntity

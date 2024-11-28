@@ -2,9 +2,7 @@
 
 package com.example.tasky.agenda.agenda_presentation.components
 
-import android.content.Intent
 import android.net.Uri
-import android.provider.Settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,7 +26,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.rounded.Square
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -39,7 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -234,8 +230,8 @@ fun TimeAndDateRow(
             )
         }
 
-        var shouldShowStartDatePicker = remember {  mutableStateOf(false)}
-        var shouldShowEndDatePicker = remember {  mutableStateOf(false)}
+        var shouldShowStartDatePicker = remember { mutableStateOf(false) }
+        var shouldShowEndDatePicker = remember { mutableStateOf(false) }
         var shouldShowStartTimePicker = remember { mutableStateOf(false) }
         var shouldShowEndTimePicker = remember { mutableStateOf(false) }
 
@@ -570,31 +566,7 @@ fun SetReminderRow(
     state: AgendaDetailState,
     areNotificationsEnabled: Boolean
 ) {
-    val context = LocalContext.current
-    var shouldCheckPermissions by remember { mutableStateOf(false) }
     val shouldShowReminderDropdown = remember { mutableStateOf(false) }
-    if (!areNotificationsEnabled && shouldCheckPermissions) {
-            AlertDialog(
-                onDismissRequest = { },
-                title = { Text(stringResource(R.string.Enable_notifications)) },
-                text = { Text(stringResource(R.string.Notifications_are_disabled_in_order_to_set_a_reminder_notification_permission_is_required_please_enable_it_in_settings)) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                        }
-                        context.startActivity(intent)
-                    }) {
-                        Text(stringResource(R.string.Go_to_settings))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { shouldCheckPermissions = false  }) {
-                        Text(stringResource(R.string.Maybe_later))
-                    }
-                }
-            )
-    }
 
     Row(
         modifier = Modifier
@@ -605,10 +577,7 @@ fun SetReminderRow(
                     Modifier
                 } else {
                     Modifier.clickable {
-                        shouldCheckPermissions = true
-                        if (areNotificationsEnabled) {
-                            shouldShowReminderDropdown.value = true
-                        }
+                        shouldShowReminderDropdown.value = true
                     }
                 }
             ),
@@ -668,7 +637,7 @@ fun SetReminderRow(
             },
             visible = shouldShowReminderDropdown.value,
             onDismiss = {
-               shouldShowReminderDropdown.value = false
+                shouldShowReminderDropdown.value = false
             }
         )
     }

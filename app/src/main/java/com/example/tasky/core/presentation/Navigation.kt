@@ -27,6 +27,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewMo
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
+import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.onboarding.onboarding.presentation.ui.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
@@ -35,8 +36,19 @@ import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterVi
 const val PHOTO_ID = "photoId"
 
 @Composable
-fun Navigation() {
+fun Navigation(userPrefsRepository: UserPrefsRepository) {
     val navController = rememberNavController()
+
+    val authInfo by userPrefsRepository.authInfo.collectAsStateWithLifecycle()
+
+    // Global authentication check
+    LaunchedEffect(authInfo) {
+        if (authInfo == null || authInfo?.accessToken?.isEmpty() == true) {
+            navController.navigate(Screen.Login) {
+                popUpTo(Screen.Login) { inclusive = true }
+            }
+        }
+    }
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
@@ -53,13 +65,7 @@ fun Navigation() {
                             }
                         })
                 }
-                composable<Screen.Login>(
-                    deepLinks = listOf(
-                        navDeepLink<Screen.Login>(
-                            basePath = "tasky://login"
-                        )
-                    )
-                ) {
+                composable<Screen.Login> {
                     val loginViewModel = hiltViewModel<LoginViewModel>()
 
                     loginViewModel.checkUserSession()

@@ -66,7 +66,7 @@
     <string name="Item_not_found">Agenda item not found</string>
     <string name="Leave_event">LEAVE EVENT</string>
     <string name="Enable_notifications">Enable Notifications</string>
-    <string name="Notifications_are_disabled_in_order_to_set_a_reminder_notification_permission_is_required_please_enable_it_in_settings">Notifications are disabled. In order to set a reminder, notification permission is required. Please enable it in settings.</string>
+    <string name="Notifications_disabled_open_settings">Notifications are disabled. In order to set a reminder, notification permission is required. Please enable it in settings.</string>
     <string name="Go_to_settings">Go to Settings</string>
     <string name="Maybe_later">Maybe later.</string>
     >

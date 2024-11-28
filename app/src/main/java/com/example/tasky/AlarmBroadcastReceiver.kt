@@ -17,24 +17,13 @@ import com.example.tasky.Constants.CHANNEL_ID
 import com.example.tasky.Constants.DESCRIPTION
 import com.example.tasky.Constants.TIME
 import com.example.tasky.Constants.TITLE
-import com.example.tasky.core.data.local.ProtoUserPrefsRepository
 import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
 import com.example.tasky.core.presentation.DateUtils.toMMMdHHmmFormat
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import timber.log.Timber
-import javax.inject.Inject
 
 
 class AlarmBroadcastReceiver : BroadcastReceiver() {
 
-    val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    @Inject
-    lateinit var userPrefsRepository: ProtoUserPrefsRepository
-    var isUserAuthenticated = false
     override fun onReceive(context: Context?, intent: Intent?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             context?.let {
@@ -48,11 +37,6 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
             return
         }
 
-        scope.launch {
-            isUserAuthenticated = userPrefsRepository.getAccessToken().isNotEmpty()
-        }
-
-
         val channelId = CHANNEL_ID
         val title = intent?.getStringExtra(TITLE) ?: return
         val description = intent.getStringExtra(DESCRIPTION) ?: return
@@ -62,8 +46,7 @@ class AlarmBroadcastReceiver : BroadcastReceiver() {
 
         context?.let { safeContext ->
             val activityIntent = Intent(Intent.ACTION_VIEW).apply {
-                data =
-                    if (isUserAuthenticated) "tasky://agenda_detail/${agendaOption}?agendaItemId=${agendaItemId}&isAgendaItemReadOnly=true&photoId=null".toUri() else "tasky://login".toUri()
+                data = "tasky://agenda_detail/${agendaOption}?agendaItemId=${agendaItemId}&isAgendaItemReadOnly=true&photoId=null".toUri()
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             }
 
