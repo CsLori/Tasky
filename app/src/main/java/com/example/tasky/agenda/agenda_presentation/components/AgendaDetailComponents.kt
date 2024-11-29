@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +69,7 @@ import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
+import timber.log.Timber
 import java.time.LocalDateTime
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -110,7 +112,6 @@ fun AgendaItemMainHeader(agendaItem: AgendaItem?) {
 
 @Composable
 fun AgendaItemTitle(
-    agendaItem: AgendaItem?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
     state: AgendaDetailState,
@@ -139,7 +140,7 @@ fun AgendaItemTitle(
             Spacer(Modifier.width(dimensions.small8dp))
 
             Text(
-                text = state.title,
+                text = state.selectedAgendaItem?.title ?: "",
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
@@ -155,7 +156,6 @@ fun AgendaItemTitle(
 
 @Composable
 fun AgendaItemDescription(
-    agendaItem: AgendaItem?,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
     state: AgendaDetailState,
@@ -178,7 +178,7 @@ fun AgendaItemDescription(
         horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Text(
-            text = state.description,
+            text = state.selectedAgendaItem?.description ?: "",
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
         if (!state.isReadOnly) {
@@ -224,16 +224,16 @@ fun TimeAndDateRow(
                     initialHour = (state.details as? AgendaItemDetails.Event)?.toTime?.hour
                         ?: LocalDateTime.now().hour,
                     initialMinute = (state.details as? AgendaItemDetails.Event)?.toTime?.minute
-                        ?: LocalDateTime.now().hour,
+                        ?: LocalDateTime.now().minute,
                     is24Hour = true
                 )
             )
         }
 
-        var shouldShowStartDatePicker = remember { mutableStateOf(false) }
-        var shouldShowEndDatePicker = remember { mutableStateOf(false) }
-        var shouldShowStartTimePicker = remember { mutableStateOf(false) }
-        var shouldShowEndTimePicker = remember { mutableStateOf(false) }
+        var shouldShowStartDatePicker by remember { mutableStateOf(false) }
+        var shouldShowEndDatePicker by remember { mutableStateOf(false) }
+        var shouldShowStartTimePicker by remember { mutableStateOf(false) }
+        var shouldShowEndTimePicker by remember { mutableStateOf(false) }
 
         Row(
             modifier = Modifier
@@ -243,10 +243,10 @@ fun TimeAndDateRow(
                     if (!state.isReadOnly) {
                         Modifier.clickable {
                             if (endTime) {
-                                shouldShowEndTimePicker.value = !shouldShowEndTimePicker.value
+                                shouldShowEndTimePicker = !shouldShowEndTimePicker
 
                             } else {
-                                shouldShowStartTimePicker.value = !shouldShowStartTimePicker.value
+                                shouldShowStartTimePicker = !shouldShowStartTimePicker
                             }
                         }
                     } else {
@@ -272,7 +272,7 @@ fun TimeAndDateRow(
             ) {
                 Text(
                     text = when (agendaItem.details) {
-                        is AgendaItemDetails.Task -> state.time.toHourMinuteFormat() ?: ""
+                        is AgendaItemDetails.Task -> state.time.toHourMinuteFormat()
                         is AgendaItemDetails.Event -> if (endTime) (state.details as? AgendaItemDetails.Event)?.toTime?.toHourMinuteFormat()
                             ?: LocalDateTime.now()
                                 .toHourMinuteFormat() else state.time.toHourMinuteFormat()
@@ -295,30 +295,28 @@ fun TimeAndDateRow(
                 }
             }
 
-            if (shouldShowStartTimePicker.value && !endTime) {
+            if (shouldShowStartTimePicker && !endTime) {
                 TimePickerDialog(
-                    onDismissRequest = { shouldShowStartTimePicker.value = false },
+                    onDismissRequest = { shouldShowStartTimePicker = false },
                     confirmButton = {
                         TextButton(
                             onClick = {
                                 val selectedHour = firstRowTimePickerState.hour
                                 val selectedMinute = firstRowTimePickerState.minute
 
-                                val updatedTime = state.selectedAgendaItem?.time?.withHour(selectedHour)
-                                    ?.withMinute(selectedMinute)
-
+                                Timber.d("DDD - Updated firstRowTimePickerState: $selectedHour | $selectedMinute")
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateStartTime(
-                                        updatedTime ?: LocalDateTime.now()
+                                        selectedMinute, selectedHour
                                     )
                                 )
-                                shouldShowStartTimePicker.value = false
+                                shouldShowStartTimePicker = false
                             }
                         ) { Text(stringResource(R.string.OK)) }
                     },
                     dismissButton = {
                         TextButton(
-                            onClick = { shouldShowStartTimePicker.value = false }
+                            onClick = { shouldShowStartTimePicker = false }
                         ) { Text(stringResource(R.string.Cancel)) }
                     },
                     content = {
@@ -327,32 +325,29 @@ fun TimeAndDateRow(
                 )
             }
 
-            if (shouldShowEndTimePicker.value) {
+            if (shouldShowEndTimePicker) {
                 TimePickerDialogSecondRow(
-                    onDismissRequest = { shouldShowEndTimePicker.value = false },
+                    onDismissRequest = { shouldShowEndTimePicker = false },
                     confirmButton = {
                         TextButton(
                             onClick = {
                                 val selectedHour = secondRowTimePickerState.hour
                                 val selectedMinute = secondRowTimePickerState.minute
 
-                                val updatedTime =
-                                    (state.selectedAgendaItem?.details as? AgendaItemDetails.Event)?.toTime
-                                        ?.withHour(selectedHour)
-                                        ?.withMinute(selectedMinute)
+                                Timber.d("DDD - Updated secondRowTimePickerState: $selectedHour | $selectedMinute")
 
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateEndTime(
-                                        updatedTime ?: LocalDateTime.now()
+                                        selectedMinute, selectedHour
                                     )
                                 )
-                                shouldShowEndTimePicker.value = false
+                                shouldShowEndTimePicker = false
                             }
                         ) { Text(stringResource(R.string.OK)) }
                     },
                     dismissButton = {
                         TextButton(
-                            onClick = { shouldShowEndTimePicker.value = false }
+                            onClick = { shouldShowEndTimePicker = false }
                         ) { Text(stringResource(R.string.Cancel)) }
                     },
                     content = {
@@ -370,9 +365,9 @@ fun TimeAndDateRow(
                     if (!state.isReadOnly) {
                         Modifier.clickable {
                             if (endTime) {
-                                shouldShowEndDatePicker.value = !shouldShowEndDatePicker.value
+                                shouldShowEndDatePicker = !shouldShowEndDatePicker
                             } else {
-                                shouldShowStartDatePicker.value = !shouldShowStartDatePicker.value
+                                shouldShowStartDatePicker = !shouldShowStartDatePicker
                             }
                         }
                     } else {
@@ -399,39 +394,47 @@ fun TimeAndDateRow(
             }
         }
 
-        if (shouldShowStartDatePicker.value) {
+        if (shouldShowStartDatePicker) {
             DatePickerModal(
                 onDateSelected = { date ->
                     date?.let { safeDate ->
+                        val localDateTime = safeDate.toLocalDateTime()
+
+                        Timber.d("DDD - Updated shouldShowStartDatePicker: ${localDateTime.dayOfMonth} | ${localDateTime.monthValue} | ${localDateTime.year}")
+
                         onUpdateState(
-                            AgendaDetailStateUpdate.UpdateStartTime(
-                                safeDate.toLocalDateTime()
+                            AgendaDetailStateUpdate.UpdateStartDay(
+                                localDateTime.dayOfMonth, localDateTime.monthValue, localDateTime.year
                             )
                         )
-                        shouldShowStartDatePicker.value = true
+                        shouldShowStartDatePicker = true
                     }
                 },
                 onDismiss = {
-                    shouldShowStartDatePicker.value = false
+                    shouldShowStartDatePicker = false
                 },
                 initialDate = state.time.toLong()
             )
         }
 
-        if (shouldShowEndDatePicker.value) {
+        if (shouldShowEndDatePicker) {
             DatePickerModalSecondRow(
                 onDateSelected = { date ->
                     date?.let { safeDate ->
+                        val localDateTime = safeDate.toLocalDateTime()
+
+                        Timber.d("DDD - Updated shouldShowEndDatePicker: ${localDateTime.dayOfMonth} | ${localDateTime.monthValue} | ${localDateTime.year}")
+
                         onUpdateState(
-                            AgendaDetailStateUpdate.UpdateEndDate(
-                                safeDate.toLocalDateTime()
+                            AgendaDetailStateUpdate.UpdateEndDay(
+                                localDateTime.dayOfMonth, localDateTime.monthValue, localDateTime.year
                             )
                         )
-                        shouldShowEndDatePicker.value = true
+                        shouldShowEndDatePicker = true
                     }
                 },
                 onDismiss = {
-                    shouldShowEndDatePicker.value = false
+                    shouldShowEndDatePicker = false
 
                 },
                 initialDate = (state.details as? AgendaItemDetails.Event)?.toTime?.toLong()
@@ -470,7 +473,7 @@ fun AddPhotosSection(
         ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (!isReadOnly) {
+        if (!isReadOnly || photos.isNotEmpty()) {
             items(photos.take(MAX_NUMBER_OF_PHOTOS), key = { photo -> photo.key }) { photo ->
                 Box(
                     modifier = Modifier
@@ -492,50 +495,52 @@ fun AddPhotosSection(
                     )
                 }
             }
-            if (photos.isEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .clickable { onAddPhotos() }
-                            .padding(vertical = dimensions.default16dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add photos",
-                            tint = colors.gray
-                        )
-                        Spacer(modifier = Modifier.width(dimensions.small8dp))
-                        Text(stringResource(R.string.Add_photos), color = colors.gray)
-                    }
-                }
-            } else {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp))
-                            .clickable {
-                                if (photos.size < MAX_NUMBER_OF_PHOTOS) {
+//            if (photos.isEmpty()) {
+//                item {
+//                    Row(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .height(80.dp)
+//                            .clickable { onAddPhotos() }
+//                            .padding(vertical = dimensions.default16dp),
+//                        horizontalArrangement = Arrangement.Center,
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        Icon(
+//                            imageVector = Icons.Default.Add,
+//                            contentDescription = "Add photos",
+//                            tint = colors.gray
+//                        )
+//                        Spacer(modifier = Modifier.width(dimensions.small8dp))
+//                        Text(stringResource(R.string.Add_photos), color = colors.gray)
+//                    }
+//                }
+//            } else {
+            item {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp))
+                        .clickable {
+                            if (photos.size < MAX_NUMBER_OF_PHOTOS) {
+                                if (!isReadOnly) {
                                     onAddPhotos()
-                                } else {
-                                    showToast(context, R.string.max_number_of_photos)
                                 }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Add photos",
-                            tint = colors.lightBlue
-                        )
-                    }
+                            } else {
+                                showToast(context, R.string.max_number_of_photos)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Add photos",
+                        tint = colors.lightBlue
+                    )
                 }
             }
+//            }
         } else {
             item {
                 Row(
@@ -564,9 +569,8 @@ fun AddPhotosSection(
 fun SetReminderRow(
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     state: AgendaDetailState,
-    areNotificationsEnabled: Boolean
 ) {
-    val shouldShowReminderDropdown = remember { mutableStateOf(false) }
+    var shouldShowReminderDropdown by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
@@ -577,7 +581,7 @@ fun SetReminderRow(
                     Modifier
                 } else {
                     Modifier.clickable {
-                        shouldShowReminderDropdown.value = true
+                        shouldShowReminderDropdown = true
                     }
                 }
             ),
@@ -623,7 +627,7 @@ fun SetReminderRow(
             )
         }
     }
-    if (shouldShowReminderDropdown.value) {
+    if (shouldShowReminderDropdown) {
         ReminderDropdown(
             options = reminderOptions,
             onItemSelected = {
@@ -633,11 +637,11 @@ fun SetReminderRow(
                 onUpdateState(
                     AgendaDetailStateUpdate.UpdateRemindAtTime(remindAt.toLocalDateTime())
                 )
-                shouldShowReminderDropdown.value = false
+                shouldShowReminderDropdown = false
             },
-            visible = shouldShowReminderDropdown.value,
+            visible = shouldShowReminderDropdown,
             onDismiss = {
-                shouldShowReminderDropdown.value = false
+                shouldShowReminderDropdown = false
             }
         )
     }
@@ -679,23 +683,22 @@ fun AddPhotosSectionReadOnlyPreview() {
     }
 }
 
-// Some issues here with material 3 due to timepickerstate
-//@Preview
-//@Composable
-//fun TimeAndDateRowPreview() {
-//    AppTheme {
-//        TimeAndDateRow(
-//            agendaItem = AgendaItem(
-//                id = "suavitate",
-//                title = "homero",
-//                description = "congue",
-//                time = LocalDateTime.now(),
-//                remindAt = LocalDateTime.now(),
-//                details = AgendaItemDetails.Task(isDone = false)
-//            ),
-//            text = "From",
-//            onUpdateState = {},
-//            state = AgendaDetailState()
-//        )
-//    }
-//}
+@Preview
+@Composable
+fun TimeAndDateRowPreview() {
+    AppTheme {
+        TimeAndDateRow(
+            agendaItem = AgendaItem(
+                id = "suavitate",
+                title = "homero",
+                description = "congue",
+                time = LocalDateTime.now(),
+                remindAt = LocalDateTime.now(),
+                details = AgendaItemDetails.Task(isDone = false)
+            ),
+            text = "From",
+            onUpdateState = {},
+            state = AgendaDetailState()
+        )
+    }
+}

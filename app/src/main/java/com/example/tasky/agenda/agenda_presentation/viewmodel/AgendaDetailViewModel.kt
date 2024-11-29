@@ -33,6 +33,7 @@ import com.example.tasky.util.PhotoCompressor
 import com.example.tasky.util.PhotoConverter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -84,24 +85,38 @@ class AgendaDetailViewModel @Inject constructor(
         _state.update {
             when (action) {
                 is AgendaDetailStateUpdate.UpdateStartTime -> it.copy(
-                    time = action.startTime,
+                    time = it.time.withHour(action.hour)?.withMinute(action.minute)
+                        ?: LocalDateTime.now(),
                     isDateSelectedFromDatePicker = false
                 )
 
-                is AgendaDetailStateUpdate.UpdateEndDate -> it.copy(
-                    details = (it.selectedAgendaItem?.details as? AgendaItemDetails.Event)?.copy(
-                        toTime = action.endDate
-                    ),
-                    isDateSelectedFromDatePicker = false
+                is AgendaDetailStateUpdate.UpdateStartDay -> it.copy(
+                    time = it.time.withYear(action.year)?.withMonth(action.month)
+                        ?.withDayOfMonth(action.day)
+                        ?: LocalDateTime.now()
                 )
 
                 is AgendaDetailStateUpdate.UpdateEndTime -> {
                     it.copy(
                         details = (it.selectedAgendaItem?.details as? AgendaItemDetails.Event)?.copy(
-                            toTime = action.endTime
+                            toTime = (it.selectedAgendaItem.details as? AgendaItemDetails.Event)?.toTime
+                                ?.withHour(action.hour)
+                                ?.withMinute(action.minute)
+                                ?: LocalDateTime.now()
                         )
                     )
                 }
+
+                is AgendaDetailStateUpdate.UpdateEndDay -> it.copy(
+                    details = (it.selectedAgendaItem?.details as? AgendaItemDetails.Event)?.copy(
+                        toTime = (it.selectedAgendaItem.details as? AgendaItemDetails.Event)?.toTime
+                            ?.withYear(action.year)
+                            ?.withMonth(action.month)
+                            ?.withDayOfMonth(action.day)
+                            ?: LocalDateTime.now()
+                    ),
+                    isDateSelectedFromDatePicker = false
+                )
 
                 is AgendaDetailStateUpdate.UpdateEditType -> it.copy(editType = action.editType)
                 is AgendaDetailStateUpdate.UpdateSelectedReminder -> it.copy(selectedReminder = action.selectedReminder)
@@ -130,11 +145,6 @@ class AgendaDetailViewModel @Inject constructor(
 
                 is AgendaDetailStateUpdate.UpdateVisitorFilter -> it.copy(visitorFilter = action.filter)
                 is AgendaDetailStateUpdate.UpdateRemindAtTime -> it.copy(remindAt = action.remindAtTime)
-                is AgendaDetailStateUpdate.UpdateSecondRowToDate -> it.copy(
-                    details = (it.details as? AgendaItemDetails.Event?)?.copy(
-                        toTime = action.toDate
-                    )
-                )
             }
         }
     }
@@ -237,7 +247,7 @@ class AgendaDetailViewModel @Inject constructor(
             description = state.value.description ?: "New task",
             time = state.value.time,
             details = AgendaItemDetails.Task(isDone = false),
-            remindAt = state.value.remindAt ?: LocalDateTime.now()
+            remindAt = state.value.remindAt
         )
     }
 
@@ -248,7 +258,7 @@ class AgendaDetailViewModel @Inject constructor(
             description = state.value.description ?: "New reminder",
             time = state.value.time,
             details = AgendaItemDetails.Reminder,
-            remindAt = state.value.remindAt ?: LocalDateTime.now()
+            remindAt = state.value.remindAt
         )
     }
 
@@ -260,12 +270,10 @@ class AgendaDetailViewModel @Inject constructor(
             }"
         )
         val newTask = agendaItem.copy(
-            id = state.value.title,
+            title = state.value.title,
             description = state.value.description,
             time = state.value.time,
-            details = (state.value.details as? AgendaItemDetails.Task)?.copy(isDone = false)
-                ?: AgendaItemDetails.Task(isDone = false),
-            remindAt = state.value.remindAt ?: LocalDateTime.now()
+            remindAt = state.value.remindAt
         )
 
         return newTask
@@ -276,7 +284,7 @@ class AgendaDetailViewModel @Inject constructor(
             title = state.value.title,
             description = state.value.description,
             time = state.value.time,
-            remindAt = state.value.remindAt ?: LocalDateTime.now()
+            remindAt = state.value.remindAt
         )
         return newReminder
     }
@@ -301,7 +309,7 @@ class AgendaDetailViewModel @Inject constructor(
                     email = loggedInUserResult.data.email,
                     eventId = eventId,
                     isGoing = true,
-                    remindAt = state.value.remindAt?.toLong() ?: 0,
+                    remindAt = state.value.remindAt.toLong(),
                     isCreator = true
                 )
             }
@@ -325,9 +333,9 @@ class AgendaDetailViewModel @Inject constructor(
                 photos = currentState.photos,
                 attendees = currentState.attendees + listOfNotNull(loggedInAttendee),
                 isUserEventCreator = true,
-                host = currentState.host ?: "",
+                host = currentState.host ?: loggedInAttendee?.name ?: "",
             ),
-            remindAt = state.value.remindAt ?: LocalDateTime.now()
+            remindAt = state.value.remindAt
         )
 
         return Pair(photos, newAgendaItem)
@@ -361,7 +369,7 @@ class AgendaDetailViewModel @Inject constructor(
                 isUserEventCreator = currentState.isUserEventCreator,
                 host = currentState.host,
             ),
-            remindAt = state.value.remindAt ?: LocalDateTime.now(),
+            remindAt = state.value.remindAt,
         )
         return Pair(photosByteArray, newEvent)
     }
@@ -465,21 +473,20 @@ class AgendaDetailViewModel @Inject constructor(
                     if (attendeeResponse.doesUserExist) {
                         val newAttendee = attendeeResponse.attendee
                         _state.update { currentState ->
-                            val agendaItem =
-                                currentState.selectedAgendaItem ?: return@update currentState
+                            val currentDetails =
+                                currentState.details as? AgendaItemDetails.Event
+                                    ?: return@update currentState // Exit if not an Event
 
                             val updatedAttendees =
-                                (agendaItem.details as? AgendaItemDetails.Event)?.attendees?.plus(
-                                    listOf(
-                                        newAttendee.toAttendee(
-                                            eventId = state.value.selectedAgendaItem?.id ?: "",
-                                            remindAt = state.value.remindAt?.toLong() ?: 0
-                                        )
-                                    )
+                                currentDetails.attendees + newAttendee.toAttendee(
+                                    eventId = state.value.selectedAgendaItem?.id ?: "",
+                                    isCreator = false,
+                                    remindAt = state.value.remindAt.toLong()
                                 )
+                            Timber.d("DDD - updatedAttendees: $updatedAttendees")
                             currentState.copy(
-                                details = (agendaItem.details as? AgendaItemDetails.Event?)?.copy(
-                                    attendees = updatedAttendees ?: emptyList()
+                                details = currentDetails.copy(
+                                    attendees = updatedAttendees
                                 )
                             )
                         }
@@ -526,7 +533,7 @@ class AgendaDetailViewModel @Inject constructor(
 
 
     fun handlePhotoCompression(uri: Uri) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO + NonCancellable) {
             photoCompressor.compressPhoto(uri)?.let { compressedData ->
                 val newPhoto = Photo(
                     key = UUID.randomUUID().toString(),

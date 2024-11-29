@@ -56,7 +56,7 @@ fun List<Attendee>.toAttendeeDtos(): List<AttendeeDto> {
     return map { it.toAttendeeDto() }
 }
 
-fun AttendeeMinimalDto.toAttendee(eventId: String, remindAt: Long, isGoing: Boolean = true, isCreator: Boolean = false): Attendee {
+fun AttendeeMinimalDto.toAttendee(eventId: String, remindAt: Long, isGoing: Boolean = true, isCreator: Boolean): Attendee {
     return Attendee(
         userId = userId,
         email = email,

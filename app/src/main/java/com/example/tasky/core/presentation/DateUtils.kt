@@ -68,12 +68,6 @@ object DateUtils {
         return this.format(formatter)
     }
 
-    fun Long.toLocalDate(): LocalDate {
-        return Instant.ofEpochMilli(this)
-            .atZone(ZoneId.systemDefault())
-            .toLocalDate()
-    }
-
     fun LocalDate.toLong(timeZone: ZoneId = ZoneId.systemDefault()): Long {
         return this.atStartOfDay(ZoneId.systemDefault())
             .toInstant()

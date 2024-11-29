@@ -182,10 +182,7 @@ fun Navigation(userPrefsRepository: UserPrefsRepository) {
 
                     AgendaDetailScreen(
                         agendaDetailViewModel = agendaDetailViewModel,
-                        onNavigateToAgendaScreen = {
-                            navController.navigateUp()
-                        },
-                        onClose = { navController.navigateUp() },
+                        onNavigateToAgendaScreen = { navController.navigateUp() },
                         onEditPressed = {
                             navController.navigate(
                                 Screen.AgendaItemEdit(

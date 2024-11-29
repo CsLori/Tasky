@@ -63,7 +63,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.tasky.MainActivity
 import com.example.tasky.NotificationPermissionUtil
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
@@ -77,11 +76,15 @@ import com.example.tasky.agenda.agenda_presentation.components.AgendaItemMainHea
 import com.example.tasky.agenda.agenda_presentation.components.AgendaItemTitle
 import com.example.tasky.agenda.agenda_presentation.components.SetReminderRow
 import com.example.tasky.agenda.agenda_presentation.components.TimeAndDateRow
+import com.example.tasky.agenda.agenda_presentation.components.thirtyMinutesInMillis
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.VisitorFilter
+import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
+import com.example.tasky.core.presentation.DateUtils.toLong
+import com.example.tasky.core.presentation.DateUtils.toStringMMMdyyyyFormat
 import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.components.AddVisitorDialog
@@ -101,7 +104,6 @@ import java.time.LocalDateTime
 internal fun AgendaDetailScreen(
     agendaDetailViewModel: AgendaDetailViewModel,
     onNavigateToAgendaScreen: () -> Unit,
-    onClose: () -> Unit,
     onEditPressed: () -> Unit,
     agendaItemId: String? = null,
     onNavigateToSelectedPhoto: (String?) -> Unit
@@ -112,7 +114,6 @@ internal fun AgendaDetailScreen(
     val errorDialogState =
         agendaDetailViewModel.errorDialogState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
-    val activity = (context as? MainActivity)
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val permissions = remember { NotificationPermissionUtil(context) }
@@ -131,39 +132,38 @@ internal fun AgendaDetailScreen(
                     when (agendaDetailViewModel.agendaOption) {
                         AgendaOption.TASK -> AgendaItem(
                             id = "",
-                            title = state.title,
-                            description = state.description,
+                            title = "Task",
+                            description = "New task",
                             time = state.time,
-                            remindAt = state.remindAt ?: LocalDateTime.now(),
+                            remindAt = state.remindAt,
                             details = AgendaItemDetails.Task(isDone = false)
                         )
 
-                        AgendaOption.EVENT -> {
-                            AgendaItem(
-                                id = "",
-                                title = state.title,
-                                description = state.description,
-                                time = state.time,
-                                remindAt = state.remindAt ?: LocalDateTime.now(),
-                                details = AgendaItemDetails.Event(
-                                    toTime = (state.details as? AgendaItemDetails.Event)?.toTime
-                                        ?: LocalDateTime.now(),
-                                    attendees = (state.details as? AgendaItemDetails.Event)?.attendees
-                                        ?: emptyList(),
-                                    photos = (state.details as? AgendaItemDetails.Event)?.photos
-                                        ?: emptyList(),
-                                    isUserEventCreator = true,
-                                    host = (state.details as? AgendaItemDetails.Event)?.host ?: ""
-                                ),
-                            )
-                        }
+                        AgendaOption.EVENT -> AgendaItem(
+                            id = "",
+                            title = "Event",
+                            description = "New event",
+                            time = state.time,
+                            remindAt = state.remindAt,
+                            details = AgendaItemDetails.Event(
+                                toTime = ((state.details as? AgendaItemDetails.Event)?.toTime?.toLong()
+                                    ?.plus(thirtyMinutesInMillis))?.toLocalDateTime()
+                                    ?: (LocalDateTime.now().toLong() + thirtyMinutesInMillis).toLocalDateTime(),
+                                attendees = (state.details as? AgendaItemDetails.Event)?.attendees
+                                    ?: emptyList(),
+                                photos = (state.details as? AgendaItemDetails.Event)?.photos
+                                    ?: emptyList(),
+                                isUserEventCreator = true,
+                                host = (state.details as? AgendaItemDetails.Event)?.host ?: ""
+                            ),
+                        )
 
                         AgendaOption.REMINDER -> AgendaItem(
                             id = "",
-                            title = state.title,
-                            description = state.description,
+                            title = "Reminder",
+                            description = "New reminder",
                             time = state.time,
-                            remindAt = state.remindAt ?: LocalDateTime.now(),
+                            remindAt = state.remindAt,
                             details = AgendaItemDetails.Reminder
                         )
                     }
@@ -328,6 +328,7 @@ private fun AgendaDetailContent(
                     .fillMaxSize(),
             ) {
                 Header(
+                    date = state.time.toStringMMMdyyyyFormat(),
                     onSavePressed = { onAction(AgendaDetailAction.OnSavePressed) },
                     onClosePressed = { onAction(AgendaDetailAction.OnClosePressed) },
                     onEnableEditPressed = { onAction(AgendaDetailAction.OnEnableEditPressed) },
@@ -368,8 +369,8 @@ private fun AgendaDetailContent(
                         onShowDialog = onShowDialog,
                         onDialogDismiss = onDialogDismiss,
                         dialogState = dialogState,
-                        areNotificationsEnabled = areNotificationsEnabled
                     )
+
                 }
             }
         }
@@ -387,7 +388,6 @@ fun MainContent(
     onShowDialog: () -> Unit,
     onDialogDismiss: () -> Unit,
     dialogState: DialogState,
-    areNotificationsEnabled: Boolean,
 ) {
     Column(
         modifier = Modifier
@@ -396,9 +396,9 @@ fun MainContent(
     ) {
         AgendaItemMainHeader(agendaItem)
 
-        AgendaItemTitle(agendaItem, onUpdateState, onAction, state)
+        AgendaItemTitle(onUpdateState, onAction, state)
 
-        AgendaItemDescription(agendaItem, onUpdateState, onAction, state)
+        AgendaItemDescription(onUpdateState, onAction, state)
 
         if (agendaItem?.details is AgendaItemDetails.Event) {
             TimeAndDateRow(
@@ -451,7 +451,7 @@ fun MainContent(
     ) {
         DefaultHorizontalDivider()
 
-        SetReminderRow(onUpdateState, state, areNotificationsEnabled)
+        SetReminderRow(onUpdateState, state)
 
         if (agendaItem?.details is AgendaItemDetails.Event) {
             VisitorsSection(
@@ -530,7 +530,6 @@ private fun VisitorsSection(
     isReadOnly: Boolean,
     isEventCreator: Boolean
 ) {
-
     Column(modifier = Modifier.padding(top = dimensions.large32dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -745,6 +744,7 @@ private fun VisitorItem(
 
 @Composable
 private fun Header(
+    date: String,
     onSavePressed: () -> Unit,
     onClosePressed: () -> Unit,
     onEnableEditPressed: () -> Unit,
@@ -795,7 +795,7 @@ private fun Header(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = dimensions.default16dp)
-                .padding(bottom = dimensions.extraLarge64dp),
+                .padding(bottom = dimensions.large32dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -811,7 +811,7 @@ private fun Header(
             }
 
             Text(
-                text = "03 March 2024",
+                text = date,
                 style = typography.bodyLarge.copy(
                     fontWeight = FontWeight.W600,
                     lineHeight = 12.sp

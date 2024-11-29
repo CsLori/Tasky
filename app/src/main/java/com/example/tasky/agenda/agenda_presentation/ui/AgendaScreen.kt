@@ -115,8 +115,8 @@ internal fun AgendaScreen(
         agendaItems = agendaItems,
         userInitials = userInitials,
         uiState = uiState,
-        onEditPressed = { action -> onEditPressed(action) },
-        onUpdateState = { action -> agendaViewModel.updateState(action) },
+        onEditPressed = { agendaItem -> onEditPressed(agendaItem) },
+        onUpdateState = { agendaUpdateState -> agendaViewModel.updateState(agendaUpdateState) },
         onAction = { action ->
             when (action) {
                 is AgendaAction.OnDeleteAgendaItem -> agendaViewModel.deleteAgendaItem(action.agendaItem)
@@ -125,14 +125,8 @@ internal fun AgendaScreen(
                     onLogoutNavigateToLogin()
                 }
 
-                is AgendaAction.OnFabItemPressed -> {
-                    onFabItemPressed()
-                }
-
-                is AgendaAction.OnOpenPressed -> {
-                    onOpenPressed(action.agendaItem)
-                }
-
+                is AgendaAction.OnFabItemPressed -> onFabItemPressed()
+                is AgendaAction.OnOpenPressed -> onOpenPressed(action.agendaItem)
                 is AgendaAction.OnFilterAgendaItems -> agendaViewModel.getAgendaItems(action.filterDate.toLocalDateTime())
                 is AgendaAction.OnIsDoneChange -> agendaViewModel.updateTaskOnIsDoneChange()
             }
@@ -168,6 +162,7 @@ private fun AgendaContent(
                     AgendaDropdown(
                         listItems = AgendaOption.entries,
                         onItemSelected = { agendaOption ->
+                            isVisible = false
                             onUpdateState(AgendaUpdateState.UpdateSelectedOption(agendaOption))
                             onAction(AgendaAction.OnFabItemPressed)
                         },
@@ -248,8 +243,6 @@ private fun AgendaContent(
                             }
                             UserInitialsButton(
                                 userInitials = userInitials,
-                                state = state,
-                                onUpdateState = onUpdateState,
                                 onAction = onAction
                             )
                         }
@@ -617,8 +610,6 @@ private fun CalendarComponent(
 @Composable
 fun UserInitialsButton(
     userInitials: String,
-    state: AgendaState,
-    onUpdateState: (AgendaUpdateState) -> Unit,
     onAction: (AgendaAction) -> Unit
 ) {
     var isVisible by remember { mutableStateOf(false) }
