@@ -89,7 +89,7 @@ class AgendaDetailViewModel @Inject constructor(
                 )
 
                 is AgendaDetailStateUpdate.UpdateEndDate -> it.copy(
-                    details = (it.details as? AgendaItemDetails.Event)?.copy(
+                    details = (it.selectedAgendaItem?.details as? AgendaItemDetails.Event)?.copy(
                         toTime = action.endDate
                     ),
                     isDateSelectedFromDatePicker = false
@@ -97,11 +97,12 @@ class AgendaDetailViewModel @Inject constructor(
 
                 is AgendaDetailStateUpdate.UpdateEndTime -> {
                     it.copy(
-                        details = (it.details as? AgendaItemDetails.Event)?.copy(
+                        details = (it.selectedAgendaItem?.details as? AgendaItemDetails.Event)?.copy(
                             toTime = action.endTime
                         )
                     )
                 }
+
                 is AgendaDetailStateUpdate.UpdateEditType -> it.copy(editType = action.editType)
                 is AgendaDetailStateUpdate.UpdateSelectedReminder -> it.copy(selectedReminder = action.selectedReminder)
                 is AgendaDetailStateUpdate.UpdateDescription -> it.copy(description = action.description)
@@ -464,18 +465,21 @@ class AgendaDetailViewModel @Inject constructor(
                     if (attendeeResponse.doesUserExist) {
                         val newAttendee = attendeeResponse.attendee
                         _state.update { currentState ->
-                            val currentDetails =
-                                currentState.details as? AgendaItemDetails.Event
-                                    ?: return@update currentState // Exit if not an Event
+                            val agendaItem =
+                                currentState.selectedAgendaItem ?: return@update currentState
 
                             val updatedAttendees =
-                                currentDetails.attendees + newAttendee.toAttendee(
-                                    eventId = state.value.selectedAgendaItem?.id ?: "",
-                                    remindAt = state.value.remindAt?.toLong() ?: 0
+                                (agendaItem.details as? AgendaItemDetails.Event)?.attendees?.plus(
+                                    listOf(
+                                        newAttendee.toAttendee(
+                                            eventId = state.value.selectedAgendaItem?.id ?: "",
+                                            remindAt = state.value.remindAt?.toLong() ?: 0
+                                        )
+                                    )
                                 )
                             currentState.copy(
-                                details = currentDetails.copy(
-                                    attendees = updatedAttendees
+                                details = (agendaItem.details as? AgendaItemDetails.Event?)?.copy(
+                                    attendees = updatedAttendees ?: emptyList()
                                 )
                             )
                         }

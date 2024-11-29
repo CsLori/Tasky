@@ -138,23 +138,25 @@ internal fun AgendaDetailScreen(
                             details = AgendaItemDetails.Task(isDone = false)
                         )
 
-                        AgendaOption.EVENT -> AgendaItem(
-                            id = "",
-                            title = state.title,
-                            description = state.description,
-                            time = state.time,
-                            remindAt = state.remindAt ?: LocalDateTime.now(),
-                            details = AgendaItemDetails.Event(
-                                toTime = (state.details as? AgendaItemDetails.Event)?.toTime
-                                    ?: LocalDateTime.now(),
-                                attendees = (state.details as? AgendaItemDetails.Event)?.attendees
-                                    ?: emptyList(),
-                                photos = (state.details as? AgendaItemDetails.Event)?.photos
-                                    ?: emptyList(),
-                                isUserEventCreator = true,
-                                host = (state.details as? AgendaItemDetails.Event)?.host ?: ""
-                            ),
-                        )
+                        AgendaOption.EVENT -> {
+                            AgendaItem(
+                                id = "",
+                                title = state.title,
+                                description = state.description,
+                                time = state.time,
+                                remindAt = state.remindAt ?: LocalDateTime.now(),
+                                details = AgendaItemDetails.Event(
+                                    toTime = (state.details as? AgendaItemDetails.Event)?.toTime
+                                        ?: LocalDateTime.now(),
+                                    attendees = (state.details as? AgendaItemDetails.Event)?.attendees
+                                        ?: emptyList(),
+                                    photos = (state.details as? AgendaItemDetails.Event)?.photos
+                                        ?: emptyList(),
+                                    isUserEventCreator = true,
+                                    host = (state.details as? AgendaItemDetails.Event)?.host ?: ""
+                                ),
+                            )
+                        }
 
                         AgendaOption.REMINDER -> AgendaItem(
                             id = "",

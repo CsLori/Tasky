@@ -304,7 +304,7 @@ fun TimeAndDateRow(
                                 val selectedHour = firstRowTimePickerState.hour
                                 val selectedMinute = firstRowTimePickerState.minute
 
-                                val updatedTime = state.time.withHour(selectedHour)
+                                val updatedTime = state.selectedAgendaItem?.time?.withHour(selectedHour)
                                     ?.withMinute(selectedMinute)
 
                                 onUpdateState(
@@ -337,7 +337,7 @@ fun TimeAndDateRow(
                                 val selectedMinute = secondRowTimePickerState.minute
 
                                 val updatedTime =
-                                    (state.details as? AgendaItemDetails.Event)?.toTime
+                                    (state.selectedAgendaItem?.details as? AgendaItemDetails.Event)?.toTime
                                         ?.withHour(selectedHour)
                                         ?.withMinute(selectedMinute)
 
