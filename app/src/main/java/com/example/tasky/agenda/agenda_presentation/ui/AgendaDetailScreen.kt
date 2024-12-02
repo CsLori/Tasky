@@ -143,13 +143,16 @@ internal fun AgendaDetailScreen(
                             id = "",
                             title = "Event",
                             description = "New event",
-                            time = LocalDateTime.now(),
+                            time = state.time,
                             remindAt = state.remindAt,
                             details = AgendaItemDetails.Event(
-                                toTime = (LocalDateTime.now()
-                                    .toLong() + thirtyMinutesInMillis).toLocalDateTime(),
-                                attendees = emptyList(),
-                                photos = emptyList(),
+                                toTime = ((state.details as? AgendaItemDetails.Event)?.toTime?.toLong()
+                                    ?.plus(thirtyMinutesInMillis))?.toLocalDateTime()
+                                    ?: (LocalDateTime.now().toLong() + thirtyMinutesInMillis).toLocalDateTime(),
+                                attendees = (state.details as? AgendaItemDetails.Event)?.attendees
+                                    ?: emptyList(),
+                                photos = (state.details as? AgendaItemDetails.Event)?.photos
+                                    ?: emptyList(),
                                 isUserEventCreator = true,
                                 host = (state.details as? AgendaItemDetails.Event)?.host ?: ""
                             ),
@@ -168,11 +171,6 @@ internal fun AgendaDetailScreen(
             )
         } else {
             agendaDetailViewModel.loadAgendaItem(agendaItemId)
-            agendaDetailViewModel.updateState(
-                AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
-                    state.selectedAgendaItem
-                )
-            )
         }
     }
 
@@ -211,9 +209,9 @@ internal fun AgendaDetailScreen(
                     }
 
                     if (agendaItemId == null) {
-                        state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
+                        agendaDetailViewModel.createAgendaItem()
                     } else {
-                        state.selectedAgendaItem?.let { agendaDetailViewModel.updateAgendaItem(it) }
+                        agendaDetailViewModel.updateAgendaItem()
                     }
                     onNavigateToAgendaScreen()
                 }
@@ -250,7 +248,16 @@ internal fun AgendaDetailScreen(
             }
         },
         agendaItemId = agendaItemId,
-        agendaItem = state.selectedAgendaItem,
+        agendaItem = state.details?.let {
+            AgendaItem(
+                id = state.id,
+                title = state.title,
+                description = state.description,
+                time = state.time,
+                details = it,
+                remindAt = state.remindAt
+            )
+        },
         onUpdatePhotos = { photos ->
             agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdatePhotos(photos))
         },
@@ -509,7 +516,7 @@ fun MainContent(
                     text = when (agendaItem?.details) {
                         is AgendaItemDetails.Task -> stringResource(R.string.Delete_task)
                         is AgendaItemDetails.Reminder -> stringResource(R.string.Delete_reminder)
-                        is AgendaItemDetails.Event -> if ((state.details as? AgendaItemDetails.Event)?.isUserEventCreator == true) stringResource(
+                        is AgendaItemDetails.Event -> if ((agendaItem?.details as? AgendaItemDetails.Event)?.isUserEventCreator == true) stringResource(
                             R.string.Delete_event
                         ) else stringResource(
                             R.string.Leave_event
@@ -541,7 +548,6 @@ private fun VisitorsSection(
     isReadOnly: Boolean,
     isEventCreator: Boolean
 ) {
-
     Column(modifier = Modifier.padding(top = dimensions.large32dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(

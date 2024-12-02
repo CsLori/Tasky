@@ -145,7 +145,7 @@ fun AgendaItemTitle(
             Spacer(Modifier.width(dimensions.small8dp))
 
             Text(
-                text = state.selectedAgendaItem?.title ?: "",
+                text = state.title,
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
@@ -184,7 +184,7 @@ fun AgendaItemDescription(
         horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
         Text(
-            text = state.selectedAgendaItem?.description ?: "",
+            text = state.description,
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
         if (!state.isReadOnly && isEventCreator) {
