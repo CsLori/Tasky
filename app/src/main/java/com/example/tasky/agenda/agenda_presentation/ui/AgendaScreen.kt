@@ -25,10 +25,12 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -94,6 +96,8 @@ internal fun AgendaScreen(
     val agendaItems by agendaViewModel.agendaItemsForSelectedDate.collectAsStateWithLifecycle()
     val syncResult by agendaViewModel.syncResult.collectAsStateWithLifecycle()
     val numberOfSyncItems = agendaViewModel.getNumberOfDeletedItemsForSync() ?: 0
+    val needlePosition by agendaViewModel.needlePosition.collectAsStateWithLifecycle()
+    val shouldShowNeedle by agendaViewModel.shouldShowNeedle.collectAsStateWithLifecycle()
     val userInitials = agendaViewModel.userInitials
 
     LaunchedEffect(syncResult) {
@@ -131,6 +135,8 @@ internal fun AgendaScreen(
                 is AgendaAction.OnIsDoneChange -> agendaViewModel.updateTaskOnIsDoneChange()
             }
         },
+        shouldShowNeedle = shouldShowNeedle,
+        needlePosition = needlePosition
     )
 }
 
@@ -142,10 +148,15 @@ private fun AgendaContent(
     uiState: AgendaViewModel.AgendaUiState,
     onEditPressed: (AgendaItem) -> Unit,
     onUpdateState: (AgendaUpdateState) -> Unit,
-    onAction: (AgendaAction) -> Unit
+    onAction: (AgendaAction) -> Unit,
+    shouldShowNeedle: Boolean,
+    needlePosition: Int
+
 ) {
     var shouldShowDatePicker by remember { mutableStateOf(false) }
     var isVisible by remember { mutableStateOf(false) }
+
+
     when (uiState) {
         AgendaViewModel.AgendaUiState.None -> {
             Scaffold(floatingActionButton = {
@@ -292,12 +303,20 @@ private fun AgendaContent(
                             TaskyLoader()
                         } else {
 
+//                            PullToRefreshBox() { }
                             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                                 items(
                                     items = agendaItems,
                                     key = { it.id }) { agendaItem ->
+                                    if (shouldShowNeedle && agendaItems.indexOf(agendaItem) == needlePosition) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(bottom = dimensions.small8dp),
+                                            color = colors.black
+                                        )
+                                    }
                                     when (agendaItem.details) {
                                         is AgendaItemDetails.Task -> {
+
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.green,
@@ -796,7 +815,9 @@ fun AgendaContentPreview() {
                     remindAt = LocalDateTime.now()
                 )
             ),
-            userInitials = "Lorant Csuhai"
+            userInitials = "Lorant Csuhai",
+            needlePosition = 0,
+            shouldShowNeedle = true
         )
     }
 }

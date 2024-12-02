@@ -20,9 +20,9 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetail
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
 import com.example.tasky.core.domain.TaskyError
+import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.core.domain.onError
 import com.example.tasky.core.domain.onSuccess
-import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
 import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
@@ -48,6 +48,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AgendaDetailViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
+    private val userPrefsRepository: UserPrefsRepository,
     private val savedStateHandle: SavedStateHandle,
     private val photoCompressor: PhotoCompressor,
     private val photoConverter: PhotoConverter,
@@ -65,6 +66,9 @@ class AgendaDetailViewModel @Inject constructor(
 
     private var _errorDialogState = MutableStateFlow<ErrorDialogState>(ErrorDialogState.None)
     val errorDialogState: StateFlow<ErrorDialogState> = _errorDialogState.asStateFlow()
+
+    private var _sessionCount = MutableStateFlow<Int>(0)
+    val sessionCount: StateFlow<Int> = _sessionCount.asStateFlow()
 
     val agendaOption = savedStateHandle.toRoute<Screen.AgendaDetail>().agendaOption
     private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
@@ -96,25 +100,26 @@ class AgendaDetailViewModel @Inject constructor(
                         ?: LocalDateTime.now()
                 )
 
-                is AgendaDetailStateUpdate.UpdateEndTime -> {
-                    it.copy(
-                        details = (it.selectedAgendaItem?.details as? AgendaItemDetails.Event)?.copy(
-                            toTime = (it.selectedAgendaItem.details as? AgendaItemDetails.Event)?.toTime
-                                ?.withHour(action.hour)
-                                ?.withMinute(action.minute)
-                                ?: LocalDateTime.now()
-                        )
+                is AgendaDetailStateUpdate.UpdateEndTime -> it.copy(
+                        details = (it.details as? AgendaItemDetails.Event)?.let { eventDetails ->
+                            eventDetails.copy(
+                                toTime = eventDetails.toTime
+                                    .withHour(action.hour)
+                                    .withMinute(action.minute)
+                            )
+                        } ?: it.selectedAgendaItem?.details
                     )
-                }
 
                 is AgendaDetailStateUpdate.UpdateEndDay -> it.copy(
-                    details = (it.selectedAgendaItem?.details as? AgendaItemDetails.Event)?.copy(
-                        toTime = (it.selectedAgendaItem.details as? AgendaItemDetails.Event)?.toTime
-                            ?.withYear(action.year)
-                            ?.withMonth(action.month)
-                            ?.withDayOfMonth(action.day)
-                            ?: LocalDateTime.now()
-                    ),
+                    details = (it.details as? AgendaItemDetails.Event)?.let { eventDetails ->
+                        eventDetails.copy(
+                            toTime = eventDetails.toTime
+                                .withYear(action.year)
+                                ?.withMonth(action.month)
+                                ?.withDayOfMonth(action.day)
+                                ?: LocalDateTime.now()
+                        ) ?: it.selectedAgendaItem?.details
+                    },
                     isDateSelectedFromDatePicker = false
                 )
 
@@ -263,12 +268,6 @@ class AgendaDetailViewModel @Inject constructor(
     }
 
     private fun prepareUpdatedTask(agendaItem: AgendaItem): AgendaItem {
-        Timber.d("DDD - viewmodel prepareUpdatedTask agendaItem: ${agendaItem.remindAt}")
-        Timber.d(
-            "DDD - viewmodel prepareUpdatedTask currentState: ${
-                state.value.time.toLong().toLocalDateTime()
-            }"
-        )
         val newTask = agendaItem.copy(
             title = state.value.title,
             description = state.value.description,
@@ -308,7 +307,6 @@ class AgendaDetailViewModel @Inject constructor(
                     name = loggedInUserResult.data.fullName,
                     email = loggedInUserResult.data.email,
                     eventId = eventId,
-                    isGoing = true,
                     remindAt = state.value.remindAt.toLong(),
                     isCreator = true
                 )
@@ -322,6 +320,7 @@ class AgendaDetailViewModel @Inject constructor(
                 null
             }
         }
+        Timber.d("DDD - loggedInAttendee: $loggedInAttendee")
 
         val newAgendaItem = AgendaItem(
             id = eventId,
@@ -332,7 +331,7 @@ class AgendaDetailViewModel @Inject constructor(
                 toTime = currentState.toTime,
                 photos = currentState.photos,
                 attendees = currentState.attendees + listOfNotNull(loggedInAttendee),
-                isUserEventCreator = true,
+                isUserEventCreator = currentState.attendees.any { it.userId == loggedInAttendee?.userId },
                 host = currentState.host ?: loggedInAttendee?.name ?: "",
             ),
             remindAt = state.value.remindAt
@@ -371,6 +370,8 @@ class AgendaDetailViewModel @Inject constructor(
             ),
             remindAt = state.value.remindAt,
         )
+        Timber.d("DDD - updateEvent: ${newEvent.details}")
+
         return Pair(photosByteArray, newEvent)
     }
 
@@ -483,7 +484,6 @@ class AgendaDetailViewModel @Inject constructor(
                                     isCreator = false,
                                     remindAt = state.value.remindAt.toLong()
                                 )
-                            Timber.d("DDD - updatedAttendees: $updatedAttendees")
                             currentState.copy(
                                 details = currentDetails.copy(
                                     attendees = updatedAttendees
@@ -563,6 +563,26 @@ class AgendaDetailViewModel @Inject constructor(
                 )
             )
         }
+    }
+
+    fun getSessionCount() {
+        viewModelScope.launch {
+            _sessionCount.value = userPrefsRepository.getSessionCount()
+        }
+    }
+
+    fun setHasSeenNotificationPrompt(hasSeenNotificationPrompt: Boolean) {
+        viewModelScope.launch {
+            userPrefsRepository.updateHasSeenNotificationPrompt(hasSeenNotificationPrompt)
+        }
+    }
+
+    fun hasSeenNotificationPrompt(): Boolean {
+        var hasSeenNotificationPrompt = false
+        viewModelScope.launch {
+            hasSeenNotificationPrompt = userPrefsRepository.getHasSeenNotificationPrompt()
+        }
+        return hasSeenNotificationPrompt
     }
 
     sealed class ErrorDialogState {

@@ -108,11 +108,11 @@ internal fun AgendaDetailScreen(
     agendaItemId: String? = null,
     onNavigateToSelectedPhoto: (String?) -> Unit
 ) {
-    val state = agendaDetailViewModel.state.collectAsStateWithLifecycle().value
-    val uiState = agendaDetailViewModel.uiState.collectAsStateWithLifecycle().value
-    val dialogState = agendaDetailViewModel.dialogState.collectAsStateWithLifecycle().value
-    val errorDialogState =
-        agendaDetailViewModel.errorDialogState.collectAsStateWithLifecycle().value
+    val state by agendaDetailViewModel.state.collectAsStateWithLifecycle()
+    val uiState by agendaDetailViewModel.uiState.collectAsStateWithLifecycle()
+    val dialogState by agendaDetailViewModel.dialogState.collectAsStateWithLifecycle()
+    val errorDialogState by agendaDetailViewModel.errorDialogState.collectAsStateWithLifecycle()
+    val sessionCount by agendaDetailViewModel.sessionCount.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -143,16 +143,13 @@ internal fun AgendaDetailScreen(
                             id = "",
                             title = "Event",
                             description = "New event",
-                            time = state.time,
+                            time = LocalDateTime.now(),
                             remindAt = state.remindAt,
                             details = AgendaItemDetails.Event(
-                                toTime = ((state.details as? AgendaItemDetails.Event)?.toTime?.toLong()
-                                    ?.plus(thirtyMinutesInMillis))?.toLocalDateTime()
-                                    ?: (LocalDateTime.now().toLong() + thirtyMinutesInMillis).toLocalDateTime(),
-                                attendees = (state.details as? AgendaItemDetails.Event)?.attendees
-                                    ?: emptyList(),
-                                photos = (state.details as? AgendaItemDetails.Event)?.photos
-                                    ?: emptyList(),
+                                toTime = (LocalDateTime.now()
+                                    .toLong() + thirtyMinutesInMillis).toLocalDateTime(),
+                                attendees = emptyList(),
+                                photos = emptyList(),
                                 isUserEventCreator = true,
                                 host = (state.details as? AgendaItemDetails.Event)?.host ?: ""
                             ),
@@ -205,6 +202,14 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnCreateSuccess -> onNavigateToAgendaScreen()
                 AgendaDetailAction.OnEditRowPressed -> onEditPressed()
                 AgendaDetailAction.OnSavePressed -> {
+                    if (!agendaDetailViewModel.hasSeenNotificationPrompt()) {
+                        when (sessionCount) {
+                            1 -> agendaDetailViewModel.setHasSeenNotificationPrompt(true)
+                            2 -> agendaDetailViewModel.setHasSeenNotificationPrompt(true)
+                            3 -> agendaDetailViewModel.setHasSeenNotificationPrompt(true)
+                        }
+                    }
+
                     if (agendaItemId == null) {
                         state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
                     } else {
@@ -255,6 +260,7 @@ internal fun AgendaDetailScreen(
         dialogState = dialogState,
         errorDialogState = errorDialogState,
         areNotificationsEnabled = areNotificationsEnabled,
+        hasSeenNotificationPrompt = agendaDetailViewModel.hasSeenNotificationPrompt()
     )
 }
 
@@ -274,6 +280,7 @@ private fun AgendaDetailContent(
     errorDialogState: AgendaDetailViewModel.ErrorDialogState,
     onErrorDialogDismiss: () -> Unit,
     areNotificationsEnabled: Boolean,
+    hasSeenNotificationPrompt: Boolean,
 ) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val getContent =
@@ -334,7 +341,8 @@ private fun AgendaDetailContent(
                     onEnableEditPressed = { onAction(AgendaDetailAction.OnEnableEditPressed) },
                     agendaItemId = agendaItemId,
                     isReadOnly = state.isReadOnly,
-                    areNotificationsEnabled = areNotificationsEnabled
+                    areNotificationsEnabled = areNotificationsEnabled,
+                    hasSeenNotificationPrompt = hasSeenNotificationPrompt
                 )
             }
 
@@ -389,6 +397,8 @@ fun MainContent(
     onDialogDismiss: () -> Unit,
     dialogState: DialogState,
 ) {
+
+    val isUserEventCreator = (state.details as? AgendaItemDetails.Event)?.isUserEventCreator ?: false
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -396,9 +406,9 @@ fun MainContent(
     ) {
         AgendaItemMainHeader(agendaItem)
 
-        AgendaItemTitle(onUpdateState, onAction, state)
+        AgendaItemTitle(onUpdateState, onAction, state, isUserEventCreator)
 
-        AgendaItemDescription(onUpdateState, onAction, state)
+        AgendaItemDescription(onUpdateState, onAction, state, isUserEventCreator)
 
         if (agendaItem?.details is AgendaItemDetails.Event) {
             TimeAndDateRow(
@@ -406,6 +416,7 @@ fun MainContent(
                 text = stringResource(R.string.from),
                 onUpdateState = onUpdateState,
                 state = state,
+                isEventCreator = isUserEventCreator
             )
 
             DefaultHorizontalDivider()
@@ -415,7 +426,8 @@ fun MainContent(
                 text = stringResource(R.string.to),
                 onUpdateState = onUpdateState,
                 state = state,
-                endTime = true
+                endTime = true,
+                isEventCreator = isUserEventCreator
             )
         } else {
             if (agendaItem != null) {
@@ -424,6 +436,7 @@ fun MainContent(
                     text = stringResource(R.string.at),
                     onUpdateState = onUpdateState,
                     state = state,
+                    isEventCreator = isUserEventCreator
                 )
             }
         }
@@ -438,8 +451,7 @@ fun MainContent(
                 onUpdateState = onUpdateState,
                 photos = (state.details as? AgendaItemDetails.Event)?.photos ?: emptyList(),
                 onAction = onAction,
-                isEventCreator = (state.details as? AgendaItemDetails.Event)?.isUserEventCreator
-                    ?: false
+                isEventCreator = isUserEventCreator
             )
         }
     }
@@ -466,8 +478,7 @@ fun MainContent(
                 onAction = onAction,
                 visitorFilter = state.visitorFilter,
                 isReadOnly = state.isReadOnly,
-                isEventCreator = (state.details as? AgendaItemDetails.Event)?.isUserEventCreator
-                    ?: false
+                isEventCreator = isUserEventCreator
             )
         }
         Box(
@@ -498,7 +509,7 @@ fun MainContent(
                     text = when (agendaItem?.details) {
                         is AgendaItemDetails.Task -> stringResource(R.string.Delete_task)
                         is AgendaItemDetails.Reminder -> stringResource(R.string.Delete_reminder)
-                        is AgendaItemDetails.Event -> if ((agendaItem?.details as? AgendaItemDetails.Event)?.isUserEventCreator == true) stringResource(
+                        is AgendaItemDetails.Event -> if ((state.details as? AgendaItemDetails.Event)?.isUserEventCreator == true) stringResource(
                             R.string.Delete_event
                         ) else stringResource(
                             R.string.Leave_event
@@ -530,6 +541,7 @@ private fun VisitorsSection(
     isReadOnly: Boolean,
     isEventCreator: Boolean
 ) {
+
     Column(modifier = Modifier.padding(top = dimensions.large32dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -538,7 +550,7 @@ private fun VisitorsSection(
                 fontSize = 20.sp
             )
 
-            if (!isReadOnly) {
+            if (!isReadOnly && isEventCreator) {
                 Spacer(modifier = Modifier.width(dimensions.small8dp))
                 Box(
                     modifier = Modifier
@@ -676,9 +688,9 @@ private fun VisitorsSection(
 
 @Composable
 private fun VisitorItem(
-    isEventCreator: Boolean,
     visitor: Attendee,
-    onDeleteAttendee: (Attendee) -> Unit
+    onDeleteAttendee: (Attendee) -> Unit,
+    isEventCreator: Boolean
 ) {
     val visitorInitials by remember { mutableStateOf(getInitials(visitor.name)) }
     Box(
@@ -750,23 +762,23 @@ private fun Header(
     onEnableEditPressed: () -> Unit,
     agendaItemId: String?,
     isReadOnly: Boolean,
-    areNotificationsEnabled: Boolean
+    areNotificationsEnabled: Boolean,
+    hasSeenNotificationPrompt: Boolean
 ) {
     val context = LocalContext.current
     var shouldCheckPermissions by remember { mutableStateOf(false) }
-    var hasSeenNotificationAlert by remember { mutableStateOf(false) }
-    if (!areNotificationsEnabled && shouldCheckPermissions) {
+
+    if (!areNotificationsEnabled && shouldCheckPermissions && !hasSeenNotificationPrompt) {
         AlertDialog(
             onDismissRequest = { },
             title = { Text(stringResource(R.string.Enable_notifications)) },
             text = { Text(stringResource(R.string.Notifications_disabled_open_settings)) },
             confirmButton = {
                 TextButton(onClick = {
+                    shouldCheckPermissions = false
                     val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                         putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                     }
-                    hasSeenNotificationAlert = true
-                    shouldCheckPermissions = false
                     context.startActivity(intent)
                 }) {
                     Text(stringResource(R.string.Go_to_settings))
@@ -774,7 +786,6 @@ private fun Header(
             },
             dismissButton = {
                 TextButton(onClick = {
-                    hasSeenNotificationAlert = true
                     shouldCheckPermissions = false
                 }) {
                     Text(stringResource(R.string.Maybe_later))
@@ -823,7 +834,7 @@ private fun Header(
                 Text(
                     modifier = Modifier.clickable {
                         shouldCheckPermissions = true
-                        if (areNotificationsEnabled || hasSeenNotificationAlert) {
+                        if (areNotificationsEnabled || hasSeenNotificationPrompt) {
                             onSavePressed()
                         }
                     },
@@ -888,6 +899,7 @@ fun AgendaDetailReadOnlyPreview() {
             errorDialogState = AgendaDetailViewModel.ErrorDialogState.None,
             onErrorDialogDismiss = {},
             areNotificationsEnabled = true,
+            hasSeenNotificationPrompt = true,
         )
     }
 }
@@ -935,6 +947,7 @@ fun AgendaDetailEditablePreview() {
             errorDialogState = AgendaDetailViewModel.ErrorDialogState.None,
             onErrorDialogDismiss = {},
             areNotificationsEnabled = true,
+            hasSeenNotificationPrompt = true,
         )
     }
 }

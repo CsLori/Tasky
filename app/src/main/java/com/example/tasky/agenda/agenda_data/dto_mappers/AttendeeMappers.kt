@@ -25,7 +25,7 @@ fun AttendeeMinimalDto.toAttendeeMinimal(): AttendeeMinimal {
     )
 }
 
-fun AttendeeDto.toAttendee(isCreator: Boolean = false): Attendee {
+fun AttendeeDto.toAttendee(isCreator: Boolean): Attendee {
     return Attendee(
         userId = userId,
         email = email,
@@ -37,8 +37,8 @@ fun AttendeeDto.toAttendee(isCreator: Boolean = false): Attendee {
     )
 }
 
-fun List<AttendeeDto>.toAttendees(): List<Attendee> {
-    return map { it.toAttendee() }
+fun List<AttendeeDto>.toAttendees(isCreator: Boolean): List<Attendee> {
+    return map { it.toAttendee(isCreator) }
 }
 
 fun Attendee.toAttendeeDto(): AttendeeDto {

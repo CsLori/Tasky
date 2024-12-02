@@ -43,9 +43,13 @@ class LoginViewModel @Inject constructor(
     private val _sessionState = MutableStateFlow<SessionState?>(null)
     val sessionState: StateFlow<SessionState?> = _sessionState.asStateFlow()
 
-//    init {
+    private val _sessionCount = MutableStateFlow<Int>(0)
+    val sessionCount: StateFlow<Int> = _sessionCount.asStateFlow()
+
+    init {
+        increaseSessionCount()
 //        login(FieldInput("lori123@boohoo.com"),FieldInput("Orlando123") )
-//    }
+    }
 
     fun login(email: FieldInput, password: FieldInput) {
         val emailErrorStatus = CredentialsValidator.validateEmail(email.value)
@@ -70,6 +74,12 @@ class LoginViewModel @Inject constructor(
                         _uiState.update { LoginUiState.Success }
                         // Update auth related tokens
                         updateTokens(result, email.value)
+
+                        // We don't want to bother the user more than 3 times
+                        if (getSessionCount() < 4) {
+                            increaseSessionCount()
+                            setHasSeenNotificationPrompt(false)
+                        }
 
                         // Get full agenda for local db sync
                         agendaRepository.getFullAgenda()
@@ -144,6 +154,25 @@ class LoginViewModel @Inject constructor(
                 ),
                 passwordErrorStatus = passwordErrorStatus
             )
+        }
+    }
+
+    private fun increaseSessionCount() {
+        viewModelScope.launch {
+            userPrefsRepository.updateSessionCount(userPrefsRepository.getSessionCount() + 1)
+        }
+    }
+
+    private fun getSessionCount(): Int {
+        viewModelScope.launch {
+            _sessionCount.value = userPrefsRepository.getSessionCount()
+        }
+        return sessionCount.value
+    }
+
+    private fun setHasSeenNotificationPrompt(hasSeenNotificationPrompt: Boolean) {
+        viewModelScope.launch {
+            userPrefsRepository.updateHasSeenNotificationPrompt(hasSeenNotificationPrompt)
         }
     }
 

@@ -7,5 +7,5 @@ data class Attendee(
     val eventId: String,
     val isGoing: Boolean = true,
     val remindAt: Long,
-    val isCreator: Boolean = false
+    val isCreator: Boolean
 )

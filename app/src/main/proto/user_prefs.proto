@@ -10,4 +10,6 @@ message UserPreferences {
   string userId = 4;
   string userName = 5;
   string email = 6;
+  bool hasSeenNotificationPrompt = 7;
+  int32 sessionCount = 8;
 }
