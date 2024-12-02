@@ -12,12 +12,14 @@ import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
 import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
 import java.time.LocalDateTime
+import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 data class AgendaDetailState(
+    val id: String = UUID.randomUUID().toString(),
     val title: String = "",
     val description: String = "",
     val time: LocalDateTime = LocalDateTime.now(),
@@ -26,7 +28,6 @@ data class AgendaDetailState(
     val isLoading: Boolean = false,
     val isReadOnly: Boolean = false,
     val editType: EditType = EditType.TITLE,
-    val selectedAgendaItem: AgendaItem? = null,
     val selectedDate: LocalDateTime? = null,
     val selectedReminder: Long = reminderOptions[1].timeBeforeInMillis,
     val emailErrorStatus: ErrorStatus? = null,
@@ -62,7 +63,7 @@ sealed interface AgendaDetailStateUpdate {
     data class UpdateTitle(val title: String) : AgendaDetailStateUpdate
     data class UpdateDescription(val description: String) : AgendaDetailStateUpdate
     data class UpdateIsReadOnly(val isReadOnly: Boolean) : AgendaDetailStateUpdate
-    data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem?) : AgendaDetailStateUpdate
+    data class UpdateSelectedAgendaItem(val selectedAgendaItem: AgendaItem) : AgendaDetailStateUpdate
     data class UpdatePhotos(val photos: List<Photo>) : AgendaDetailStateUpdate
     data class UpdateAttendees(val attendees: List<Attendee>) : AgendaDetailStateUpdate
     data class UpdateAddVisitorEmail(val email: FieldInput) : AgendaDetailStateUpdate

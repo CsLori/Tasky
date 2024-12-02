@@ -108,7 +108,7 @@ internal fun AgendaDetailScreen(
     agendaItemId: String? = null,
     onNavigateToSelectedPhoto: (String?) -> Unit
 ) {
-    val state = agendaDetailViewModel.state.collectAsStateWithLifecycle().value
+    val state by agendaDetailViewModel.state.collectAsStateWithLifecycle()
     val uiState = agendaDetailViewModel.uiState.collectAsStateWithLifecycle().value
     val dialogState = agendaDetailViewModel.dialogState.collectAsStateWithLifecycle().value
     val errorDialogState =
@@ -171,11 +171,6 @@ internal fun AgendaDetailScreen(
             )
         } else {
             agendaDetailViewModel.loadAgendaItem(agendaItemId)
-            agendaDetailViewModel.updateState(
-                AgendaDetailStateUpdate.UpdateSelectedAgendaItem(
-                    state.selectedAgendaItem
-                )
-            )
         }
     }
 
@@ -206,9 +201,9 @@ internal fun AgendaDetailScreen(
                 AgendaDetailAction.OnEditRowPressed -> onEditPressed()
                 AgendaDetailAction.OnSavePressed -> {
                     if (agendaItemId == null) {
-                        state.selectedAgendaItem?.let { agendaDetailViewModel.createAgendaItem(it) }
+                        agendaDetailViewModel.createAgendaItem()
                     } else {
-                        state.selectedAgendaItem?.let { agendaDetailViewModel.updateAgendaItem(it) }
+                        agendaDetailViewModel.updateAgendaItem()
                     }
                     onNavigateToAgendaScreen()
                 }
@@ -245,7 +240,16 @@ internal fun AgendaDetailScreen(
             }
         },
         agendaItemId = agendaItemId,
-        agendaItem = state.selectedAgendaItem,
+        agendaItem = state.details?.let {
+            AgendaItem(
+                id = state.id,
+                title = state.title,
+                description = state.description,
+                time = state.time,
+                details = it,
+                remindAt = state.remindAt
+            )
+        },
         onUpdatePhotos = { photos ->
             agendaDetailViewModel.updateState(AgendaDetailStateUpdate.UpdatePhotos(photos))
         },
