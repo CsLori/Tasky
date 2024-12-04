@@ -19,7 +19,7 @@ interface LocalDatabaseRepository {
 
     suspend fun upsertTasks(taskEntities: List<TaskEntity>)
 
-    suspend fun deleteTask(taskEntity: TaskEntity)
+    suspend fun deleteTask(taskId: String)
 
     fun getAllEvents(startOfDay: Long, endOfDay: Long): Flow<List<EventEntity>>
 
@@ -29,7 +29,7 @@ interface LocalDatabaseRepository {
 
     suspend fun upsertEvents(eventEntities: List<EventEntity>)
 
-    suspend fun deleteEvent(eventEntity: EventEntity)
+    suspend fun deleteEvent(eventId: String)
 
     fun getAllReminders(startOfDay: Long, endOfDay: Long): Flow<List<ReminderEntity>>
 
@@ -39,7 +39,7 @@ interface LocalDatabaseRepository {
 
     suspend fun upsertReminders(reminderEntities: List<ReminderEntity>)
 
-    suspend fun deleteReminder(reminderEntity: ReminderEntity)
+    suspend fun deleteReminder(reminderId: String)
 
     //Agenda items for a specific date
     fun getAllAgendaItemsForDate(selectedDate: LocalDateTime): Flow<List<AgendaItem>>

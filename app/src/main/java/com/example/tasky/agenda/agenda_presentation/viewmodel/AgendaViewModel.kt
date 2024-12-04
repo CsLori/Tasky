@@ -152,7 +152,7 @@ class AgendaViewModel @Inject constructor(
                     is AgendaItemDetails.Task -> {
                         val task = safeAgendaItem as? AgendaItem
                         if (task != null) {
-                            agendaRepository.deleteTask(task)
+                            agendaRepository.deleteTask(task.id)
 
                         } else {
                             handleItemMismatch()
@@ -164,7 +164,7 @@ class AgendaViewModel @Inject constructor(
                     is AgendaItemDetails.Event -> {
                         val event = safeAgendaItem as? AgendaItem
                         if (event != null) {
-                            agendaRepository.deleteEvent(event)
+                            agendaRepository.deleteEvent(event.id)
 
                         } else {
                             handleItemMismatch()
@@ -175,7 +175,7 @@ class AgendaViewModel @Inject constructor(
                     is AgendaItemDetails.Reminder -> {
                         val reminder = safeAgendaItem as? AgendaItem
                         if (reminder != null) {
-                            agendaRepository.deleteReminder(reminder)
+                            agendaRepository.deleteReminder(reminder.id)
 
                         } else {
                             handleItemMismatch()

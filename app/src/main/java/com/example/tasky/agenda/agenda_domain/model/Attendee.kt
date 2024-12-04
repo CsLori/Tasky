@@ -1,5 +1,8 @@
 package com.example.tasky.agenda.agenda_domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Attendee(
     val email: String,
     val name: String,

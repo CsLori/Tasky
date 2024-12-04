@@ -72,10 +72,26 @@ class AgendaDetailViewModel @Inject constructor(
     private var _sessionCount = MutableStateFlow<Int>(0)
     val sessionCount: StateFlow<Int> = _sessionCount.asStateFlow()
 
+    private val _hasSeenNotificationPrompt = MutableStateFlow(false)
+    val hasSeenNotificationPrompt: StateFlow<Boolean> = _hasSeenNotificationPrompt
+
     val agendaOption = savedStateHandle.toRoute<Screen.AgendaDetail>().agendaOption
     private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
 
     private var deletedPhotos: MutableList<String> = mutableListOf()
+
+    private fun getSessionCount() {
+        viewModelScope.launch {
+            _sessionCount.value = userPrefsRepository.getSessionCount()
+        }
+    }
+
+    fun setHasSeenNotificationPrompt(hasSeenNotificationPrompt: Boolean) {
+        viewModelScope.launch {
+            userPrefsRepository.updateHasSeenNotificationPrompt(hasSeenNotificationPrompt)
+            _hasSeenNotificationPrompt.value = hasSeenNotificationPrompt
+        }
+    }
 
 //    val networkStatus: StateFlow<NetworkStatus> = networkConnectivityService.networkStatus.stateIn(
 //        initialValue = NetworkStatus.Unknown,
@@ -85,6 +101,7 @@ class AgendaDetailViewModel @Inject constructor(
 
     init {
         updateState(AgendaDetailStateUpdate.UpdateIsReadOnly(isReadOnly))
+        getSessionCount()
     }
 
     fun updateState(action: AgendaDetailStateUpdate) {
@@ -121,6 +138,7 @@ class AgendaDetailViewModel @Inject constructor(
                     )
                 }
             }
+
             else -> Unit
         }
         _state.update { currentState ->
@@ -138,7 +156,10 @@ class AgendaDetailViewModel @Inject constructor(
                 )
 
                 is AgendaDetailStateUpdate.UpdateEditType -> currentState.copy(editType = action.editType)
-                is AgendaDetailStateUpdate.UpdateSelectedReminder -> currentState.copy(selectedReminder = action.selectedReminder)
+                is AgendaDetailStateUpdate.UpdateSelectedReminder -> currentState.copy(
+                    selectedReminder = action.selectedReminder
+                )
+
                 is AgendaDetailStateUpdate.UpdateDescription -> currentState.copy(description = action.description)
                 is AgendaDetailStateUpdate.UpdateTitle -> currentState.copy(title = action.title)
                 is AgendaDetailStateUpdate.UpdateIsReadOnly -> currentState.copy(isReadOnly = action.isReadOnly)
@@ -150,6 +171,7 @@ class AgendaDetailViewModel @Inject constructor(
                     remindAt = action.selectedAgendaItem.remindAt,
                     details = action.selectedAgendaItem.details,
                 )
+
                 is AgendaDetailStateUpdate.UpdatePhotos -> currentState.copy(
                     details = (currentState.details as? AgendaItemDetails.Event?)?.copy(
                         photos = action.photos
@@ -348,7 +370,7 @@ class AgendaDetailViewModel @Inject constructor(
                     email = loggedInUserResult.data.email,
                     eventId = eventId,
                     isGoing = true,
-                    remindAt = state.value.remindAt.toLong(),
+                    remindAt = _state.value.remindAt.toLong(),
                     isCreator = true
                 )
             }
@@ -427,9 +449,9 @@ class AgendaDetailViewModel @Inject constructor(
             // Or just use this approach if you embed the type into the ID
 //            agendaRepository.deleteAgenda(id= agendaItem.id)
             val result = when (agendaItem.details) {
-                is AgendaItemDetails.Task -> agendaRepository.deleteTask(agendaItem)
-                is AgendaItemDetails.Event -> agendaRepository.deleteEvent(agendaItem)
-                is AgendaItemDetails.Reminder -> agendaRepository.deleteReminder(agendaItem)
+                is AgendaItemDetails.Task -> agendaRepository.deleteTask(agendaItem.id)
+                is AgendaItemDetails.Event -> agendaRepository.deleteEvent(agendaItem.id)
+                is AgendaItemDetails.Reminder -> agendaRepository.deleteReminder(agendaItem.id)
             }
 
             result.onSuccess {
@@ -494,6 +516,7 @@ class AgendaDetailViewModel @Inject constructor(
             result.onSuccess { agendaItem ->
                 _state.update { currentState ->
                     currentState.copy(
+                        id = agendaItem.id,
                         title = agendaItem.title,
                         description = agendaItem.description,
                         time = agendaItem.time,
@@ -586,16 +609,22 @@ class AgendaDetailViewModel @Inject constructor(
     fun handlePhotoCompression(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO + NonCancellable) {
             photoCompressor.compressPhoto(uri)?.let { compressedData ->
-                val newPhoto = Photo(
-                    key = UUID.randomUUID().toString(),
-                    url = uri.toString()
-                )
-                updateState(
-                    AgendaDetailStateUpdate.UpdatePhotos(
-                        ((state.value.details as? AgendaItemDetails.Event?)?.photos
-                            ?: emptyList()) + newPhoto
+                if (compressedData.size < 1_000_000){
+                    val newPhoto = Photo(
+                        key = UUID.randomUUID().toString(),
+                        url = uri.toString()
                     )
-                )
+                    updateState(
+                        AgendaDetailStateUpdate.UpdatePhotos(
+                            ((state.value.details as? AgendaItemDetails.Event?)?.photos
+                                ?: emptyList()) + newPhoto
+                        )
+                    )
+                }
+                else {
+                    Timber.d("DDD - Image too large hence it was skipped!")
+                    _errorDialogState.update { ErrorDialogState.GeneralError(UiText.StringResource(R.string.Image_too_large)) }
+                }
             }
         }
     }
@@ -614,26 +643,6 @@ class AgendaDetailViewModel @Inject constructor(
                 )
             )
         }
-    }
-
-    fun getSessionCount() {
-        viewModelScope.launch {
-            _sessionCount.value = userPrefsRepository.getSessionCount()
-        }
-    }
-
-    fun setHasSeenNotificationPrompt(hasSeenNotificationPrompt: Boolean) {
-        viewModelScope.launch {
-            userPrefsRepository.updateHasSeenNotificationPrompt(hasSeenNotificationPrompt)
-        }
-    }
-
-    fun hasSeenNotificationPrompt(): Boolean {
-        var hasSeenNotificationPrompt = false
-        viewModelScope.launch {
-            hasSeenNotificationPrompt = userPrefsRepository.getHasSeenNotificationPrompt()
-        }
-        return hasSeenNotificationPrompt
     }
 
     sealed class ErrorDialogState {

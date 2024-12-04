@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.rounded.Square
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SelectableDates
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
@@ -242,7 +244,8 @@ fun TimeAndDateRow(
         val selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                 val selectedDate =
-                    Instant.ofEpochMilli(utcTimeMillis).atZone((ZoneId.systemDefault())).toLocalDate()
+                    Instant.ofEpochMilli(utcTimeMillis).atZone((ZoneId.systemDefault()))
+                        .toLocalDate()
                 return !selectedDate.isBefore(LocalDate.now())
             }
 
@@ -476,7 +479,6 @@ fun AddPhotosSection(
     onAction: (AgendaDetailAction) -> Unit,
     isEventCreator: Boolean
 ) {
-
     val context = LocalContext.current
 
     selectedImageUri?.let { uri ->
@@ -484,7 +486,6 @@ fun AddPhotosSection(
             onAction(AgendaDetailAction.OnPhotoCompress(uri))
         }
     }
-
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
@@ -492,8 +493,8 @@ fun AddPhotosSection(
             .background(colors.light2)
             .padding(dimensions.default16dp),
         horizontalArrangement = if (!isReadOnly || (isReadOnly && photos.isNotEmpty())) Arrangement.spacedBy(
-            dimensions.small8dp) else Arrangement.Center
-        ,
+            dimensions.small8dp
+        ) else Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (!isReadOnly || (isReadOnly && photos.isNotEmpty())) {
@@ -505,8 +506,17 @@ fun AddPhotosSection(
                         .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
+                    val painter = rememberAsyncImagePainter(photo.url)
+
+                    if (painter.state is AsyncImagePainter.State.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.padding(3.dp),
+                            color = colors.green
+                        )
+                    }
+
                     Image(
-                        painter = rememberAsyncImagePainter(photo.url),
+                        painter = painter,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -595,7 +605,10 @@ fun SetReminderRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Start) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
             Box(
                 modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center
             ) {
@@ -725,15 +738,17 @@ fun TimeAndDateRowEventCreatorPreview() {
                 remindAt = LocalDateTime.now(),
                 details = AgendaItemDetails.Event(
                     toTime = LocalDateTime.now(),
-                    attendees = listOf(Attendee(
-                        email = "julio.velasquez@example.com",
-                        name = "Myles Orr",
-                        userId = "amet",
-                        eventId = "melius",
-                        isGoing = false,
-                        remindAt = 3775,
-                        isCreator = false
-                    )),
+                    attendees = listOf(
+                        Attendee(
+                            email = "julio.velasquez@example.com",
+                            name = "Myles Orr",
+                            userId = "amet",
+                            eventId = "melius",
+                            isGoing = false,
+                            remindAt = 3775,
+                            isCreator = false
+                        )
+                    ),
                     photos = listOf(),
                     isUserEventCreator = true,
                     host = "contentiones"
