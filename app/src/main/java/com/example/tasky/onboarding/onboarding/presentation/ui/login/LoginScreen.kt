@@ -1,4 +1,4 @@
-package com.example.tasky.onboarding.onboarding.presentation.ui
+package com.example.tasky.onboarding.onboarding.presentation.ui.login
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -56,95 +57,71 @@ internal fun LoginScreen(
     onNavigateToAgenda: () -> Unit
 ) {
     val state by loginViewModel.state.collectAsStateWithLifecycle()
-    val uiState by loginViewModel.uiState.collectAsStateWithLifecycle()
     val dialogState by loginViewModel.dialogState.collectAsStateWithLifecycle()
 
-    LoginContent(state = state, uiState = uiState, dialogState = dialogState, onAction = { action ->
-        when (action) {
-            LoginViewModel.LoginAction.OnNavigateToRegister -> {
-                onNavigateToRegister()
-            }
-
-            LoginViewModel.LoginAction.OnDismissDialog -> {
-                loginViewModel.onDismissDialog()
-            }
-
-            is LoginViewModel.LoginAction.OnEmailChange -> {
-                loginViewModel.onEmailChange(action.email)
-            }
-
-            is LoginViewModel.LoginAction.OnPasswordChange -> {
-                loginViewModel.onPasswordChange(action.password)
-            }
-
-            is LoginViewModel.LoginAction.OnLoginClick -> {
-                loginViewModel.login(state.email, state.password)
-            }
-
-            is LoginViewModel.LoginAction.OnNavigateToAgenda -> {
-                onNavigateToAgenda()
+    LaunchedEffect(Unit) {
+        loginViewModel.navigationEvents.collect { event ->
+            when (event) {
+                LoginNavigationEvent.NavigateToRegister -> onNavigateToRegister()
+                LoginNavigationEvent.NavigateToAgenda -> onNavigateToAgenda()
             }
         }
     }
-    )
+
+    LoginContent(
+        state = state,
+        dialogState = dialogState,
+        onAction = { loginViewModel.onAction(it) })
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun LoginContent(
-    state: LoginViewModel.LoginState,
-    uiState: LoginViewModel.LoginUiState,
-    onAction: (LoginViewModel.LoginAction) -> Unit,
+    state: LoginState,
+    onAction: (LoginAction) -> Unit,
     dialogState: DialogState
 ) {
     val context = LocalContext.current
-    if (state.isLoading) {
-        TaskyLoader()
-    } else {
-        when (uiState) {
+    val cornerRadius = 30.dp
 
-            LoginViewModel.LoginUiState.Success -> {
-                onAction(LoginViewModel.LoginAction.OnNavigateToAgenda)
-            }
+    if (dialogState is DialogState.Show) {
+        ErrorDialog(
+            title = stringResource(R.string.Something_went_wrong),
+            label = dialogState.errorMessage?.asString(context).orEmpty(),
+            displayCloseIcon = false,
+            positiveButtonText = stringResource(R.string.OK),
+            positiveOnClick = { onAction(LoginAction.OnDismissDialog) },
+            onCancelClicked = { onAction(LoginAction.OnDismissDialog) }
+        )
+    }
 
-            LoginViewModel.LoginUiState.None -> {
-                val cornerRadius = 30.dp
-                if (dialogState is DialogState.Show) {
-                    ErrorDialog(
-                        title = stringResource(R.string.Something_went_wrong),
-                        label = dialogState.errorMessage?.asString(context).orEmpty(),
-                        displayCloseIcon = false,
-                        positiveButtonText = stringResource(R.string.OK),
-                        positiveOnClick = { onAction(LoginViewModel.LoginAction.OnDismissDialog) },
-                        onCancelClicked = { onAction(LoginViewModel.LoginAction.OnDismissDialog) }
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(colors.black)
-                ) {
-                    Header()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.black)
+    ) {
+        if (state.isLoading) {
+            TaskyLoader()
+        }
+        Header()
 
-                    Surface(
-                        shape = RoundedCornerShape(
-                            topStart = cornerRadius,
-                            topEnd = cornerRadius
-                        ),
-                        color = colors.white,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
-                            .padding(top = 150.dp)
-                    ) {
-                        MainContent(state, onAction)
-                        BottomText(onAction)
-                    }
-                }
-
-            }
+        Surface(
+            shape = RoundedCornerShape(
+                topStart = cornerRadius,
+                topEnd = cornerRadius
+            ),
+            color = colors.white,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .padding(top = 150.dp)
+        ) {
+            MainContent(state, onAction)
+            BottomText(onAction)
         }
     }
+
+//    }
 }
 
 @Composable
@@ -168,8 +145,8 @@ private fun Header() {
 
 @Composable
 private fun MainContent(
-    state: LoginViewModel.LoginState,
-    onAction: (LoginViewModel.LoginAction) -> Unit
+    state: LoginState,
+    onAction: (LoginAction) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -188,13 +165,7 @@ private fun MainContent(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
-            onValueChange = {
-                onAction(
-                    LoginViewModel.LoginAction.OnEmailChange(
-                        it
-                    )
-                )
-            }
+            onValueChange = { onAction(LoginAction.OnEmailChange(it)) }
         )
 
         Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
@@ -209,13 +180,7 @@ private fun MainContent(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Next
             ),
-            onValueChange = {
-                onAction(
-                    LoginViewModel.LoginAction.OnPasswordChange(
-                        it
-                    )
-                )
-            }
+            onValueChange = { onAction(LoginAction.OnPasswordChange(it)) }
         )
 
         Spacer(modifier = Modifier.height(dimensions.default16dp))
@@ -223,9 +188,7 @@ private fun MainContent(
         MainButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = {
-                onAction(
-                    LoginViewModel.LoginAction.OnLoginClick
-                )
+                onAction(LoginAction.OnLoginClick)
             },
             btnString = stringResource(R.string.Log_in).uppercase(),
             textStyle = typography.buttonText
@@ -236,7 +199,7 @@ private fun MainContent(
 
 @Composable
 private fun BottomText(
-    onAction: (LoginViewModel.LoginAction) -> Unit
+    onAction: (LoginAction) -> Unit
 ) {
     val styledText = buildAnnotatedString {
         withStyle(style = SpanStyle(color = colors.gray)) {
@@ -259,7 +222,7 @@ private fun BottomText(
             modifier = Modifier
                 .padding(bottom = 70.dp)
                 .clickable {
-                    onAction(LoginViewModel.LoginAction.OnNavigateToRegister)
+                    onAction(LoginAction.OnNavigateToRegister)
                 },
             style = typography.bodyMedium.copy(
                 fontWeight = FontWeight.W500,
@@ -276,7 +239,7 @@ private fun BottomText(
 fun LoginScreenPreview() {
     AppTheme {
         LoginContent(
-            state = LoginViewModel.LoginState(
+            state = LoginState(
                 email = FieldInput("lori123@boohoo.com"),
                 emailErrorStatus = ErrorStatus(
                     true,
@@ -288,8 +251,7 @@ fun LoginScreenPreview() {
                     UiText.StringResource(R.string.Password_error)
                 )
             ),
-            uiState = LoginViewModel.LoginUiState.None,
-            onAction = {},
+            onAction = {LoginAction.OnLoginClick},
             dialogState = DialogState.Hide
         )
     }
