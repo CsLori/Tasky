@@ -96,15 +96,14 @@ class AgendaRepositoryImpl(
     }
 
 
-    override suspend fun deleteTask(task: AgendaItem): Result<Unit, TaskyError> {
+    override suspend fun deleteTask(taskId: String): Result<Unit, TaskyError> {
         return try {
-            localDatabaseRepository.deleteTask(task.toTaskEntity())
-            val remoteResult = api.deleteTaskById(task.id)
-
+            localDatabaseRepository.deleteTask(taskId)
+            val remoteResult = api.deleteTaskById(taskId)
 
             // If they api call fails, we would like to save the deleted task, event, reminder
             if (!remoteResult.isSuccessful) {
-                insertDeletedAgendaItem(AgendaItemForDeletionEntity(task.id, AgendaOption.TASK))
+                insertDeletedAgendaItem(AgendaItemForDeletionEntity(taskId, AgendaOption.TASK))
             }
             Result.Success(Unit)
         } catch (e: Exception) {
@@ -175,13 +174,13 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun deleteEvent(event: AgendaItem): Result<Unit, TaskyError> {
+    override suspend fun deleteEvent(eventId: String): Result<Unit, TaskyError> {
         return try {
-            localDatabaseRepository.deleteEvent(event.toEventEntity())
-            val remoteResult = api.deleteEventById(event.id)
+            localDatabaseRepository.deleteEvent(eventId)
+            val remoteResult = api.deleteEventById(eventId)
 
             if (!remoteResult.isSuccessful) {
-                insertDeletedAgendaItem(AgendaItemForDeletionEntity(event.id, AgendaOption.EVENT))
+                insertDeletedAgendaItem(AgendaItemForDeletionEntity(eventId, AgendaOption.EVENT))
             }
             Result.Success(Unit)
         } catch (e: Exception) {
@@ -238,13 +237,13 @@ class AgendaRepositoryImpl(
         }
     }
 
-    override suspend fun deleteReminder(reminder: AgendaItem): Result<Unit, TaskyError> {
+    override suspend fun deleteReminder(reminderId: String): Result<Unit, TaskyError> {
         return try {
-            localDatabaseRepository.deleteReminder(reminder.toReminderEntity())
-            val remoteResult = api.deleteReminderById(reminder.id)
+            localDatabaseRepository.deleteReminder(reminderId)
+            val remoteResult = api.deleteReminderById(reminderId)
 
             if (!remoteResult.isSuccessful) {
-                insertDeletedAgendaItem(AgendaItemForDeletionEntity(reminder.id, AgendaOption.REMINDER))
+                insertDeletedAgendaItem(AgendaItemForDeletionEntity(reminderId, AgendaOption.REMINDER))
             }
             Result.Success(Unit)
         } catch (e: Exception) {

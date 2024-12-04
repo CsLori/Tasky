@@ -16,4 +16,5 @@ sealed interface AgendaDetailAction {
     data class OnPhotoPressed(val key: String) : AgendaDetailAction
     data class OnDeleteAgendaItem(val agendaItem: AgendaItem) : AgendaDetailAction
     data class OnDeleteAttendee(val attendee: Attendee) : AgendaDetailAction
+    data class OnNotificationPromptSeen(val hasSeenNotificationPrompt: Boolean) : AgendaDetailAction
 }

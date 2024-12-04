@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
-import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.domain.TaskyError
 import com.example.tasky.core.domain.UserPrefsRepository
@@ -12,11 +11,16 @@ import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
+import com.example.tasky.onboarding.onboarding.presentation.ui.login.LoginAction
+import com.example.tasky.onboarding.onboarding.presentation.ui.login.LoginNavigationEvent
+import com.example.tasky.onboarding.onboarding.presentation.ui.login.LoginState
 import com.example.tasky.onboarding.onboarding_domain.UserRepository
 import com.example.tasky.onboarding.onboarding_domain.model.LoginUser
 import com.example.tasky.util.CredentialsValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -27,12 +31,11 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val defaultUserRepository: UserRepository,
     private val userPrefsRepository: UserPrefsRepository,
-    private val localDatabaseRepository: LocalDatabaseRepository,
     private val agendaRepository: AgendaRepository
 ) : ViewModel() {
 
-    private var _uiState = MutableStateFlow<LoginUiState>(LoginUiState.None)
-    val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
+    private val _navigationEvents = MutableSharedFlow<LoginNavigationEvent>()
+    val navigationEvents: SharedFlow<LoginNavigationEvent> = _navigationEvents
 
     private var _dialogState = MutableStateFlow<DialogState>(DialogState.Hide)
     val dialogState: StateFlow<DialogState> = _dialogState.asStateFlow()
@@ -43,9 +46,37 @@ class LoginViewModel @Inject constructor(
     private val _sessionState = MutableStateFlow<SessionState?>(null)
     val sessionState: StateFlow<SessionState?> = _sessionState.asStateFlow()
 
-//    init {
+    private val _sessionCount = MutableStateFlow(0)
+    val sessionCount: StateFlow<Int> = _sessionCount.asStateFlow()
+
+    init {
+        increaseSessionCount()
 //        login(FieldInput("lori123@boohoo.com"),FieldInput("Orlando123") )
-//    }
+    }
+
+    fun onAction(action: LoginAction) {
+        when (action) {
+            LoginAction.OnNavigateToRegister -> {
+                viewModelScope.launch {
+                    _navigationEvents.emit(LoginNavigationEvent.NavigateToRegister)
+                }
+            }
+
+            LoginAction.OnDismissDialog -> onDismissDialog()
+
+            is LoginAction.OnEmailChange -> onEmailChange(action.email)
+
+            is LoginAction.OnPasswordChange -> onPasswordChange(action.password)
+
+            LoginAction.OnLoginClick -> login(_state.value.email, _state.value.password)
+
+            LoginAction.OnNavigateToAgenda -> {
+                viewModelScope.launch {
+                    _navigationEvents.emit(LoginNavigationEvent.NavigateToAgenda)
+                }
+            }
+        }
+    }
 
     fun login(email: FieldInput, password: FieldInput) {
         val emailErrorStatus = CredentialsValidator.validateEmail(email.value)
@@ -64,15 +95,20 @@ class LoginViewModel @Inject constructor(
         if (isFormValid(emailErrorStatus, passwordErrorStatus)) {
             _state.update { it.copy(isLoading = true) }
             viewModelScope.launch {
-                val result = defaultUserRepository.login(email.value, password.value)
-                when (result) {
+                when (val result = defaultUserRepository.login(email.value, password.value)) {
                     is Result.Success -> {
-                        _uiState.update { LoginUiState.Success }
                         // Update auth related tokens
-                        updateTokens(result, email.value)
+                        updateTokens(result.data, email.value)
+
+                        // We don't want to bother the user more than 3 times
+                        if (getSessionCount() < 4) {
+                            increaseSessionCount()
+                            setHasSeenNotificationPrompt(false)
+                        }
 
                         // Get full agenda for local db sync
                         agendaRepository.getFullAgenda()
+                        _navigationEvents.emit(LoginNavigationEvent.NavigateToAgenda)
                     }
 
                     is Result.Error -> {
@@ -81,7 +117,6 @@ class LoginViewModel @Inject constructor(
                             TaskyError.NetworkError.NO_INTERNET -> UiText.StringResource(R.string.No_internet_connection)
                             else -> UiText.StringResource(R.string.Login_failed)
                         }
-                        _uiState.update { LoginUiState.None }
                         _dialogState.update { DialogState.Show(errorMessage) }
                     }
                 }
@@ -100,8 +135,8 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    private suspend fun updateTokens(result: Result.Success<LoginUser>, email: String) {
-        result.data.apply {
+    private suspend fun updateTokens(loginUser: LoginUser, email: String) {
+        loginUser.apply {
             userPrefsRepository.updateRefreshToken(refreshToken)
             userPrefsRepository.updateAccessToken(accessToken)
             userPrefsRepository.updateUserId(userId)
@@ -112,14 +147,14 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun onDismissDialog() {
+    private fun onDismissDialog() {
         _dialogState.value = DialogState.Hide
     }
 
     private fun isFormValid(emailErrorStatus: ErrorStatus, passwordErrorStatus: ErrorStatus) =
         !emailErrorStatus.hasError && !passwordErrorStatus.hasError
 
-    fun onEmailChange(emailInput: String) {
+    private fun onEmailChange(emailInput: String) {
         val emailErrorStatus = CredentialsValidator.validateEmail(emailInput)
 
         _state.update {
@@ -133,7 +168,7 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun onPasswordChange(passwordInput: String) {
+    private fun onPasswordChange(passwordInput: String) {
         val passwordErrorStatus = CredentialsValidator.validatePassword(passwordInput)
 
         _state.update {
@@ -147,31 +182,27 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    data class LoginState(
-        val email: FieldInput = FieldInput(),
-        val emailErrorStatus: ErrorStatus = ErrorStatus(false),
-        val password: FieldInput = FieldInput(),
-        val passwordErrorStatus: ErrorStatus = ErrorStatus(false),
-        val isLoading: Boolean = false
-    )
+    private fun increaseSessionCount() {
+        viewModelScope.launch {
+            userPrefsRepository.updateSessionCount(userPrefsRepository.getSessionCount() + 1)
+        }
+    }
 
-    sealed interface LoginAction {
-        data class OnEmailChange(val email: String) : LoginAction
-        data class OnPasswordChange(val password: String) : LoginAction
-        data object OnLoginClick : LoginAction
-        data object OnNavigateToRegister : LoginAction
-        data object OnNavigateToAgenda : LoginAction
-        data object OnDismissDialog : LoginAction
+    private fun getSessionCount(): Int {
+        viewModelScope.launch {
+            _sessionCount.value = userPrefsRepository.getSessionCount()
+        }
+        return sessionCount.value
+    }
+
+    private fun setHasSeenNotificationPrompt(hasSeenNotificationPrompt: Boolean) {
+        viewModelScope.launch {
+            userPrefsRepository.updateHasSeenNotificationPrompt(hasSeenNotificationPrompt)
+        }
     }
 
     sealed class SessionState {
-        object Valid : SessionState()
-        object Invalid : SessionState()
+        data object Valid : SessionState()
+        data object Invalid : SessionState()
     }
-
-    sealed class LoginUiState {
-        data object None : LoginUiState()
-        data object Success : LoginUiState()
-    }
-
 }

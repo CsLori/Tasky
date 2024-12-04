@@ -38,5 +38,15 @@ interface UserPrefsRepository {
 
     suspend fun getAccessTokenExpirationTimestamp(): Long
 
+    // Has seen notification prompt
+    suspend fun updateHasSeenNotificationPrompt(hasSeenNotificationPrompt: Boolean)
+
+    suspend fun getHasSeenNotificationPrompt(): Boolean
+
+    // Session count
+    suspend fun updateSessionCount(sessionCount: Int)
+
+    suspend fun getSessionCount(): Int
+
     val authInfo: StateFlow<AuthInfo?>
 }

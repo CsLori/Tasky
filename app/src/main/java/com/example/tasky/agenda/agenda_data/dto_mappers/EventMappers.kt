@@ -16,7 +16,7 @@ fun EventResponse.toEvent(): AgendaItem {
         time = from.toLocalDateTime(),
         details = AgendaItemDetails.Event(
             toTime = to.toLocalDateTime(),
-            attendees = attendees.toAttendees(),
+            attendees = attendees.toAttendees(isUserEventCreator),
             photos = photos.toPhotos(),
             isUserEventCreator = isUserEventCreator,
             host = host

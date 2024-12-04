@@ -13,6 +13,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
 import com.example.tasky.core.domain.UserPrefsRepository
+import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.onboarding.onboarding_domain.UserRepository
@@ -26,9 +27,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
@@ -59,6 +62,9 @@ class AgendaViewModel @Inject constructor(
 
     private var _errorDialogState = MutableStateFlow<ErrorDialogState>(ErrorDialogState.None)
     val errorDialogState: StateFlow<ErrorDialogState> = _errorDialogState.asStateFlow()
+
+    private val _currentTime = MutableStateFlow(System.currentTimeMillis())
+    val currentTime: StateFlow<Long> = _currentTime
 
     private val networkStatus: StateFlow<NetworkStatus> =
         networkConnectivityService.networkStatus.stateIn(
@@ -122,6 +128,20 @@ class AgendaViewModel @Inject constructor(
             }
         }.stateIn(viewModelScope, WhileSubscribed(5_000L), emptyList())
 
+    val needlePosition: StateFlow<Int> = combine(agendaItemsForSelectedDate, currentTime) { items, time ->
+        items.indexOfFirst { it.time.toLong() >= time }
+            .takeIf { it != -1 } ?: items.size
+    }.stateIn(viewModelScope,  WhileSubscribed(5_000L), 0)
+
+    val shouldShowNeedle: StateFlow<Boolean> = agendaItemsForSelectedDate.map { items ->
+        items.any { it.time.toLong() <= System.currentTimeMillis() }
+    }.stateIn(viewModelScope,  WhileSubscribed(5_000L), false)
+
+    fun refreshTime() {
+        _currentTime.value = System.currentTimeMillis()
+    }
+
+
     fun deleteAgendaItem(agendaItem: AgendaItem) {
         viewModelScope.launch {
             val existingAgendaItem =
@@ -132,7 +152,7 @@ class AgendaViewModel @Inject constructor(
                     is AgendaItemDetails.Task -> {
                         val task = safeAgendaItem as? AgendaItem
                         if (task != null) {
-                            agendaRepository.deleteTask(task)
+                            agendaRepository.deleteTask(task.id)
 
                         } else {
                             handleItemMismatch()
@@ -144,7 +164,7 @@ class AgendaViewModel @Inject constructor(
                     is AgendaItemDetails.Event -> {
                         val event = safeAgendaItem as? AgendaItem
                         if (event != null) {
-                            agendaRepository.deleteEvent(event)
+                            agendaRepository.deleteEvent(event.id)
 
                         } else {
                             handleItemMismatch()
@@ -155,7 +175,7 @@ class AgendaViewModel @Inject constructor(
                     is AgendaItemDetails.Reminder -> {
                         val reminder = safeAgendaItem as? AgendaItem
                         if (reminder != null) {
-                            agendaRepository.deleteReminder(reminder)
+                            agendaRepository.deleteReminder(reminder.id)
 
                         } else {
                             handleItemMismatch()

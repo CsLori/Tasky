@@ -20,9 +20,9 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetail
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
 import com.example.tasky.core.domain.TaskyError
+import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.core.domain.onError
 import com.example.tasky.core.domain.onSuccess
-import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
 import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
@@ -50,6 +50,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AgendaDetailViewModel @Inject constructor(
     private val agendaRepository: AgendaRepository,
+    private val userPrefsRepository: UserPrefsRepository,
     private val savedStateHandle: SavedStateHandle,
     private val photoCompressor: PhotoCompressor,
     private val photoConverter: PhotoConverter,
@@ -68,10 +69,29 @@ class AgendaDetailViewModel @Inject constructor(
     private var _errorDialogState = MutableStateFlow<ErrorDialogState>(ErrorDialogState.None)
     val errorDialogState: StateFlow<ErrorDialogState> = _errorDialogState.asStateFlow()
 
+    private var _sessionCount = MutableStateFlow<Int>(0)
+    val sessionCount: StateFlow<Int> = _sessionCount.asStateFlow()
+
+    private val _hasSeenNotificationPrompt = MutableStateFlow(false)
+    val hasSeenNotificationPrompt: StateFlow<Boolean> = _hasSeenNotificationPrompt
+
     val agendaOption = savedStateHandle.toRoute<Screen.AgendaDetail>().agendaOption
     private val isReadOnly = savedStateHandle.toRoute<Screen.AgendaDetail>().isAgendaItemReadOnly
 
     private var deletedPhotos: MutableList<String> = mutableListOf()
+
+    private fun getSessionCount() {
+        viewModelScope.launch {
+            _sessionCount.value = userPrefsRepository.getSessionCount()
+        }
+    }
+
+    fun setHasSeenNotificationPrompt(hasSeenNotificationPrompt: Boolean) {
+        viewModelScope.launch {
+            userPrefsRepository.updateHasSeenNotificationPrompt(hasSeenNotificationPrompt)
+            _hasSeenNotificationPrompt.value = hasSeenNotificationPrompt
+        }
+    }
 
 //    val networkStatus: StateFlow<NetworkStatus> = networkConnectivityService.networkStatus.stateIn(
 //        initialValue = NetworkStatus.Unknown,
@@ -81,6 +101,7 @@ class AgendaDetailViewModel @Inject constructor(
 
     init {
         updateState(AgendaDetailStateUpdate.UpdateIsReadOnly(isReadOnly))
+        getSessionCount()
     }
 
     fun updateState(action: AgendaDetailStateUpdate) {
@@ -117,6 +138,7 @@ class AgendaDetailViewModel @Inject constructor(
                     )
                 }
             }
+
             else -> Unit
         }
         _state.update { currentState ->
@@ -134,7 +156,10 @@ class AgendaDetailViewModel @Inject constructor(
                 )
 
                 is AgendaDetailStateUpdate.UpdateEditType -> currentState.copy(editType = action.editType)
-                is AgendaDetailStateUpdate.UpdateSelectedReminder -> currentState.copy(selectedReminder = action.selectedReminder)
+                is AgendaDetailStateUpdate.UpdateSelectedReminder -> currentState.copy(
+                    selectedReminder = action.selectedReminder
+                )
+
                 is AgendaDetailStateUpdate.UpdateDescription -> currentState.copy(description = action.description)
                 is AgendaDetailStateUpdate.UpdateTitle -> currentState.copy(title = action.title)
                 is AgendaDetailStateUpdate.UpdateIsReadOnly -> currentState.copy(isReadOnly = action.isReadOnly)
@@ -146,6 +171,7 @@ class AgendaDetailViewModel @Inject constructor(
                     remindAt = action.selectedAgendaItem.remindAt,
                     details = action.selectedAgendaItem.details,
                 )
+
                 is AgendaDetailStateUpdate.UpdatePhotos -> currentState.copy(
                     details = (currentState.details as? AgendaItemDetails.Event?)?.copy(
                         photos = action.photos
@@ -304,12 +330,6 @@ class AgendaDetailViewModel @Inject constructor(
     }
 
     private fun prepareUpdatedTask(agendaItem: AgendaItem): AgendaItem {
-        Timber.d("DDD - viewmodel prepareUpdatedTask agendaItem: ${agendaItem.remindAt}")
-        Timber.d(
-            "DDD - viewmodel prepareUpdatedTask currentState: ${
-                state.value.time.toLong().toLocalDateTime()
-            }"
-        )
         val newTask = agendaItem.copy(
             title = state.value.title,
             description = state.value.description,
@@ -350,7 +370,7 @@ class AgendaDetailViewModel @Inject constructor(
                     email = loggedInUserResult.data.email,
                     eventId = eventId,
                     isGoing = true,
-                    remindAt = state.value.remindAt.toLong(),
+                    remindAt = _state.value.remindAt.toLong(),
                     isCreator = true
                 )
             }
@@ -429,9 +449,9 @@ class AgendaDetailViewModel @Inject constructor(
             // Or just use this approach if you embed the type into the ID
 //            agendaRepository.deleteAgenda(id= agendaItem.id)
             val result = when (agendaItem.details) {
-                is AgendaItemDetails.Task -> agendaRepository.deleteTask(agendaItem)
-                is AgendaItemDetails.Event -> agendaRepository.deleteEvent(agendaItem)
-                is AgendaItemDetails.Reminder -> agendaRepository.deleteReminder(agendaItem)
+                is AgendaItemDetails.Task -> agendaRepository.deleteTask(agendaItem.id)
+                is AgendaItemDetails.Event -> agendaRepository.deleteEvent(agendaItem.id)
+                is AgendaItemDetails.Reminder -> agendaRepository.deleteReminder(agendaItem.id)
             }
 
             result.onSuccess {
@@ -496,6 +516,7 @@ class AgendaDetailViewModel @Inject constructor(
             result.onSuccess { agendaItem ->
                 _state.update { currentState ->
                     currentState.copy(
+                        id = agendaItem.id,
                         title = agendaItem.title,
                         description = agendaItem.description,
                         time = agendaItem.time,
@@ -537,7 +558,6 @@ class AgendaDetailViewModel @Inject constructor(
                                     remindAt = state.value.remindAt.toLong(),
                                     isCreator = false
                                 )
-                            Timber.d("DDD - updatedAttendees: $updatedAttendees")
                             currentState.copy(
                                 details = currentDetails.copy(
                                     attendees = updatedAttendees
@@ -589,16 +609,22 @@ class AgendaDetailViewModel @Inject constructor(
     fun handlePhotoCompression(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO + NonCancellable) {
             photoCompressor.compressPhoto(uri)?.let { compressedData ->
-                val newPhoto = Photo(
-                    key = UUID.randomUUID().toString(),
-                    url = uri.toString()
-                )
-                updateState(
-                    AgendaDetailStateUpdate.UpdatePhotos(
-                        ((state.value.details as? AgendaItemDetails.Event?)?.photos
-                            ?: emptyList()) + newPhoto
+                if (compressedData.size < 1_000_000){
+                    val newPhoto = Photo(
+                        key = UUID.randomUUID().toString(),
+                        url = uri.toString()
                     )
-                )
+                    updateState(
+                        AgendaDetailStateUpdate.UpdatePhotos(
+                            ((state.value.details as? AgendaItemDetails.Event?)?.photos
+                                ?: emptyList()) + newPhoto
+                        )
+                    )
+                }
+                else {
+                    Timber.d("DDD - Image too large hence it was skipped!")
+                    _errorDialogState.update { ErrorDialogState.GeneralError(UiText.StringResource(R.string.Image_too_large)) }
+                }
             }
         }
     }

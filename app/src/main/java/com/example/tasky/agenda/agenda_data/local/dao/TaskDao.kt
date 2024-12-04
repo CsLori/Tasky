@@ -1,7 +1,6 @@
 package com.example.tasky.agenda.agenda_data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
 import com.example.tasky.agenda.agenda_data.local.entity.TaskEntity
@@ -27,6 +26,6 @@ interface TaskDao {
     @Upsert
     suspend fun upsertTasks(task: List<TaskEntity>)
 
-    @Delete
-    suspend fun deleteTask(task: TaskEntity)
+    @Query("DELETE FROM tasks WHERE id = :id")
+    suspend fun deleteTask(id: String)
 }

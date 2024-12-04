@@ -16,7 +16,7 @@ interface AgendaRepository {
 
     suspend fun updateTask(task: AgendaItem, shouldScheduleAlarm: Boolean = true): Result<Unit, TaskyError>
 
-    suspend fun deleteTask(task: AgendaItem): Result<Unit, TaskyError>
+    suspend fun deleteTask(taskId: String): Result<Unit, TaskyError>
 
     suspend fun addEvent(event: AgendaItem, photos: List<ByteArray>): Result<EventResponse, TaskyError>
 
@@ -24,7 +24,7 @@ interface AgendaRepository {
 
     suspend fun updateEvent(event: AgendaItem, photos: List<ByteArray>, photosToDelete: List<String>): Result<EventResponse, TaskyError>
 
-    suspend fun deleteEvent(event: AgendaItem): Result<Unit, TaskyError>
+    suspend fun deleteEvent(eventId: String): Result<Unit, TaskyError>
 
     suspend fun addReminder(reminder: AgendaItem): Result<Unit, TaskyError>
 
@@ -32,7 +32,7 @@ interface AgendaRepository {
 
     suspend fun updateReminder(reminder: AgendaItem): Result<Unit, TaskyError>
 
-    suspend fun deleteReminder(reminder: AgendaItem): Result<Unit, TaskyError>
+    suspend fun deleteReminder(reminderId: String): Result<Unit, TaskyError>
 
     suspend fun getAttendee(email: String): Result<AttendeeExistDto, TaskyError>
 

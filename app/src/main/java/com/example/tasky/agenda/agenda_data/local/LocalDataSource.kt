@@ -43,8 +43,8 @@ class LocalDataSource @Inject constructor(
         return taskDao.upsertTasks(taskEntities)
     }
 
-    override suspend fun deleteTask(taskEntity: TaskEntity) {
-        return taskDao.deleteTask(taskEntity)
+    override suspend fun deleteTask(taskId: String) {
+        return taskDao.deleteTask(taskId)
     }
 
     override fun getAllEvents(startOfDay: Long, endOfDay: Long): Flow<List<EventEntity>> {
@@ -63,8 +63,8 @@ class LocalDataSource @Inject constructor(
         return eventDao.upsertEvents(eventEntities)
     }
 
-    override suspend fun deleteEvent(eventEntity: EventEntity) {
-        return eventDao.deleteEvent(eventEntity)
+    override suspend fun deleteEvent(eventId: String) {
+        return eventDao.deleteEvent(eventId)
     }
 
     override fun getAllReminders(startOfDay: Long, endOfDay: Long): Flow<List<ReminderEntity>> {
@@ -83,8 +83,8 @@ class LocalDataSource @Inject constructor(
         return reminderDao.upsertReminders(reminderEntities)
     }
 
-    override suspend fun deleteReminder(reminderEntity: ReminderEntity) {
-        return reminderDao.deleteReminder(reminderEntity)
+    override suspend fun deleteReminder(reminderId: String) {
+        return reminderDao.deleteReminder(reminderId)
     }
 
     //Agenda items for a specific date

@@ -26,8 +26,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.rounded.Square
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -47,11 +49,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import com.example.tasky.R
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
+import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
@@ -69,8 +73,10 @@ import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
-import timber.log.Timber
+import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
 
 const val thirtyMinutesInMillis = 1800000L // 30 * 60 * 1000
@@ -115,12 +121,13 @@ fun AgendaItemTitle(
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
     state: AgendaDetailState,
+    isEventCreator: Boolean
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = dimensions.default16dp)
-            .then(if (!state.isReadOnly) {
+            .then(if (!state.isReadOnly && isEventCreator) {
                 Modifier.clickable {
                     onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.TITLE))
                     onAction(AgendaDetailAction.OnEditRowPressed)
@@ -144,7 +151,7 @@ fun AgendaItemTitle(
                 style = typography.title.copy(lineHeight = 25.sp, fontSize = 26.sp)
             )
         }
-        if (!state.isReadOnly) {
+        if (!state.isReadOnly && isEventCreator) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"
@@ -159,13 +166,14 @@ fun AgendaItemDescription(
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     onAction: (AgendaDetailAction) -> Unit,
     state: AgendaDetailState,
+    isEventCreator: Boolean
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = dimensions.default16dp)
             .then(
-                if (!state.isReadOnly) {
+                if (!state.isReadOnly && isEventCreator) {
                     Modifier.clickable {
                         onUpdateState(AgendaDetailStateUpdate.UpdateEditType(EditType.DESCRIPTION))
                         onAction(AgendaDetailAction.OnEditRowPressed)
@@ -181,7 +189,7 @@ fun AgendaItemDescription(
             text = state.description,
             style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
         )
-        if (!state.isReadOnly) {
+        if (!state.isReadOnly && isEventCreator) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Navigate next"
@@ -198,7 +206,8 @@ fun TimeAndDateRow(
     text: String,
     onUpdateState: (AgendaDetailStateUpdate) -> Unit,
     state: AgendaDetailState,
-    endTime: Boolean = false
+    endTime: Boolean = false,
+    isEventCreator: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -218,16 +227,31 @@ fun TimeAndDateRow(
             )
         }
 
+        val toTime =
+            ((state.details as? AgendaItemDetails.Event)?.toTime?.toLong()
+                ?.plus(thirtyMinutesInMillis))?.toLocalDateTime()
+                ?: (LocalDateTime.now().toLong() + thirtyMinutesInMillis).toLocalDateTime()
         val secondRowTimePickerState by remember {
             mutableStateOf(
                 TimePickerState(
-                    initialHour = (state.details as? AgendaItemDetails.Event)?.toTime?.hour
-                        ?: LocalDateTime.now().hour,
-                    initialMinute = (state.details as? AgendaItemDetails.Event)?.toTime?.minute
-                        ?: LocalDateTime.now().minute,
+                    initialHour = toTime.hour,
+                    initialMinute = toTime.minute,
                     is24Hour = true
                 )
             )
+        }
+
+        val selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val selectedDate =
+                    Instant.ofEpochMilli(utcTimeMillis).atZone((ZoneId.systemDefault()))
+                        .toLocalDate()
+                return !selectedDate.isBefore(LocalDate.now())
+            }
+
+            override fun isSelectableYear(year: Int): Boolean {
+                return year >= LocalDate.now().year
+            }
         }
 
         var shouldShowStartDatePicker by remember { mutableStateOf(false) }
@@ -240,7 +264,7 @@ fun TimeAndDateRow(
                 .width(120.dp)
                 .weight(1f)
                 .then(
-                    if (!state.isReadOnly) {
+                    if (!state.isReadOnly && isEventCreator) {
                         Modifier.clickable {
                             if (endTime) {
                                 shouldShowEndTimePicker = !shouldShowEndTimePicker
@@ -273,9 +297,12 @@ fun TimeAndDateRow(
                 Text(
                     text = when (agendaItem.details) {
                         is AgendaItemDetails.Task -> state.time.toHourMinuteFormat()
-                        is AgendaItemDetails.Event -> if (endTime) (state.details as? AgendaItemDetails.Event)?.toTime?.toHourMinuteFormat()
-                            ?: LocalDateTime.now()
-                                .toHourMinuteFormat() else state.time.toHourMinuteFormat()
+                        is AgendaItemDetails.Event -> {
+                            if (endTime) (state.details as? AgendaItemDetails.Event)?.toTime?.toHourMinuteFormat()
+                                ?: (LocalDateTime.now()
+                                    .toLong() + thirtyMinutesInMillis).toLocalDateTime()
+                                    .toHourMinuteFormat() else state.time.toHourMinuteFormat()
+                        }
 
                         is AgendaItemDetails.Reminder -> state.time.toHourMinuteFormat()
                     },
@@ -286,7 +313,7 @@ fun TimeAndDateRow(
                     )
                 )
 
-                if (!state.isReadOnly) {
+                if (!state.isReadOnly && isEventCreator) {
                     Icon(
                         modifier = Modifier.padding(end = dimensions.default16dp),
                         imageVector = Icons.AutoMirrored.Filled.NavigateNext,
@@ -304,7 +331,6 @@ fun TimeAndDateRow(
                                 val selectedHour = firstRowTimePickerState.hour
                                 val selectedMinute = firstRowTimePickerState.minute
 
-                                Timber.d("DDD - Updated firstRowTimePickerState: $selectedHour | $selectedMinute")
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateStartTime(
                                         selectedMinute, selectedHour
@@ -334,8 +360,6 @@ fun TimeAndDateRow(
                                 val selectedHour = secondRowTimePickerState.hour
                                 val selectedMinute = secondRowTimePickerState.minute
 
-                                Timber.d("DDD - Updated secondRowTimePickerState: $selectedHour | $selectedMinute")
-
                                 onUpdateState(
                                     AgendaDetailStateUpdate.UpdateEndTime(
                                         selectedMinute, selectedHour
@@ -362,7 +386,7 @@ fun TimeAndDateRow(
             modifier = Modifier
                 .weight(1f)
                 .then(
-                    if (!state.isReadOnly) {
+                    if (!state.isReadOnly && isEventCreator) {
                         Modifier.clickable {
                             if (endTime) {
                                 shouldShowEndDatePicker = !shouldShowEndDatePicker
@@ -386,7 +410,7 @@ fun TimeAndDateRow(
                 } else state.time.toStringMMMdyyyyFormat(),
                 style = typography.bodyLarge.copy(lineHeight = 15.sp, fontWeight = FontWeight.W400)
             )
-            if (!state.isReadOnly) {
+            if (!state.isReadOnly && isEventCreator) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                     contentDescription = "Navigate next"
@@ -395,16 +419,16 @@ fun TimeAndDateRow(
         }
 
         if (shouldShowStartDatePicker) {
-            DatePickerModal(
+            DatePickerModalFirstRow(
                 onDateSelected = { date ->
                     date?.let { safeDate ->
                         val localDateTime = safeDate.toLocalDateTime()
 
-                        Timber.d("DDD - Updated shouldShowStartDatePicker: ${localDateTime.dayOfMonth} | ${localDateTime.monthValue} | ${localDateTime.year}")
-
                         onUpdateState(
                             AgendaDetailStateUpdate.UpdateStartDay(
-                                localDateTime.dayOfMonth, localDateTime.monthValue, localDateTime.year
+                                localDateTime.dayOfMonth,
+                                localDateTime.monthValue,
+                                localDateTime.year
                             )
                         )
                         shouldShowStartDatePicker = true
@@ -413,7 +437,8 @@ fun TimeAndDateRow(
                 onDismiss = {
                     shouldShowStartDatePicker = false
                 },
-                initialDate = state.time.toLong()
+                initialDate = state.time.toLong(),
+                selectableDates = selectableDates
             )
         }
 
@@ -423,11 +448,11 @@ fun TimeAndDateRow(
                     date?.let { safeDate ->
                         val localDateTime = safeDate.toLocalDateTime()
 
-                        Timber.d("DDD - Updated shouldShowEndDatePicker: ${localDateTime.dayOfMonth} | ${localDateTime.monthValue} | ${localDateTime.year}")
-
                         onUpdateState(
                             AgendaDetailStateUpdate.UpdateEndDay(
-                                localDateTime.dayOfMonth, localDateTime.monthValue, localDateTime.year
+                                localDateTime.dayOfMonth,
+                                localDateTime.monthValue,
+                                localDateTime.year
                             )
                         )
                         shouldShowEndDatePicker = true
@@ -437,7 +462,8 @@ fun TimeAndDateRow(
                     shouldShowEndDatePicker = false
 
                 },
-                initialDate = (state.details as? AgendaItemDetails.Event)?.toTime?.toLong()
+                initialDate = (state.details as? AgendaItemDetails.Event)?.toTime?.toLong(),
+                selectableDates = selectableDates
             )
         }
     }
@@ -453,7 +479,6 @@ fun AddPhotosSection(
     onAction: (AgendaDetailAction) -> Unit,
     isEventCreator: Boolean
 ) {
-
     val context = LocalContext.current
 
     selectedImageUri?.let { uri ->
@@ -461,19 +486,18 @@ fun AddPhotosSection(
             onAction(AgendaDetailAction.OnPhotoCompress(uri))
         }
     }
-
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
             .background(colors.light2)
             .padding(dimensions.default16dp),
-        horizontalArrangement = if (photos.isEmpty() || isReadOnly) Arrangement.Center else Arrangement.spacedBy(
+        horizontalArrangement = if (!isReadOnly || (isReadOnly && photos.isNotEmpty())) Arrangement.spacedBy(
             dimensions.small8dp
-        ),
+        ) else Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (!isReadOnly || photos.isNotEmpty()) {
+        if (!isReadOnly || (isReadOnly && photos.isNotEmpty())) {
             items(photos.take(MAX_NUMBER_OF_PHOTOS), key = { photo -> photo.key }) { photo ->
                 Box(
                     modifier = Modifier
@@ -482,8 +506,17 @@ fun AddPhotosSection(
                         .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
+                    val painter = rememberAsyncImagePainter(photo.url)
+
+                    if (painter.state is AsyncImagePainter.State.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.padding(3.dp),
+                            color = colors.green
+                        )
+                    }
+
                     Image(
-                        painter = rememberAsyncImagePainter(photo.url),
+                        painter = painter,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -495,42 +528,27 @@ fun AddPhotosSection(
                     )
                 }
             }
-//            if (photos.isEmpty()) {
-//                item {
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .height(80.dp)
-//                            .clickable { onAddPhotos() }
-//                            .padding(vertical = dimensions.default16dp),
-//                        horizontalArrangement = Arrangement.Center,
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//                        Icon(
-//                            imageVector = Icons.Default.Add,
-//                            contentDescription = "Add photos",
-//                            tint = colors.gray
-//                        )
-//                        Spacer(modifier = Modifier.width(dimensions.small8dp))
-//                        Text(stringResource(R.string.Add_photos), color = colors.gray)
-//                    }
-//                }
-//            } else {
             item {
                 Box(
                     modifier = Modifier
                         .size(80.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .border(1.dp, colors.lightBlue, RoundedCornerShape(10.dp))
-                        .clickable {
-                            if (photos.size < MAX_NUMBER_OF_PHOTOS) {
-                                if (!isReadOnly) {
-                                    onAddPhotos()
+                        .then(
+                            if (isEventCreator) {
+                                Modifier.clickable {
+                                    if (photos.size < MAX_NUMBER_OF_PHOTOS) {
+                                        if (!isReadOnly) {
+                                            onAddPhotos()
+                                        }
+                                    } else {
+                                        showToast(context, R.string.max_number_of_photos)
+                                    }
                                 }
                             } else {
-                                showToast(context, R.string.max_number_of_photos)
+                                Modifier
                             }
-                        },
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -540,7 +558,6 @@ fun AddPhotosSection(
                     )
                 }
             }
-//            }
         } else {
             item {
                 Row(
@@ -588,21 +605,25 @@ fun SetReminderRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (state.isReadOnly) Arrangement.Start else Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
             Box(
-                modifier = Modifier.size(30.dp), contentAlignment = Alignment.CenterStart
+                modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center
             ) {
                 Icon(
+                    modifier = Modifier.fillMaxSize(),
                     imageVector = Icons.Rounded.Square,
                     tint = colors.light2,
                     contentDescription = "Rounded Square"
                 )
                 Icon(
+                    modifier = Modifier.size(30.dp),
                     imageVector = Icons.Outlined.Notifications,
                     tint = colors.gray,
                     contentDescription = "Notifications Icon"
                 )
-
             }
 
             Spacer(Modifier.width(dimensions.small8dp))
@@ -697,6 +718,55 @@ fun TimeAndDateRowPreview() {
                 details = AgendaItemDetails.Task(isDone = false)
             ),
             text = "From",
+            onUpdateState = {},
+            state = AgendaDetailState(),
+            isEventCreator = false
+        )
+    }
+}
+
+@Preview
+@Composable
+fun TimeAndDateRowEventCreatorPreview() {
+    AppTheme {
+        TimeAndDateRow(
+            agendaItem = AgendaItem(
+                id = "suavitate",
+                title = "homero",
+                description = "congue",
+                time = LocalDateTime.now(),
+                remindAt = LocalDateTime.now(),
+                details = AgendaItemDetails.Event(
+                    toTime = LocalDateTime.now(),
+                    attendees = listOf(
+                        Attendee(
+                            email = "julio.velasquez@example.com",
+                            name = "Myles Orr",
+                            userId = "amet",
+                            eventId = "melius",
+                            isGoing = false,
+                            remindAt = 3775,
+                            isCreator = false
+                        )
+                    ),
+                    photos = listOf(),
+                    isUserEventCreator = true,
+                    host = "contentiones"
+                )
+            ),
+            text = "From",
+            onUpdateState = {},
+            state = AgendaDetailState(),
+            isEventCreator = true
+        )
+    }
+}
+
+@Preview
+@Composable
+fun SetReminderRowPreview() {
+    AppTheme {
+        SetReminderRow(
             onUpdateState = {},
             state = AgendaDetailState()
         )

@@ -113,4 +113,26 @@ class ProtoUserPrefsRepository(context: Context) : UserPrefsRepository {
         val timestampString = userPrefsStore.data.first().accessTokenExpirationTimestamp
         return timestampString.toLong()
     }
+
+    // Has seen notification prompt
+    override suspend fun updateHasSeenNotificationPrompt(hasSeenNotificationPrompt: Boolean) {
+        userPrefsStore.updateData { preference ->
+            preference.toBuilder().setHasSeenNotificationPrompt(hasSeenNotificationPrompt).build()
+        }
+    }
+
+    override suspend fun getHasSeenNotificationPrompt(): Boolean {
+        return userPrefsStore.data.first().hasSeenNotificationPrompt
+    }
+
+    // Session count
+    override suspend fun updateSessionCount(sessionCount: Int) {
+        userPrefsStore.updateData { preference ->
+            preference.toBuilder().setSessionCount(sessionCount).build()
+        }
+    }
+
+    override suspend fun getSessionCount(): Int {
+        return userPrefsStore.data.first().sessionCount
+    }
 }
