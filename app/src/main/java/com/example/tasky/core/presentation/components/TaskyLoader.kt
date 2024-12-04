@@ -9,9 +9,9 @@ import androidx.compose.ui.Modifier
 import com.example.tasky.ui.theme.AppTheme.colors
 
 @Composable
-fun TaskyLoader() {
+fun TaskyLoader(modifier: Modifier = Modifier) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {

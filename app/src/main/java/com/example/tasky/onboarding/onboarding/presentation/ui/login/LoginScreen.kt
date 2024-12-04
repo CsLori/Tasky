@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
 import com.example.tasky.core.presentation.ErrorStatus
@@ -94,15 +95,17 @@ private fun LoginContent(
             onCancelClicked = { onAction(LoginAction.OnDismissDialog) }
         )
     }
+    if (state.isLoading) {
+        TaskyLoader(
+            modifier = Modifier.zIndex(1f)
+        )
+    }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(colors.black)
     ) {
-        if (state.isLoading) {
-            TaskyLoader()
-        }
         Header()
 
         Surface(
@@ -118,10 +121,10 @@ private fun LoginContent(
         ) {
             MainContent(state, onAction)
             BottomText(onAction)
+
         }
     }
 
-//    }
 }
 
 @Composable
@@ -251,7 +254,7 @@ fun LoginScreenPreview() {
                     UiText.StringResource(R.string.Password_error)
                 )
             ),
-            onAction = {LoginAction.OnLoginClick},
+            onAction = { LoginAction.OnLoginClick },
             dialogState = DialogState.Hide
         )
     }
