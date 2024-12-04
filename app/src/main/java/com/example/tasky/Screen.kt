@@ -10,7 +10,9 @@ object Screen {
     object Login
 
     @Serializable
-    object Register
+    object Register {
+        const val route = "register"
+    }
 
     @Serializable
     object Agenda

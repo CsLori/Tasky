@@ -29,7 +29,7 @@ import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.onboarding.onboarding.presentation.ui.login.LoginScreen
-import com.example.tasky.onboarding.onboarding.presentation.ui.RegisterScreen
+import com.example.tasky.onboarding.onboarding.presentation.ui.register.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 
@@ -43,7 +43,8 @@ fun Navigation(userPrefsRepository: UserPrefsRepository) {
 
     // Global authentication check
     LaunchedEffect(authInfo) {
-        if (authInfo == null || authInfo?.accessToken?.isEmpty() == true) {
+        if (navController.currentBackStackEntry != null //To avoid crash
+            && (authInfo == null || authInfo?.accessToken?.isEmpty() == true)) {
             navController.navigate(Screen.Login) {
                 popUpTo(Screen.Login) { inclusive = true }
             }

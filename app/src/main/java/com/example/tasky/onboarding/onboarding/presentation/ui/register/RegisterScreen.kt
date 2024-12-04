@@ -1,4 +1,4 @@
-package com.example.tasky.onboarding.onboarding.presentation.ui
+package com.example.tasky.onboarding.onboarding.presentation.ui.register
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -36,14 +37,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tasky.R
+import com.example.tasky.core.presentation.ErrorStatus
+import com.example.tasky.core.presentation.FieldInput
+import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.CredentialsTextField
 import com.example.tasky.core.presentation.components.DialogState
 import com.example.tasky.core.presentation.components.ErrorDialog
 import com.example.tasky.core.presentation.components.MainButton
 import com.example.tasky.core.presentation.components.TaskyLoader
-import com.example.tasky.core.presentation.ErrorStatus
-import com.example.tasky.core.presentation.FieldInput
-import com.example.tasky.core.presentation.UiText
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
@@ -56,100 +57,78 @@ internal fun RegisterScreen(
     onNavigateToLogin: () -> Unit
 ) {
     val state by registerViewModel.state.collectAsStateWithLifecycle()
-    val uiState by registerViewModel.uiState.collectAsStateWithLifecycle()
     val dialogState by registerViewModel.dialogState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        registerViewModel.navigationEvents.collect { event ->
+            when (event) {
+                RegisterNavigationEvent.NavigateToLogin -> onNavigateToLogin()
+            }
+        }
+    }
 
     RegisterContent(
         state = state,
-        uiState = uiState,
         dialogState = dialogState,
-        onAction = { action ->
-            when (action) {
-                RegisterViewModel.RegisterAction.OnRegistrationClick -> {
-                    registerViewModel.register(state.fullName, state.email, state.password)
-                }
-
-                is RegisterViewModel.RegisterAction.OnEmailChange -> registerViewModel.onEmailChange(
-                    action.email
-                )
-
-                is RegisterViewModel.RegisterAction.OnNameChange -> registerViewModel.onNameChange(
-                    action.name
-                )
-
-                is RegisterViewModel.RegisterAction.OnPasswordChange -> registerViewModel.onPasswordChange(
-                    action.password
-                )
-
-                RegisterViewModel.RegisterAction.OnNavigateToLogin -> {
-                    onNavigateToLogin()
-                }
-
-                RegisterViewModel.RegisterAction.OnDismissDialog -> registerViewModel.hideDialog()
-
-            }
-        }
+        onAction = { action -> registerViewModel.onAction(action) }
     )
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun RegisterContent(
-    state: RegisterViewModel.RegisterState,
-    uiState: RegisterViewModel.RegisterUiState,
+    state: RegisterState,
     dialogState: DialogState,
-    onAction: (RegisterViewModel.RegisterAction) -> Unit
+    onAction: (RegisterAction) -> Unit
 ) {
     val context = LocalContext.current
 
     if (state.isLoading) {
         TaskyLoader()
-    } else {
+    }
 
-        when (uiState) {
+    if (dialogState is DialogState.Show) {
+        ErrorDialog(
+            title = stringResource(R.string.Something_went_wrong),
+            label = dialogState.errorMessage?.asString(context) ?: "",
+            displayCloseIcon = true,
+            positiveButtonText = stringResource(R.string.OK),
+            positiveOnClick = { onAction(RegisterAction.OnDismissDialog) },
+            onCancelClicked = { onAction(RegisterAction.OnDismissDialog) },
+        )
+    }
+    Scaffold(
+        floatingActionButton = {
+            GoBackFab(onAction)
+        }, floatingActionButtonPosition = FabPosition.Start
+    ) { innerPadding ->
+        val cornerRadius = 30.dp
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+        ) {
+            Header()
 
-            RegisterViewModel.RegisterUiState.Success -> {
-                onAction(RegisterViewModel.RegisterAction.OnNavigateToLogin)
-            }
-
-            RegisterViewModel.RegisterUiState.None -> {
-                if (dialogState is DialogState.Show) {
-                    ErrorDialog(
-                        title = stringResource(R.string.Something_went_wrong),
-                        label = dialogState.errorMessage?.asString(context) ?: "",
-                        displayCloseIcon = true,
-                        positiveButtonText = stringResource(R.string.OK),
-                        positiveOnClick = { onAction(RegisterViewModel.RegisterAction.OnDismissDialog) },
-                        onCancelClicked = { onAction(RegisterViewModel.RegisterAction.OnDismissDialog) },
-                    )
-                }
-                Scaffold(
-                    floatingActionButton = {
-                        GoBackFab(onAction)
-                    }, floatingActionButtonPosition = FabPosition.Start
-                ) { innerPadding ->
-                    val cornerRadius = 30.dp
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                    ) {
-                        Header()
-
-                        Surface(
-                            shape = RoundedCornerShape(
-                                topStart = cornerRadius,
-                                topEnd = cornerRadius
-                            ),
-                            color = colors.white,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight()
-                                .padding(top = 150.dp)
-                        ) {
-                            MainContent(state, onAction)
-                        }
-                    }
-                }
+            Surface(
+                shape = RoundedCornerShape(
+                    topStart = cornerRadius,
+                    topEnd = cornerRadius
+                ),
+                color = colors.white,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(top = 150.dp)
+            ) {
+                MainContent(
+                    fullName = state.fullName,
+                    fullNameErrorStatus = state.fullNameErrorStatus,
+                    email = state.email,
+                    emailErrorStatus = state.emailErrorStatus,
+                    password = state.password,
+                    passwordErrorStatus = state.passwordErrorStatus,
+                    onAction = onAction
+                )
             }
         }
     }
@@ -163,8 +142,7 @@ private fun Header() {
             .height(200.dp)
             .background(colors.black),
         contentAlignment = Alignment.Center
-    )
-    {
+    ) {
         Text(
             text = stringResource(R.string.Create_your_account),
             style = typography.title,
@@ -177,8 +155,13 @@ private fun Header() {
 
 @Composable
 private fun MainContent(
-    state: RegisterViewModel.RegisterState,
-    onAction: (RegisterViewModel.RegisterAction) -> Unit
+    fullName: FieldInput,
+    fullNameErrorStatus: ErrorStatus,
+    email: FieldInput,
+    emailErrorStatus: ErrorStatus,
+    password: FieldInput,
+    passwordErrorStatus: ErrorStatus,
+    onAction: (RegisterAction) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -189,67 +172,51 @@ private fun MainContent(
     ) {
         CredentialsTextField(
             modifier = Modifier.fillMaxWidth(),
-            fieldInput = state.fullName,
+            fieldInput = fullName,
             placeholderValue = stringResource(R.string.Name),
-            errorStatus = state.fullNameErrorStatus,
+            errorStatus = fullNameErrorStatus,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
                 capitalization = KeyboardCapitalization.Words,
                 imeAction = ImeAction.Next
             ),
-            onValueChange = {
-                onAction(
-                    RegisterViewModel.RegisterAction.OnNameChange(it)
-                )
-            }
+            onValueChange = { onAction(RegisterAction.OnNameChange(it)) }
         )
 
         Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
 
         CredentialsTextField(
             modifier = Modifier.fillMaxWidth(),
-            fieldInput = state.email,
+            fieldInput = email,
             placeholderValue = stringResource(R.string.Email_address),
-            errorStatus = state.emailErrorStatus,
+            errorStatus = emailErrorStatus,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
-            onValueChange = {
-                onAction(
-                    RegisterViewModel.RegisterAction.OnEmailChange(it)
-                )
-            }
+            onValueChange = { onAction(RegisterAction.OnEmailChange(it)) }
         )
 
         Spacer(modifier = Modifier.height(dimensions.extraSmall4dp))
 
         CredentialsTextField(
             modifier = Modifier.fillMaxWidth(),
-            fieldInput = state.password,
-            errorStatus = state.passwordErrorStatus,
+            fieldInput = password,
+            errorStatus = passwordErrorStatus,
             placeholderValue = stringResource(R.string.Password),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Next
             ),
             isPasswordField = true,
-            onValueChange = {
-                onAction(
-                    RegisterViewModel.RegisterAction.OnPasswordChange(
-                        it
-                    )
-                )
-            }
+            onValueChange = { onAction(RegisterAction.OnPasswordChange(it)) }
         )
 
         Spacer(modifier = Modifier.height(dimensions.extraLarge64dp))
 
         MainButton(
             modifier = Modifier.fillMaxWidth(),
-            onClick = {
-                onAction(RegisterViewModel.RegisterAction.OnRegistrationClick)
-            },
+            onClick = { onAction(RegisterAction.OnRegistrationClick) },
             btnString = stringResource(R.string.Get_Started).uppercase(),
             textStyle = typography.buttonText
         )
@@ -257,12 +224,10 @@ private fun MainContent(
 }
 
 @Composable
-private fun GoBackFab(
-    onAction: (RegisterViewModel.RegisterAction) -> Unit
-) {
+private fun GoBackFab(onAction: (RegisterAction) -> Unit) {
     FloatingActionButton(
         containerColor = colors.black,
-        onClick = { onAction(RegisterViewModel.RegisterAction.OnNavigateToLogin) },
+        onClick = { onAction(RegisterAction.OnNavigateToLogin) },
         shape = RoundedCornerShape(16.dp),
     ) {
         Icon(
@@ -280,7 +245,7 @@ private fun GoBackFab(
 fun RegisterScreenPreview() {
     AppTheme {
         RegisterContent(
-            state = RegisterViewModel.RegisterState(
+            state = RegisterState(
                 fullName = FieldInput("Lorant Csuhai"),
                 email = FieldInput("lori123@boohoo.com"),
                 password = FieldInput("boohoo123"),
@@ -289,7 +254,6 @@ fun RegisterScreenPreview() {
                     UiText.StringResource(R.string.Name_length_error)
                 )
             ),
-            uiState = RegisterViewModel.RegisterUiState.None,
             dialogState = DialogState.Hide,
             onAction = {}
         )
@@ -303,7 +267,7 @@ fun RegisterScreenPreview() {
 fun RegisterScreenWithErrorDialogPreview() {
     AppTheme {
         RegisterContent(
-            state = RegisterViewModel.RegisterState(
+            state = RegisterState(
                 fullName = FieldInput("Lorant Csuhai"),
                 email = FieldInput("lori123@boohoo.com"),
                 password = FieldInput("boohoo123"),
@@ -312,7 +276,6 @@ fun RegisterScreenWithErrorDialogPreview() {
                     UiText.StringResource(R.string.Name_length_error)
                 )
             ),
-            uiState = RegisterViewModel.RegisterUiState.None,
             dialogState = DialogState.Show(UiText.StringResource(R.string.Registration_failed)),
             onAction = {}
         )
