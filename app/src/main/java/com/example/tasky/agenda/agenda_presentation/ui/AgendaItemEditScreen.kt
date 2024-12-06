@@ -23,7 +23,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -33,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditUpdate
@@ -47,13 +47,15 @@ import com.example.tasky.ui.theme.AppTheme.typography
 
 @Composable
 internal fun AgendaItemEditScreen(
-    agendaItemEditViewModel: AgendaItemEditViewModel,
     title: String,
     description: String,
     editType: EditType,
     onBackPressed: () -> Unit,
     onSavePressed: (String, String) -> Unit
 ) {
+    val agendaItemEditViewModel = hiltViewModel<AgendaItemEditViewModel>()
+    val state = agendaItemEditViewModel.state.value
+
     LaunchedEffect(description) {
         agendaItemEditViewModel.updateState(
             AgendaItemEditUpdate.UpdateDescription(
@@ -70,7 +72,6 @@ internal fun AgendaItemEditScreen(
         )
     }
 
-    val state = agendaItemEditViewModel.state.collectAsState().value
     AgendaItemEditContent(
         state = state,
         editType = editType,

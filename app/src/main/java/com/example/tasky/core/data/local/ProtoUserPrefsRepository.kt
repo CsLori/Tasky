@@ -46,7 +46,7 @@ class ProtoUserPrefsRepository(context: Context) : UserPrefsRepository {
                 userId = preferences.userId,
                 userName = preferences.userName,
                 email = preferences.email,
-                accessTokenExpirationTimestamp = preferences.accessTokenExpirationTimestamp.toLong()
+                accessTokenExpirationTimestamp = preferences.accessTokenExpirationTimestamp.toLongOrNull() ?: 0L
             )
         } else null
     }.stateIn(

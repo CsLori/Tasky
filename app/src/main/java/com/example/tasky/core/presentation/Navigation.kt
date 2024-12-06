@@ -24,14 +24,11 @@ import com.example.tasky.agenda.agenda_presentation.ui.AgendaItemEditScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
 import com.example.tasky.agenda.agenda_presentation.ui.PhotoScreen
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
-import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditViewModel
-import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.onboarding.onboarding.presentation.ui.login.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.register.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
-import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 
 const val PHOTO_ID = "photoId"
 
@@ -58,13 +55,9 @@ fun Navigation(userPrefsRepository: UserPrefsRepository) {
                 startDestination = Screen.Login,
             ) {
                 composable<Screen.Register> {
-                    val registerViewModel = hiltViewModel<RegisterViewModel>()
-                    RegisterScreen(registerViewModel = registerViewModel,
-                        onNavigateToLogin = {
-                            navController.navigate(Screen.Login) {
-                                popUpTo(Screen.Register) { inclusive = true }
-                            }
-                        })
+                    RegisterScreen(
+                        navController = navController
+                    )
                 }
                 composable<Screen.Login> {
                     val loginViewModel = hiltViewModel<LoginViewModel>()
@@ -91,58 +84,13 @@ fun Navigation(userPrefsRepository: UserPrefsRepository) {
                         // Stay on LoginScreen and allow the user to log in manually
                         LoginScreen(
                             loginViewModel = loginViewModel,
-                            onNavigateToRegister = {
-                                navController.navigate(Screen.Register) {
-                                    popUpTo(Screen.Login) { inclusive = true }
-                                }
-                            },
-                            onNavigateToAgenda = {
-                                navController.navigate(Screen.Agenda)
-                            }
+                            navController = navController
                         )
                     }
 
                 }
                 composable<Screen.Agenda> {
-                    val agendaViewModel = hiltViewModel<AgendaViewModel>()
-
-                    AgendaScreen(
-                        agendaViewModel = agendaViewModel,
-                        onEditPressed = { agendaItem ->
-                            navController.navigate(
-                                Screen.AgendaDetail(
-                                    agendaItemId = agendaItem.id,
-                                    isAgendaItemReadOnly = false,
-                                    agendaOption = agendaViewModel.state.value.agendaOption,
-                                )
-                            )
-                        },
-                        onLogoutNavigateToLogin = {
-                            navController.navigate(Screen.Login) {
-                                popUpTo(Screen.Login) {
-                                    inclusive = true
-                                }
-                            }
-                        },
-                        onFabItemPressed = {
-                            navController.navigate(
-                                Screen.AgendaDetail(
-                                    agendaItemId = null,
-                                    agendaOption = agendaViewModel.state.value.agendaOption,
-                                    isAgendaItemReadOnly = false
-                                )
-                            )
-                        },
-                        onOpenPressed = { agendaItem ->
-                            navController.navigate(
-                                Screen.AgendaDetail(
-                                    agendaItemId = agendaItem.id,
-                                    isAgendaItemReadOnly = true,
-                                    agendaOption = agendaViewModel.state.value.agendaOption,
-                                )
-                            )
-                        }
-                    )
+                    AgendaScreen(navController = navController)
                 }
                 composable<Screen.AgendaDetail>(
                     deepLinks = listOf(
@@ -183,7 +131,7 @@ fun Navigation(userPrefsRepository: UserPrefsRepository) {
 
                     AgendaDetailScreen(
                         agendaDetailViewModel = agendaDetailViewModel,
-                        onNavigateToAgendaScreen = { navController.navigateUp() },
+                        navigateToAgendaScreen = { navController.navigateUp() },
                         onEditPressed = {
                             navController.navigate(
                                 Screen.AgendaItemEdit(
@@ -194,7 +142,7 @@ fun Navigation(userPrefsRepository: UserPrefsRepository) {
                             )
                         },
                         agendaItemId = args.agendaItemId,
-                        onNavigateToSelectedPhoto = { photoId ->
+                        navigateToPhotoScreen = { photoId ->
                             val photoUrl =
                                 (agendaDetailViewModel.state.value.details as? AgendaItemDetails.Event)?.photos
                                     ?.firstOrNull { photo -> photo.key == photoId }?.url
@@ -207,9 +155,7 @@ fun Navigation(userPrefsRepository: UserPrefsRepository) {
                 }
                 composable<Screen.AgendaItemEdit> {
                     val args = it.toRoute<Screen.AgendaItemEdit>()
-                    val agendaItemEditViewModel = hiltViewModel<AgendaItemEditViewModel>()
                     AgendaItemEditScreen(
-                        agendaItemEditViewModel = agendaItemEditViewModel,
                         title = args.title,
                         description = args.description ?: "",
                         editType = args.editType,
@@ -230,8 +176,8 @@ fun Navigation(userPrefsRepository: UserPrefsRepository) {
 
                 composable<Screen.Photo> {
                     PhotoScreen(
-                        onNavigateBack = { navController.navigateUp() },
-                        onDeletePhoto = { photoId ->
+                        navigateBack = { navController.navigateUp() },
+                        deletePhoto = { photoId ->
                             navController.previousBackStackEntry?.savedStateHandle?.set(
                                 PHOTO_ID,
                                 photoId

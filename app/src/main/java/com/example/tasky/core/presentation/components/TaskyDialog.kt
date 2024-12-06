@@ -168,7 +168,7 @@ fun AddVisitorDialog(
 
                 CredentialsTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    fieldInput = email,
+                    state = email,
                     errorStatus = emailErrorStatus,
                     placeholderValue = stringResource(R.string.Email_address),
                     keyboardOptions = KeyboardOptions(

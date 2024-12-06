@@ -105,10 +105,10 @@ const val MAX_SESSION_COUNT = 2
 @Composable
 internal fun AgendaDetailScreen(
     agendaDetailViewModel: AgendaDetailViewModel,
-    onNavigateToAgendaScreen: () -> Unit,
+    navigateToAgendaScreen: () -> Unit,
     onEditPressed: () -> Unit,
     agendaItemId: String? = null,
-    onNavigateToSelectedPhoto: (String?) -> Unit
+    navigateToPhotoScreen: (String?) -> Unit
 ) {
     val state by agendaDetailViewModel.state.collectAsStateWithLifecycle()
     val uiState by agendaDetailViewModel.uiState.collectAsStateWithLifecycle()
@@ -200,8 +200,8 @@ internal fun AgendaDetailScreen(
         onUpdateState = { agendaDetailViewModel.updateState(it) },
         onAction = { action ->
             when (action) {
-                AgendaDetailAction.OnClosePressed -> onNavigateToAgendaScreen()
-                AgendaDetailAction.OnCreateSuccess -> onNavigateToAgendaScreen()
+                AgendaDetailAction.OnClosePressed -> navigateToAgendaScreen()
+                AgendaDetailAction.OnCreateSuccess -> navigateToAgendaScreen()
                 AgendaDetailAction.OnEditRowPressed -> onEditPressed()
                 AgendaDetailAction.OnSavePressed -> {
                     if (agendaItemId == null) {
@@ -209,7 +209,7 @@ internal fun AgendaDetailScreen(
                     } else {
                         agendaDetailViewModel.updateAgendaItem()
                     }
-                    onNavigateToAgendaScreen()
+                    navigateToAgendaScreen()
                 }
 
                 AgendaDetailAction.OnEnableEditPressed -> agendaDetailViewModel.updateState(
@@ -224,7 +224,7 @@ internal fun AgendaDetailScreen(
                     agendaDetailViewModel.handlePhotoCompression(action.uri)
                 }
 
-                is AgendaDetailAction.OnPhotoPressed -> onNavigateToSelectedPhoto(action.key)
+                is AgendaDetailAction.OnPhotoPressed -> navigateToPhotoScreen(action.key)
 
                 is AgendaDetailAction.OnVisitorFilterChanged -> when (state.visitorFilter) {
                     VisitorFilter.ALL -> (state.details as? AgendaItemDetails.Event)?.attendees
@@ -234,12 +234,12 @@ internal fun AgendaDetailScreen(
 
                 is AgendaDetailAction.OnDeleteAgendaItem -> {
                     agendaDetailViewModel.deleteAgendaItem(action.agendaItem)
-                    onNavigateToAgendaScreen()
+                    navigateToAgendaScreen()
                 }
 
                 is AgendaDetailAction.OnDeleteAttendee -> {
                     agendaDetailViewModel.deleteAttendee(action.attendee)
-                    onNavigateToAgendaScreen()
+                    navigateToAgendaScreen()
                 }
 
                 is AgendaDetailAction.OnNotificationPromptSeen -> {

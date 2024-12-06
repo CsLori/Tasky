@@ -12,7 +12,7 @@ import dagger.hilt.android.HiltAndroidApp
 class TaskyApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        val channelName = ""
+
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channel = NotificationChannel(

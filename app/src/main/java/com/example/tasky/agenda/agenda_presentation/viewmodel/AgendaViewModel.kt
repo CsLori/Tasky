@@ -1,5 +1,6 @@
 package com.example.tasky.agenda.agenda_presentation.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
@@ -8,11 +9,14 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
+import com.example.tasky.agenda.agenda_presentation.ui.agenda.AgendaNavigationEvent
+import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
 import com.example.tasky.core.domain.UserPrefsRepository
+import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
 import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
@@ -23,7 +27,9 @@ import com.example.tasky.util.getInitials
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,14 +54,16 @@ class AgendaViewModel @Inject constructor(
     private val localDatabaseRepository: LocalDatabaseRepository,
     private val userPrefsRepository: UserPrefsRepository,
     private val networkConnectivityService: ConnectivityService,
-    private val alarmScheduler: AlarmScheduler
+    private val alarmScheduler: AlarmScheduler,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+
+    private val _navigationEvents = MutableSharedFlow<AgendaNavigationEvent>()
+    val navigationEvents: SharedFlow<AgendaNavigationEvent> = _navigationEvents
 
     private var _state = MutableStateFlow(AgendaState())
     val state = _state.asStateFlow()
-
-    private var _uiState = MutableStateFlow<AgendaUiState>(AgendaUiState.None)
-    val uiState: StateFlow<AgendaUiState> = _uiState.asStateFlow()
 
     private var _dialogState = MutableStateFlow<DialogState>(DialogState.Hide)
     val dialogState: StateFlow<DialogState> = _dialogState.asStateFlow()
@@ -83,7 +91,55 @@ class AgendaViewModel @Inject constructor(
         }
     }
 
-    fun getAgendaItems(filterDate: LocalDateTime) {
+    fun onAction(action: AgendaAction) {
+        when (action) {
+            is AgendaAction.DeleteAgendaItem -> deleteAgendaItem(action.agendaItem)
+            AgendaAction.Logout -> {
+                viewModelScope.launch {
+                    logout()
+                    _navigationEvents.emit(AgendaNavigationEvent.NavigateToLoginScreen)
+                }
+            }
+
+            is AgendaAction.EditPressed -> {
+                viewModelScope.launch {
+                    _navigationEvents.emit(
+                        AgendaNavigationEvent.NavigateToAgendaDetailScreen(
+                            agendaItemId = action.agendaItem.id,
+                            isAgendaItemReadOnly = false,
+                            agendaOption = state.value.agendaOption
+                        )
+                    )
+                }
+            }
+            is AgendaAction.OpenPressed -> {
+                viewModelScope.launch {
+                    _navigationEvents.emit(
+                        AgendaNavigationEvent.NavigateToAgendaDetailScreen(
+                            agendaItemId = action.agendaItem.id,
+                            isAgendaItemReadOnly = true,
+                            agendaOption = state.value.agendaOption
+                        )
+                    )
+                }
+            }
+            is AgendaAction.FilterAgendaItems -> getAgendaItemsForSelectedDate(action.filterDate.toLocalDateTime())
+            is AgendaAction.IsDoneChange -> updateTaskOnIsDoneChange()
+            AgendaAction.FabItemPressed -> {
+                viewModelScope.launch {
+                    _navigationEvents.emit(
+                        AgendaNavigationEvent.NavigateToAgendaDetailScreen(
+                            agendaItemId = null,
+                            isAgendaItemReadOnly = false,
+                            agendaOption = state.value.agendaOption
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private fun getAgendaItemsForSelectedDate(filterDate: LocalDateTime) {
         selectedDate.value = filterDate
     }
 
@@ -93,7 +149,6 @@ class AgendaViewModel @Inject constructor(
         .onEach { result ->
             when (result) {
                 is Success -> {
-                    _uiState.update { AgendaUiState.None }
                     _state.update { it.copy(hasDeviceBeenOffline = false) }
                 }
 
@@ -142,7 +197,7 @@ class AgendaViewModel @Inject constructor(
     }
 
 
-    fun deleteAgendaItem(agendaItem: AgendaItem) {
+    private fun deleteAgendaItem(agendaItem: AgendaItem) {
         viewModelScope.launch {
             val existingAgendaItem =
                 state.value.agendaItems.find { it.id == agendaItem.id }
@@ -158,7 +213,6 @@ class AgendaViewModel @Inject constructor(
                             handleItemMismatch()
                             return@launch
                         }
-
                     }
 
                     is AgendaItemDetails.Event -> {
@@ -240,19 +294,15 @@ class AgendaViewModel @Inject constructor(
         }
     }
 
-    fun logout() {
+    private suspend fun logout() {
         _state.update { it.copy(isLoading = true) }
-        viewModelScope.launch {
             when (defaultUserRepository.logout()) {
                 is Success -> {
                     cancelAlarms()
-                    _uiState.update { AgendaUiState.None }
                 }
-
                 is Error -> {}
             }
             _state.update { it.copy(isLoading = false) }
-        }
     }
 
     private fun cancelAlarms() {
@@ -284,7 +334,7 @@ class AgendaViewModel @Inject constructor(
         return numberOfSyncedItems
     }
 
-    fun updateTaskOnIsDoneChange() {
+    private fun updateTaskOnIsDoneChange() {
         viewModelScope.launch {
             state.value.selectedItem?.let { safeTask ->
                 agendaRepository.updateTask(
@@ -300,10 +350,5 @@ class AgendaViewModel @Inject constructor(
         data object None : ErrorDialogState()
         data class ItemNotFound(val uiText: UiText) : ErrorDialogState()
         data class AgendaItemDeletionError(val uiText: UiText) : ErrorDialogState()
-    }
-
-    sealed class AgendaUiState {
-        data object None : AgendaUiState()
-        data object Success : AgendaUiState()
     }
 }

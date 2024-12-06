@@ -37,8 +37,8 @@ import com.example.tasky.ui.theme.AppTheme
 
 @Composable
 internal fun PhotoScreen(
-    onNavigateBack: () -> Unit,
-    onDeletePhoto: (String) -> Unit
+    navigateBack: () -> Unit,
+    deletePhoto: (String) -> Unit
 ) {
     val photoViewModel = hiltViewModel<PhotoViewModel>()
     val photoUrl = photoViewModel.photoUrl
@@ -49,9 +49,9 @@ internal fun PhotoScreen(
         photoUrl = photoUrl,
         onAction = { action ->
             when (action) {
-                PhotoAction.OnNavigateBack -> onNavigateBack()
+                PhotoAction.OnNavigateBack -> navigateBack()
                 is PhotoAction.OnDeletePhoto -> {
-                    photoId?.let { onDeletePhoto(it) }
+                    photoId?.let { deletePhoto(it) }
                 }
             }
         })

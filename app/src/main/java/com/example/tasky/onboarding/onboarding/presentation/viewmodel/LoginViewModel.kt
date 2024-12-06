@@ -1,5 +1,6 @@
 package com.example.tasky.onboarding.onboarding.presentation.viewmodel
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasky.R
@@ -40,14 +41,14 @@ class LoginViewModel @Inject constructor(
     private var _dialogState = MutableStateFlow<DialogState>(DialogState.Hide)
     val dialogState: StateFlow<DialogState> = _dialogState.asStateFlow()
 
-    private var _state = MutableStateFlow(LoginState())
-    val state: StateFlow<LoginState> = _state.asStateFlow()
-
     private val _sessionState = MutableStateFlow<SessionState?>(null)
     val sessionState: StateFlow<SessionState?> = _sessionState.asStateFlow()
 
     private val _sessionCount = MutableStateFlow(0)
     val sessionCount: StateFlow<Int> = _sessionCount.asStateFlow()
+
+    var state = mutableStateOf(LoginState())
+        private set
 
     init {
         increaseSessionCount()
@@ -68,7 +69,7 @@ class LoginViewModel @Inject constructor(
 
             is LoginAction.OnPasswordChange -> onPasswordChange(action.password)
 
-            LoginAction.OnLoginClick -> login(_state.value.email, _state.value.password)
+            LoginAction.OnLoginClick -> login(state.value.email, state.value.password)
 
             LoginAction.OnNavigateToAgenda -> {
                 viewModelScope.launch {
@@ -83,17 +84,16 @@ class LoginViewModel @Inject constructor(
         val passwordErrorStatus = CredentialsValidator.validatePassword(password.value)
         var errorMessage: UiText
 
-        _state.update {
-            it.copy(
-                email = email.copy(hasInteracted = true),
-                emailErrorStatus = emailErrorStatus,
-                password = password.copy(hasInteracted = true),
-                passwordErrorStatus = passwordErrorStatus
-            )
-        }
+        state.value = state.value.copy(
+            email = email.copy(hasInteracted = true),
+            emailErrorStatus = emailErrorStatus,
+            password = password.copy(hasInteracted = true),
+            passwordErrorStatus = passwordErrorStatus
+        )
+
 
         if (isFormValid(emailErrorStatus, passwordErrorStatus)) {
-            _state.update { it.copy(isLoading = true) }
+            state.value = state.value.copy(isLoading = true)
             viewModelScope.launch {
                 when (val result = defaultUserRepository.login(email.value, password.value)) {
                     is Result.Success -> {
@@ -120,7 +120,7 @@ class LoginViewModel @Inject constructor(
                         _dialogState.update { DialogState.Show(errorMessage) }
                     }
                 }
-                _state.update { it.copy(isLoading = false) }
+                state.value = state.value.copy(isLoading = false)
             }
         }
     }
@@ -157,29 +157,25 @@ class LoginViewModel @Inject constructor(
     private fun onEmailChange(emailInput: String) {
         val emailErrorStatus = CredentialsValidator.validateEmail(emailInput)
 
-        _state.update {
-            it.copy(
-                email = it.email.copy(
-                    value = emailInput,
-                    hasInteracted = true
-                ),
-                emailErrorStatus = emailErrorStatus
-            )
-        }
+        state.value = state.value.copy(
+            email =  FieldInput(
+                value = emailInput,
+                hasInteracted = true
+            ),
+            emailErrorStatus = emailErrorStatus
+        )
     }
 
     private fun onPasswordChange(passwordInput: String) {
         val passwordErrorStatus = CredentialsValidator.validatePassword(passwordInput)
 
-        _state.update {
-            it.copy(
-                password = it.password.copy(
-                    value = passwordInput,
-                    hasInteracted = true
-                ),
-                passwordErrorStatus = passwordErrorStatus
-            )
-        }
+        state.value = state.value.copy(
+            password = FieldInput(
+                value = passwordInput,
+                hasInteracted = true
+            ),
+            passwordErrorStatus = passwordErrorStatus
+        )
     }
 
     private fun increaseSessionCount() {

@@ -331,6 +331,7 @@ class AgendaDetailViewModel @Inject constructor(
 
     private fun prepareUpdatedTask(agendaItem: AgendaItem): AgendaItem {
         val newTask = agendaItem.copy(
+            id = state.value.id,
             title = state.value.title,
             description = state.value.description,
             time = state.value.time,
@@ -342,6 +343,7 @@ class AgendaDetailViewModel @Inject constructor(
 
     private fun prepareUpdatedReminder(agendaItem: AgendaItem): AgendaItem {
         val newReminder = agendaItem.copy(
+            id = state.value.id,
             title = state.value.title,
             description = state.value.description,
             time = state.value.time,
@@ -420,6 +422,7 @@ class AgendaDetailViewModel @Inject constructor(
         }
 
         val newEvent = agendaItem.copy(
+            id = state.value.id,
             title = state.value.title,
             description = state.value.description,
             time = state.value.time,

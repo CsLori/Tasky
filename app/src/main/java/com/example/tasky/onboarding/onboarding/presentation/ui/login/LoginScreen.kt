@@ -36,7 +36,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import com.example.tasky.R
+import com.example.tasky.Screen
 import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
@@ -54,17 +56,23 @@ import com.example.tasky.ui.theme.AppTheme.typography
 @Composable
 internal fun LoginScreen(
     loginViewModel: LoginViewModel,
-    onNavigateToRegister: () -> Unit,
-    onNavigateToAgenda: () -> Unit
+    navController: NavController
 ) {
-    val state by loginViewModel.state.collectAsStateWithLifecycle()
+    val state by loginViewModel.state
     val dialogState by loginViewModel.dialogState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         loginViewModel.navigationEvents.collect { event ->
             when (event) {
-                LoginNavigationEvent.NavigateToRegister -> onNavigateToRegister()
-                LoginNavigationEvent.NavigateToAgenda -> onNavigateToAgenda()
+                LoginNavigationEvent.NavigateToRegister -> {
+                    navController.navigate(Screen.Register) {
+                        popUpTo(Screen.Login) { inclusive = true }
+                    }
+                }
+
+                LoginNavigationEvent.NavigateToAgenda -> {
+                    navController.navigate(Screen.Agenda)
+                }
             }
         }
     }
@@ -72,15 +80,16 @@ internal fun LoginScreen(
     LoginContent(
         state = state,
         dialogState = dialogState,
-        onAction = { loginViewModel.onAction(it) })
+        onAction = { loginViewModel.onAction(it) },
+        )
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun LoginContent(
     state: LoginState,
+    dialogState: DialogState,
     onAction: (LoginAction) -> Unit,
-    dialogState: DialogState
 ) {
     val context = LocalContext.current
     val cornerRadius = 30.dp
@@ -119,12 +128,17 @@ private fun LoginContent(
                 .fillMaxHeight()
                 .padding(top = 150.dp)
         ) {
-            MainContent(state, onAction)
+            MainContent(
+                email = state.email,
+                emailErrorStatus = state.emailErrorStatus,
+                password = state.password,
+                passwordErrorStatus = state.passwordErrorStatus,
+                onAction = onAction
+            )
             BottomText(onAction)
 
         }
     }
-
 }
 
 @Composable
@@ -148,7 +162,10 @@ private fun Header() {
 
 @Composable
 private fun MainContent(
-    state: LoginState,
+    email: FieldInput,
+    emailErrorStatus: ErrorStatus,
+    password: FieldInput,
+    passwordErrorStatus: ErrorStatus,
     onAction: (LoginAction) -> Unit
 ) {
     Column(
@@ -161,8 +178,8 @@ private fun MainContent(
     ) {
         CredentialsTextField(
             modifier = Modifier.fillMaxWidth(),
-            fieldInput = state.email,
-            errorStatus = state.emailErrorStatus,
+            state = email,
+            errorStatus = emailErrorStatus,
             placeholderValue = stringResource(R.string.Email_address),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
@@ -175,8 +192,8 @@ private fun MainContent(
 
         CredentialsTextField(
             modifier = Modifier.fillMaxWidth(),
-            fieldInput = state.password,
-            errorStatus = state.passwordErrorStatus,
+            state = password,
+            errorStatus = passwordErrorStatus,
             placeholderValue = stringResource(R.string.Password),
             isPasswordField = true,
             keyboardOptions = KeyboardOptions(
@@ -254,8 +271,8 @@ fun LoginScreenPreview() {
                     UiText.StringResource(R.string.Password_error)
                 )
             ),
+            dialogState = DialogState.Hide,
             onAction = { LoginAction.OnLoginClick },
-            dialogState = DialogState.Hide
         )
     }
 }

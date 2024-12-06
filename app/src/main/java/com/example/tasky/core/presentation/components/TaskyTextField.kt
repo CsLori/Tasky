@@ -33,7 +33,7 @@ import com.example.tasky.ui.theme.AppTheme
 @Composable
 fun CredentialsTextField(
     modifier: Modifier,
-    fieldInput: FieldInput,
+    state: FieldInput,
     errorStatus: ErrorStatus,
     placeholderValue: String? = null,
     textStyle: TextStyle = AppTheme.typography.textFieldString.copy(color = AppTheme.colors.darkGray),
@@ -64,18 +64,16 @@ fun CredentialsTextField(
 
     OutlinedTextField(
         modifier = modifier,
-        value = fieldInput.value,
-        onValueChange = {
-            onValueChange(it)
-        },
+        value = state.value,
+        onValueChange = onValueChange,
         singleLine = true,
         textStyle = textStyle,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         placeholder = placeholder,
-        isError = fieldInput.hasInteracted && errorStatus.hasError,
+        isError = state.hasInteracted && errorStatus.hasError,
         supportingText = {
-            if (fieldInput.hasInteracted && errorStatus.hasError) {
+            if (state.hasInteracted && errorStatus.hasError) {
                 errorStatus.errorMsg?.let {
                     Text(
                         text = it.asString(),
@@ -97,7 +95,7 @@ fun CredentialsTextField(
                         tint = AppTheme.colors.gray
                     )
                 }
-            } else if (fieldInput.hasInteracted && !errorStatus.hasError) {
+            } else if (state.hasInteracted && !errorStatus.hasError) {
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = null,

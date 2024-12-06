@@ -35,8 +35,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import com.example.tasky.R
+import com.example.tasky.Screen
 import com.example.tasky.core.presentation.ErrorStatus
 import com.example.tasky.core.presentation.FieldInput
 import com.example.tasky.core.presentation.UiText
@@ -53,16 +56,20 @@ import com.example.tasky.ui.theme.AppTheme.typography
 
 @Composable
 internal fun RegisterScreen(
-    registerViewModel: RegisterViewModel,
-    onNavigateToLogin: () -> Unit
+    navController: NavController
 ) {
+    val registerViewModel = hiltViewModel<RegisterViewModel>()
     val state by registerViewModel.state.collectAsStateWithLifecycle()
     val dialogState by registerViewModel.dialogState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         registerViewModel.navigationEvents.collect { event ->
             when (event) {
-                RegisterNavigationEvent.NavigateToLogin -> onNavigateToLogin()
+                RegisterNavigationEvent.NavigateToLogin -> {
+                    navController.navigate(Screen.Login) {
+                        popUpTo(Screen.Register) { inclusive = true }
+                    }
+                }
             }
         }
     }
@@ -172,7 +179,7 @@ private fun MainContent(
     ) {
         CredentialsTextField(
             modifier = Modifier.fillMaxWidth(),
-            fieldInput = fullName,
+            state = fullName,
             placeholderValue = stringResource(R.string.Name),
             errorStatus = fullNameErrorStatus,
             keyboardOptions = KeyboardOptions(
@@ -187,7 +194,7 @@ private fun MainContent(
 
         CredentialsTextField(
             modifier = Modifier.fillMaxWidth(),
-            fieldInput = email,
+            state = email,
             placeholderValue = stringResource(R.string.Email_address),
             errorStatus = emailErrorStatus,
             keyboardOptions = KeyboardOptions(
@@ -201,7 +208,7 @@ private fun MainContent(
 
         CredentialsTextField(
             modifier = Modifier.fillMaxWidth(),
-            fieldInput = password,
+            state = password,
             errorStatus = passwordErrorStatus,
             placeholderValue = stringResource(R.string.Password),
             keyboardOptions = KeyboardOptions(
