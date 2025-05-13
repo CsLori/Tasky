@@ -24,14 +24,12 @@ import com.example.tasky.agenda.agenda_presentation.ui.AgendaItemEditScreen
 import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
 import com.example.tasky.agenda.agenda_presentation.ui.PhotoScreen
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
-import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.onboarding.onboarding.presentation.ui.login.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.register.RegisterScreen
 import com.example.tasky.onboarding.onboarding.presentation.viewmodel.LoginViewModel
-import com.example.tasky.onboarding.onboarding.presentation.viewmodel.RegisterViewModel
 
 const val PHOTO_ID = "photoId"
 
@@ -58,8 +56,7 @@ fun Navigation(userPrefsRepository: UserPrefsRepository) {
                 startDestination = Screen.Login,
             ) {
                 composable<Screen.Register> {
-                    val registerViewModel = hiltViewModel<RegisterViewModel>()
-                    RegisterScreen(registerViewModel = registerViewModel,
+                    RegisterScreen(
                         onNavigateToLogin = {
                             navController.navigate(Screen.Login) {
                                 popUpTo(Screen.Register) { inclusive = true }
@@ -207,9 +204,7 @@ fun Navigation(userPrefsRepository: UserPrefsRepository) {
                 }
                 composable<Screen.AgendaItemEdit> {
                     val args = it.toRoute<Screen.AgendaItemEdit>()
-                    val agendaItemEditViewModel = hiltViewModel<AgendaItemEditViewModel>()
                     AgendaItemEditScreen(
-                        agendaItemEditViewModel = agendaItemEditViewModel,
                         title = args.title,
                         description = args.description ?: "",
                         editType = args.editType,

@@ -2,6 +2,7 @@ package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
+import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaItemEditAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,32 +17,21 @@ class AgendaItemEditViewModel @Inject constructor(
     private var _state = MutableStateFlow(AgendaItemEditState())
     val state = _state.asStateFlow()
 
-    fun updateState(action: AgendaItemEditUpdate) {
-        _state.update {
-            when (action) {
-                is AgendaItemEditUpdate.UpdateDescription -> it.copy(
-                    description = action.description
-                )
-
-                is AgendaItemEditUpdate.UpdateTitle -> it.copy(
-                    title = action.title
-                )
+    fun onAction(action: AgendaItemEditAction) {
+        when (action) {
+            is AgendaItemEditAction.OnUpdateDescription -> {
+                _state.update { it.copy(description = action.description) }
             }
+            is AgendaItemEditAction.OnUpdateTitle -> {
+                _state.update { it.copy(title = action.title) }
+            }
+            AgendaItemEditAction.OnNavigateBack -> {}
+            AgendaItemEditAction.OnSaveAgendaItem -> {}
         }
     }
-}
-
-sealed interface AgendaItemEditUpdate {
-    data class UpdateDescription(val description: String) : AgendaItemEditUpdate
-    data class UpdateTitle(val title: String) : AgendaItemEditUpdate
 }
 
 data class AgendaItemEditState(
     val title: String = "",
     val description: String = ""
 )
-
-sealed interface AgendaItemEditAction {
-    data object OnBackPressed: AgendaItemEditAction
-    data object OnSavePressed: AgendaItemEditAction
-}

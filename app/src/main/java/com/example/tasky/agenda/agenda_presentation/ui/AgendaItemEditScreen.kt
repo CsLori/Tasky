@@ -33,21 +33,19 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditAction
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditState
-import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditUpdate
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditViewModel
+import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaItemEditAction
 import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
-import com.example.tasky.core.presentation.components.DefaultHorizontalDivider
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions
 import com.example.tasky.ui.theme.AppTheme.typography
 
-
 @Composable
 internal fun AgendaItemEditScreen(
-    agendaItemEditViewModel: AgendaItemEditViewModel,
+    agendaItemEditViewModel: AgendaItemEditViewModel = hiltViewModel(),
     title: String,
     description: String,
     editType: EditType,
@@ -55,18 +53,14 @@ internal fun AgendaItemEditScreen(
     onSavePressed: (String, String) -> Unit
 ) {
     LaunchedEffect(description) {
-        agendaItemEditViewModel.updateState(
-            AgendaItemEditUpdate.UpdateDescription(
-                description
-            )
+        agendaItemEditViewModel.onAction(
+            AgendaItemEditAction.OnUpdateDescription(description)
         )
     }
 
     LaunchedEffect(title) {
-        agendaItemEditViewModel.updateState(
-            AgendaItemEditUpdate.UpdateTitle(
-                title
-            )
+        agendaItemEditViewModel.onAction(
+            AgendaItemEditAction.OnUpdateTitle(title)
         )
     }
 
@@ -74,12 +68,17 @@ internal fun AgendaItemEditScreen(
     AgendaItemEditContent(
         state = state,
         editType = editType,
-        onUpdate = { action -> agendaItemEditViewModel.updateState(action) },
         onAction = { action ->
             when (action) {
-                AgendaItemEditAction.OnBackPressed -> onBackPressed()
-                AgendaItemEditAction.OnSavePressed -> onSavePressed(state.title, state.description)
+                AgendaItemEditAction.OnNavigateBack -> onBackPressed()
+                AgendaItemEditAction.OnSaveAgendaItem -> onSavePressed(
+                    state.title,
+                    state.description
+                )
+
+                else -> Unit
             }
+            agendaItemEditViewModel.onAction(action)
         }
     )
 }
@@ -88,51 +87,48 @@ internal fun AgendaItemEditScreen(
 private fun AgendaItemEditContent(
     state: AgendaItemEditState,
     editType: EditType,
-    onUpdate: (AgendaItemEditUpdate) -> Unit,
     onAction: (AgendaItemEditAction) -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.white),
+            .background(colors.white)
     ) {
         Header(
             editType = editType,
-            onSavePressed = { onAction(AgendaItemEditAction.OnSavePressed) },
-            onBackPressed = { onAction(AgendaItemEditAction.OnBackPressed) }
+            onAction = onAction,
+            state = state
         )
 
         if (editType == EditType.TITLE) {
             Textarea(
                 onUpdate = { updatedText ->
-                    onUpdate(
-                        AgendaItemEditUpdate.UpdateTitle(updatedText)
+                    onAction(
+                        AgendaItemEditAction.OnUpdateTitle(updatedText)
                     )
                 },
                 textValue = state.title,
                 maxLines = 2
             )
-
         } else {
             Textarea(
                 onUpdate = { updatedText ->
-                    onUpdate(
-                        AgendaItemEditUpdate.UpdateDescription(updatedText)
+                    onAction(
+                        AgendaItemEditAction.OnUpdateDescription(updatedText)
                     )
                 },
                 textValue = state.description,
                 maxLines = 2
             )
         }
-
     }
 }
 
 @Composable
-private fun Header(
-    onSavePressed: () -> Unit,
-    onBackPressed: () -> Unit,
-    editType: EditType
+fun Header(
+    editType: EditType,
+    onAction: (AgendaItemEditAction) -> Unit,
+    state: AgendaItemEditState
 ) {
     Column(
         Modifier
@@ -149,7 +145,7 @@ private fun Header(
         ) {
             IconButton(
                 modifier = Modifier.size(24.dp),
-                onClick = { onBackPressed() },
+                onClick = { onAction(AgendaItemEditAction.OnNavigateBack) },
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
@@ -178,13 +174,12 @@ private fun Header(
                     lineHeight = 12.sp,
                     color = colors.green
                 ),
-                modifier = Modifier.clickable { onSavePressed() }
+                modifier = Modifier.clickable { onAction(AgendaItemEditAction.OnSaveAgendaItem) }
             )
-
         }
     }
-    DefaultHorizontalDivider(modifier = Modifier.padding(horizontal = dimensions.default16dp))
 }
+
 
 @Composable
 fun Textarea(
@@ -224,10 +219,12 @@ fun Textarea(
 fun AgendaItemEditPreview() {
     AppTheme {
         AgendaItemEditContent(
-            state = AgendaItemEditState("Titlevcvcvcvcvcvvcvcvcvcvcvcvcvcvcvcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", "Edit this title"),
+            state = AgendaItemEditState(
+                "Titlevcvcvcvcvcvvcvcvcvcvcvcvcvcvcvcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
+                "Edit this title"
+            ),
             editType = EditType.TITLE,
-            onAction = {},
-            onUpdate = {}
+            onAction = {}
         )
     }
 }
