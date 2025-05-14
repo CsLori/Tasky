@@ -8,11 +8,12 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_presentation.action.AgendaUpdateState
+import com.example.tasky.agenda.agenda_presentation.action.AgendaAction
 import com.example.tasky.agenda.agenda_presentation.state.AgendaState
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
 import com.example.tasky.core.domain.UserPrefsRepository
+import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
 import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.core.presentation.UiText
 import com.example.tasky.core.presentation.components.DialogState
@@ -210,36 +211,6 @@ class AgendaViewModel @Inject constructor(
         }
     }
 
-    fun updateState(action: AgendaUpdateState) {
-        _state.update {
-            when (action) {
-                is AgendaUpdateState.UpdateSelectedDate -> it.copy(selectedDate = action.newDate)
-                is AgendaUpdateState.UpdateSelectedOption -> it.copy(agendaOption = action.item)
-                is AgendaUpdateState.UpdateIsDateSelectedFromDatePicker -> it.copy(
-                    isDateSelectedFromDatePicker = action.isDateSelectedFromDatePicker
-                )
-
-                is AgendaUpdateState.UpdateMonth -> it.copy(month = action.month)
-                is AgendaUpdateState.UpdateSelectedIndex -> it.copy(
-                    selectedIndex = action.selectedIndex,
-                    isDateSelectedFromDatePicker = false
-                )
-
-                is AgendaUpdateState.UpdateSelectedItem -> it.copy(selectedItem = action.agendaItem)
-                is AgendaUpdateState.UpdateIsDone -> {
-                    it.copy(
-                        selectedItem = it.selectedItem?.copy(
-                            details = (it.selectedItem.details as? AgendaItemDetails.Task)?.copy(
-                                isDone = action.isDone
-                            )
-                                ?: it.selectedItem.details
-                        )
-                    )
-                }
-            }
-        }
-    }
-
     fun logout() {
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
@@ -295,6 +266,55 @@ class AgendaViewModel @Inject constructor(
         }
     }
 
+    fun onAction(action: AgendaAction) {
+        when (action) {
+            is AgendaAction.OnDeleteAgendaItem -> deleteAgendaItem(action.agendaItem)
+            is AgendaAction.OnLogout -> logout()
+            is AgendaAction.OnFabItemPressed -> { /* Handle in UI */ }
+            is AgendaAction.OnOpenPressed -> { /* Handle in UI */ }
+            is AgendaAction.OnFilterAgendaItems -> getAgendaItems(action.filterDate.toLocalDateTime())
+            is AgendaAction.OnIsDoneChange -> updateTaskOnIsDoneChange()
+            
+            // Handle new actions that were previously state updates
+            is AgendaAction.OnDateSelected -> {
+                _state.update { it.copy(selectedDate = action.newDate) }
+            }
+            is AgendaAction.OnAgendaOptionSelected -> {
+                _state.update { it.copy(agendaOption = action.option) }
+            }
+            is AgendaAction.OnMonthChanged -> {
+                _state.update { it.copy(month = action.month) }
+            }
+            is AgendaAction.OnDatePickerSelection -> {
+                _state.update { it.copy(isDateSelectedFromDatePicker = action.isDateSelectedFromDatePicker) }
+            }
+            is AgendaAction.OnDayIndexSelected -> {
+                _state.update { it.copy(selectedIndex = action.selectedIndex) }
+                _state.update { it.copy(month = action.date.toLocalDateTime().month.name) }
+                getAgendaItems(action.date.toLocalDateTime())
+            }
+            is AgendaAction.OnAgendaItemSelected -> {
+                _state.update { it.copy(selectedItem = action.agendaItem) }
+            }
+            is AgendaAction.OnTaskCompletionChanged -> {
+                _state.update { 
+                    it.copy(
+                        selectedItem = action.agendaItem,
+                        agendaItems = it.agendaItems.map { item ->
+                            if (item.id == action.agendaItem.id) {
+                                item.copy(
+                                    details = (item.details as? AgendaItemDetails.Task)?.copy(
+                                        isDone = action.isDone
+                                    ) ?: item.details
+                                )
+                            } else item
+                        }
+                    )
+                }
+                updateTaskOnIsDoneChange()
+            }
+        }
+    }
 
     sealed class ErrorDialogState {
         data object None : ErrorDialogState()

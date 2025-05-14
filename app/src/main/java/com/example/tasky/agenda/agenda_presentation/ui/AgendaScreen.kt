@@ -62,7 +62,6 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_presentation.action.AgendaAction
-import com.example.tasky.agenda.agenda_presentation.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
 import com.example.tasky.agenda.agenda_presentation.state.AgendaState
@@ -112,9 +111,7 @@ internal fun AgendaScreen(
                 is Result.Error -> {
                     //                showToast(context, (R.string.Failed_to_sync_agenda))
                 }
-
-                else -> { /* Do nothing */
-                }
+                else -> { /* Do nothing */ }
             }
         }
     }
@@ -125,20 +122,14 @@ internal fun AgendaScreen(
         userInitials = userInitials,
         uiState = uiState,
         onEditPressed = { agendaItem -> onEditPressed(agendaItem) },
-        onUpdateState = { agendaUpdateState -> agendaViewModel.updateState(agendaUpdateState) },
         onAction = { action ->
             when (action) {
-                is AgendaAction.OnDeleteAgendaItem -> agendaViewModel.deleteAgendaItem(action.agendaItem)
-                AgendaAction.OnLogout -> {
-                    agendaViewModel.logout()
-                    onLogoutNavigateToLogin()
-                }
-
                 is AgendaAction.OnFabItemPressed -> onFabItemPressed()
                 is AgendaAction.OnOpenPressed -> onOpenPressed(action.agendaItem)
-                is AgendaAction.OnFilterAgendaItems -> agendaViewModel.getAgendaItems(action.filterDate.toLocalDateTime())
-                is AgendaAction.OnIsDoneChange -> agendaViewModel.updateTaskOnIsDoneChange()
+                is AgendaAction.OnLogout -> onLogoutNavigateToLogin()
+                else -> Unit
             }
+            agendaViewModel.onAction(action)
         },
         shouldShowNeedle = shouldShowNeedle,
         needlePosition = needlePosition
@@ -152,40 +143,40 @@ private fun AgendaContent(
     userInitials: String,
     uiState: AgendaViewModel.AgendaUiState,
     onEditPressed: (AgendaItem) -> Unit,
-    onUpdateState: (AgendaUpdateState) -> Unit,
     onAction: (AgendaAction) -> Unit,
     shouldShowNeedle: Boolean,
     needlePosition: Int
-
 ) {
     var shouldShowDatePicker by remember { mutableStateOf(false) }
     var isVisible by remember { mutableStateOf(false) }
 
-
     when (uiState) {
         AgendaViewModel.AgendaUiState.None -> {
-            Scaffold(floatingActionButton = {
-                FloatingActionButton(
-                    containerColor = colors.black,
-                    onClick = { isVisible = !isVisible },
-                    shape = RoundedCornerShape(dimensions.default16dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = "Add button",
-                        tint = colors.white,
-                    )
-                    AgendaDropdown(
-                        listItems = AgendaOption.entries,
-                        onItemSelected = { agendaOption ->
-                            isVisible = false
-                            onUpdateState(AgendaUpdateState.UpdateSelectedOption(agendaOption))
-                            onAction(AgendaAction.OnFabItemPressed)
-                        },
-                        visible = isVisible
-                    )
-                }
-            }, floatingActionButtonPosition = FabPosition.End) { innerPadding ->
+            Scaffold(
+                floatingActionButton = {
+                    FloatingActionButton(
+                        containerColor = colors.black,
+                        onClick = { isVisible = !isVisible },
+                        shape = RoundedCornerShape(dimensions.default16dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Add button",
+                            tint = colors.white,
+                        )
+                        AgendaDropdown(
+                            listItems = AgendaOption.entries,
+                            onItemSelected = { agendaOption ->
+                                isVisible = false
+                                onAction(AgendaAction.OnAgendaOptionSelected(agendaOption))
+                                onAction(AgendaAction.OnFabItemPressed)
+                            },
+                            visible = isVisible
+                        )
+                    }
+                },
+                floatingActionButtonPosition = FabPosition.End
+            ) { innerPadding ->
                 val cornerRadius = 30.dp
                 Box(
                     modifier = Modifier
@@ -228,26 +219,11 @@ private fun AgendaContent(
                                 DatePickerModal(
                                     onDateSelected = { date ->
                                         date?.let { safeDate ->
-                                            val result =
-                                                DateUtils.convertMillisToLocalDate(safeDate)
-                                            onUpdateState(
-                                                AgendaUpdateState.UpdateMonth(
-                                                    result.month.name
-                                                )
-                                            )
-
-                                            onUpdateState(
-                                                AgendaUpdateState.UpdateSelectedDate(
-                                                    DateUtils.longToLocalDate(safeDate)
-                                                )
-                                            )
-
+                                            val result = DateUtils.convertMillisToLocalDate(safeDate)
+                                            onAction(AgendaAction.OnMonthChanged(result.month.name))
+                                            onAction(AgendaAction.OnDateSelected(DateUtils.longToLocalDate(safeDate)))
                                             onAction(AgendaAction.OnFilterAgendaItems(safeDate))
-                                            onUpdateState(
-                                                AgendaUpdateState.UpdateIsDateSelectedFromDatePicker(
-                                                    true
-                                                )
-                                            )
+                                            onAction(AgendaAction.OnDatePickerSelection(true))
                                         }
                                     },
                                     onDismiss = { shouldShowDatePicker = false },
@@ -286,14 +262,9 @@ private fun AgendaContent(
                             state.selectedIndex,
                             state.isDateSelectedFromDatePicker,
                             onSelectedIndexChanged = { selectedIndex, date ->
-                                onUpdateState(
-                                    AgendaUpdateState.UpdateSelectedIndex(
-                                        selectedIndex
-                                    )
-                                )
-                                onUpdateState(AgendaUpdateState.UpdateMonth(date.toLocalDateTime().month.name))
-                                onAction(AgendaAction.OnFilterAgendaItems(date))
-                            })
+                                onAction(AgendaAction.OnDayIndexSelected(selectedIndex, date))
+                            }
+                        )
 
                         val rowSelectedDate =
                             state.selectedDate.plusDays(state.selectedIndex.toLong())
@@ -311,7 +282,8 @@ private fun AgendaContent(
                             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                                 items(
                                     items = agendaItems,
-                                    key = { it.id }) { agendaItem ->
+                                    key = { it.id }
+                                ) { agendaItem ->
                                     if (shouldShowNeedle && agendaItems.indexOf(agendaItem) == needlePosition) {
                                         HorizontalDivider(
                                             modifier = Modifier.padding(bottom = dimensions.small8dp),
@@ -320,49 +292,22 @@ private fun AgendaContent(
                                     }
                                     when (agendaItem.details) {
                                         is AgendaItemDetails.Task -> {
-
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.green,
                                                 onDelete = {
-                                                    onAction(
-                                                        AgendaAction.OnDeleteAgendaItem(
-                                                            agendaItem
-                                                        )
-                                                    )
+                                                    onAction(AgendaAction.OnDeleteAgendaItem(agendaItem))
                                                 },
                                                 onEditPressed = {
-                                                    onUpdateState(
-                                                        AgendaUpdateState.UpdateSelectedOption(
-                                                            AgendaOption.TASK
-                                                        )
-                                                    )
+                                                    onAction(AgendaAction.OnAgendaOptionSelected(AgendaOption.TASK))
                                                     onEditPressed(agendaItem)
                                                 },
                                                 onOpenPressed = {
-                                                    onUpdateState(
-                                                        AgendaUpdateState.UpdateSelectedOption(
-                                                            AgendaOption.TASK
-                                                        )
-                                                    )
-                                                    onAction(
-                                                        AgendaAction.OnOpenPressed(
-                                                            agendaItem
-                                                        )
-                                                    )
+                                                    onAction(AgendaAction.OnAgendaOptionSelected(AgendaOption.TASK))
+                                                    onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
                                                 onIsDoneChange = { isDone ->
-                                                    onUpdateState(
-                                                        AgendaUpdateState.UpdateSelectedItem(
-                                                            agendaItem
-                                                        )
-                                                    )
-                                                    onUpdateState(
-                                                        AgendaUpdateState.UpdateIsDone(
-                                                            isDone
-                                                        )
-                                                    )
-                                                    onAction(AgendaAction.OnIsDoneChange)
+                                                    onAction(AgendaAction.OnTaskCompletionChanged(agendaItem, isDone))
                                                 }
                                             )
                                         }
@@ -371,27 +316,15 @@ private fun AgendaContent(
                                             AgendaItem(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.lightGreen,
-                                                onDelete = { agendaItemId ->
-                                                    onAction(
-                                                        AgendaAction.OnDeleteAgendaItem(
-                                                            agendaItem
-                                                        )
-                                                    )
+                                                onDelete = {
+                                                    onAction(AgendaAction.OnDeleteAgendaItem(agendaItem))
                                                 },
                                                 onEditPressed = {
-                                                    onUpdateState(
-                                                        AgendaUpdateState.UpdateSelectedOption(
-                                                            AgendaOption.EVENT
-                                                        )
-                                                    )
+                                                    onAction(AgendaAction.OnAgendaOptionSelected(AgendaOption.EVENT))
                                                     onEditPressed(agendaItem)
                                                 },
                                                 onOpenPressed = {
-                                                    onUpdateState(
-                                                        AgendaUpdateState.UpdateSelectedOption(
-                                                            AgendaOption.EVENT
-                                                        )
-                                                    )
+                                                    onAction(AgendaAction.OnAgendaOptionSelected(AgendaOption.EVENT))
                                                     onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
                                                 onIsDoneChange = {}
@@ -403,26 +336,14 @@ private fun AgendaContent(
                                                 agendaItem = agendaItem,
                                                 backgroundColor = colors.light2,
                                                 onDelete = {
-                                                    onAction(
-                                                        AgendaAction.OnDeleteAgendaItem(
-                                                            agendaItem
-                                                        )
-                                                    )
+                                                    onAction(AgendaAction.OnDeleteAgendaItem(agendaItem))
                                                 },
                                                 onEditPressed = {
-                                                    onUpdateState(
-                                                        AgendaUpdateState.UpdateSelectedOption(
-                                                            AgendaOption.REMINDER
-                                                        )
-                                                    )
+                                                    onAction(AgendaAction.OnAgendaOptionSelected(AgendaOption.REMINDER))
                                                     onEditPressed(agendaItem)
                                                 },
                                                 onOpenPressed = {
-                                                    onUpdateState(
-                                                        AgendaUpdateState.UpdateSelectedOption(
-                                                            AgendaOption.REMINDER
-                                                        )
-                                                    )
+                                                    onAction(AgendaAction.OnAgendaOptionSelected(AgendaOption.REMINDER))
                                                     onAction(AgendaAction.OnOpenPressed(agendaItem))
                                                 },
                                                 onIsDoneChange = {}
@@ -775,7 +696,6 @@ fun AgendaContentPreview() {
                 ),
             ),
             onEditPressed = {},
-            onUpdateState = {},
             onAction = { },
             uiState = AgendaViewModel.AgendaUiState.None,
             agendaItems = listOf(
