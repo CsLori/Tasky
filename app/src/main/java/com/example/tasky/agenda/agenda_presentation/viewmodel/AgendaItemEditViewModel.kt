@@ -2,7 +2,7 @@ package com.example.tasky.agenda.agenda_presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
-import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaItemEditAction
+import com.example.tasky.agenda.agenda_presentation.action.AgendaItemEditAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AgendaItemEditViewModel @Inject constructor(
-    agendaRepository: AgendaRepository
+    private val agendaRepository: AgendaRepository
 ) : ViewModel() {
 
     private var _state = MutableStateFlow(AgendaItemEditState())

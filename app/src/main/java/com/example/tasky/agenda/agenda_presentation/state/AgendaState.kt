@@ -1,4 +1,4 @@
-package com.example.tasky.agenda.agenda_presentation.viewmodel.state
+package com.example.tasky.agenda.agenda_presentation.state
 
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption

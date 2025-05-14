@@ -78,10 +78,10 @@ import com.example.tasky.agenda.agenda_presentation.components.SetReminderRow
 import com.example.tasky.agenda.agenda_presentation.components.TimeAndDateRow
 import com.example.tasky.agenda.agenda_presentation.components.thirtyMinutesInMillis
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
-import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.VisitorFilter
+import com.example.tasky.agenda.agenda_presentation.action.AgendaDetailAction
+import com.example.tasky.agenda.agenda_presentation.state.AgendaDetailState
+import com.example.tasky.agenda.agenda_presentation.state.AgendaDetailStateUpdate
+import com.example.tasky.agenda.agenda_presentation.state.VisitorFilter
 import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
 import com.example.tasky.core.presentation.DateUtils.toLong
 import com.example.tasky.core.presentation.DateUtils.toStringMMMdyyyyFormat

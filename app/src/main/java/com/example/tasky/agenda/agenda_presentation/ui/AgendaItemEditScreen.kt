@@ -36,8 +36,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaItemEditViewModel
-import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaItemEditAction
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
+import com.example.tasky.agenda.agenda_presentation.action.AgendaItemEditAction
+import com.example.tasky.agenda.agenda_presentation.state.EditType
 import com.example.tasky.ui.theme.AppTheme
 import com.example.tasky.ui.theme.AppTheme.colors
 import com.example.tasky.ui.theme.AppTheme.dimensions

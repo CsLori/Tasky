@@ -1,4 +1,4 @@
-package com.example.tasky.agenda.agenda_presentation.viewmodel.action
+package com.example.tasky.agenda.agenda_presentation.action
 
 import android.net.Uri
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem

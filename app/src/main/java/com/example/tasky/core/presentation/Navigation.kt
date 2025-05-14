@@ -25,7 +25,7 @@ import com.example.tasky.agenda.agenda_presentation.ui.AgendaScreen
 import com.example.tasky.agenda.agenda_presentation.ui.PhotoScreen
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaDetailViewModel
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
+import com.example.tasky.agenda.agenda_presentation.state.AgendaDetailStateUpdate
 import com.example.tasky.core.domain.UserPrefsRepository
 import com.example.tasky.onboarding.onboarding.presentation.ui.login.LoginScreen
 import com.example.tasky.onboarding.onboarding.presentation.ui.register.RegisterScreen

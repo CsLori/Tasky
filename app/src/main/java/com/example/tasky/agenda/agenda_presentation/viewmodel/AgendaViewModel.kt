@@ -8,8 +8,8 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.repository.AgendaRepository
 import com.example.tasky.agenda.agenda_domain.repository.LocalDatabaseRepository
-import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
+import com.example.tasky.agenda.agenda_presentation.action.AgendaUpdateState
+import com.example.tasky.agenda.agenda_presentation.state.AgendaState
 import com.example.tasky.core.domain.Result.Error
 import com.example.tasky.core.domain.Result.Success
 import com.example.tasky.core.domain.UserPrefsRepository

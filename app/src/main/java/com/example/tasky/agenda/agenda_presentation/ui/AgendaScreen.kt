@@ -1,5 +1,10 @@
 package com.example.tasky.agenda.agenda_presentation.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,7 +35,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -56,12 +61,12 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaItem
 import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Attendee
+import com.example.tasky.agenda.agenda_presentation.action.AgendaAction
+import com.example.tasky.agenda.agenda_presentation.action.AgendaUpdateState
 import com.example.tasky.agenda.agenda_presentation.components.AgendaDetailOption
 import com.example.tasky.agenda.agenda_presentation.components.DatePickerModal
+import com.example.tasky.agenda.agenda_presentation.state.AgendaState
 import com.example.tasky.agenda.agenda_presentation.viewmodel.AgendaViewModel
-import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaAction
-import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaUpdateState
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaState
 import com.example.tasky.core.domain.Result
 import com.example.tasky.core.presentation.DateUtils
 import com.example.tasky.core.presentation.DateUtils.getDaysWithDates
@@ -192,8 +197,7 @@ private fun AgendaContent(
                             .height(200.dp)
                             .background(colors.black),
                         contentAlignment = Alignment.Center
-                    )
-                    {
+                    ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -606,23 +610,52 @@ private fun CalendarComponent(
 ) {
     val componentHeight = 61.dp
     val componentWidth = 40.dp
+    
+    val animatedBackgroundColor by animateColorAsState(
+        targetValue = if (isSelected) colors.orange else colors.white,
+        animationSpec = tween(durationMillis = 300),
+        label = "background"
+    )
+    
+    val animatedTextColor by animateColorAsState(
+        targetValue = if (isSelected) colors.darkGray else colors.gray,
+        animationSpec = tween(durationMillis = 300),
+        label = "text"
+    )
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.1f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessVeryLow
+        ),
+        label = "scale"
+    )
+
     Column(
         modifier = Modifier
             .height(componentHeight)
             .width(componentWidth)
             .clip(RoundedCornerShape(dimensions.large24dp))
-            .background(if (isSelected) colors.orange else colors.white)
-            .clickable {
-                onClick()
+            .background(animatedBackgroundColor)
+            .clickable { onClick() }
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
             },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
         Text(
             dayLetter,
-            style = typography.calendarDayText.copy(color = if (isSelected) colors.darkGray else colors.gray)
+            style = typography.calendarDayText.copy(color = animatedTextColor)
         )
-        Text(text = dayNumber, style = typography.calendarDayNumber)
+        Text(
+            text = dayNumber,
+            style = typography.calendarDayNumber.copy(
+                color = if (isSelected) colors.black else colors.darkGray
+            )
+        )
     }
 }
 

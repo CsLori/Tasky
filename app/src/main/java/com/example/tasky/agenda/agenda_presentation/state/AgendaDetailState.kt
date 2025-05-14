@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.example.tasky.agenda.agenda_presentation.viewmodel.state
+package com.example.tasky.agenda.agenda_presentation.state
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.example.tasky.agenda.agenda_domain.model.AgendaItem

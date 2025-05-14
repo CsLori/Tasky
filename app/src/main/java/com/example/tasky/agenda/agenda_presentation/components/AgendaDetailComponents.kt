@@ -57,11 +57,11 @@ import com.example.tasky.agenda.agenda_domain.model.AgendaItemDetails
 import com.example.tasky.agenda.agenda_domain.model.AgendaOption
 import com.example.tasky.agenda.agenda_domain.model.Attendee
 import com.example.tasky.agenda.agenda_domain.model.Photo
-import com.example.tasky.agenda.agenda_presentation.viewmodel.action.AgendaDetailAction
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailState
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.AgendaDetailStateUpdate
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.EditType
-import com.example.tasky.agenda.agenda_presentation.viewmodel.state.RemindBeforeDuration
+import com.example.tasky.agenda.agenda_presentation.action.AgendaDetailAction
+import com.example.tasky.agenda.agenda_presentation.state.AgendaDetailState
+import com.example.tasky.agenda.agenda_presentation.state.AgendaDetailStateUpdate
+import com.example.tasky.agenda.agenda_presentation.state.EditType
+import com.example.tasky.agenda.agenda_presentation.state.RemindBeforeDuration
 import com.example.tasky.core.presentation.DateUtils.toHourMinuteFormat
 import com.example.tasky.core.presentation.DateUtils.toLocalDateTime
 import com.example.tasky.core.presentation.DateUtils.toLong
